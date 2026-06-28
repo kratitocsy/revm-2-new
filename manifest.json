@@ -1,0 +1,27 @@
+{
+  "name": "RevM² — Study OS",
+  "short_name": "RevM²",
+  "description": "Ebbinghaus revision tracker, study timer, marks calculator and rank predictor for JEE, NEET, CAT and UPSC.",
+  "start_url": "/tracker.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#c8a96e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["education", "productivity"],
+  "lang": "en-IN"
+}

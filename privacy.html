@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RevM² — Privacy Policy</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c8a96e">
+<style>
+.policy-wrap{position:relative;z-index:5;max-width:720px;margin:0 auto;padding:5rem 2rem 4rem;}
+.policy-wrap h1{font-size:1.8rem;font-weight:900;color:var(--white);text-transform:uppercase;letter-spacing:-0.02em;margin-bottom:0.5rem;}
+.policy-wrap .date{font-size:0.72rem;color:var(--muted);margin-bottom:2.5rem;}
+.policy-wrap h2{font-size:0.88rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.06em;margin:2rem 0 0.65rem;}
+.policy-wrap p,.policy-wrap li{font-size:0.85rem;color:var(--muted);line-height:1.8;margin-bottom:0.5rem;}
+.policy-wrap ul{padding-left:1.25rem;}
+.policy-wrap a{color:var(--gold);text-decoration:none;}
+</style>
+</head>
+<body>
+<canvas id="starfield"></canvas>
+<nav class="topnav">
+  <a href="index.html"><div class="rm2-logo" data-size="nav"></div></a>
+  <ul class="topnav-links"><li><a href="index.html">← Back to RevM²</a></li></ul>
+  <a class="topnav-cta" href="login.html">Launch app →</a>
+</nav>
+<div class="policy-wrap">
+  <h1>Privacy Policy</h1>
+  <div class="date">Last updated: June 2026</div>
+
+  <p>RevM² ("we", "our", "us") is committed to protecting your privacy. This policy explains what information we collect and how we use it.</p>
+
+  <h2>Information we collect</h2>
+  <ul>
+    <li><strong>Account data:</strong> When you sign in with Google, we receive your email address and name from Google OAuth.</li>
+    <li><strong>Usage data:</strong> Your revision tracker entries, study timer sessions, and onboarding preferences are stored to provide the service.</li>
+    <li><strong>Score submissions:</strong> If you choose to submit your marks calculator score to our community database, we store the score, exam type, shift, and a random anonymous ID. Your name and email are never associated with score submissions.</li>
+    <li><strong>Analytics:</strong> We use Google Analytics to understand how the app is used. This collects anonymised usage data.</li>
+    <li><strong>Advertising:</strong> We use Google AdSense to display ads. Google may use cookies to show relevant ads based on your browsing history.</li>
+  </ul>
+
+  <h2>How we use your information</h2>
+  <ul>
+    <li>To provide and improve the RevM² service</li>
+    <li>To personalise your tracker and dashboard</li>
+    <li>To improve percentile predictions using anonymised score submissions</li>
+    <li>To display relevant advertisements through Google AdSense</li>
+  </ul>
+
+  <h2>Data storage</h2>
+  <p>Your data is stored securely using Supabase (PostgreSQL). Tracker data is also stored locally in your browser's localStorage for offline access.</p>
+
+  <h2>Third-party services</h2>
+  <ul>
+    <li><strong>Google OAuth</strong> — for sign-in</li>
+    <li><strong>Supabase</strong> — for database and authentication</li>
+    <li><strong>Google Analytics</strong> — for usage analytics</li>
+    <li><strong>Google AdSense</strong> — for advertisements</li>
+  </ul>
+
+  <h2>Your rights</h2>
+  <p>You may request deletion of your account and data at any time by contacting us. Score submissions are stored anonymously and cannot be individually identified or deleted.</p>
+
+  <h2>Cookies</h2>
+  <p>We use cookies for authentication and advertising. You can disable cookies in your browser settings, though this may affect app functionality.</p>
+
+  <h2>Contact</h2>
+  <p>For any privacy concerns, contact us at: <a href="mailto:privacy@revm2.in">privacy@revm2.in</a></p>
+
+  <p style="margin-top:2rem;font-size:0.75rem;color:var(--dim)">This privacy policy applies to revm2.vercel.app and revm2.in.</p>
+</div>
+<script src="shared.js"></script>
+<script>initStarfield();</script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>

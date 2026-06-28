@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RevM² — Reminders</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c8a96e">
+<style>
+.tg-wrap{position:relative;z-index:10;width:100%;max-width:460px;}
+.tg-back{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.7rem;color:var(--muted);text-decoration:none;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:1.5rem;transition:color 0.2s;}
+.tg-back:hover{color:var(--gold);}
+.tg-icon{font-size:2.25rem;line-height:1;margin-bottom:0.9rem;}
+.tg-status{display:flex;align-items:center;gap:0.5rem;font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:1.1rem;}
+.dot-status{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dot-status.off{background:var(--muted);}
+.dot-status.on{background:var(--success);box-shadow:0 0 8px rgba(74,222,128,0.6);}
+.tg-desc{font-size:0.82rem;color:var(--muted);line-height:1.7;margin-bottom:1.4rem;}
+.tg-row{display:flex;align-items:center;justify-content:space-between;padding:0.9rem 0;border-top:1px solid var(--border);}
+.tg-row:first-of-type{border-top:none;}
+.tg-row-label{font-size:0.82rem;color:var(--text);}
+.tg-row-sub{font-size:0.66rem;color:var(--dim);margin-top:0.15rem;}
+/* simple switch */
+.switch{position:relative;width:42px;height:24px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;}
+.switch-track{position:absolute;inset:0;background:var(--s3);border:1px solid var(--border2);border-radius:99px;cursor:pointer;transition:background 0.2s,border-color 0.2s;}
+.switch-track::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:50%;transform:translateY(-50%);background:var(--muted);border-radius:50%;transition:transform 0.2s,background 0.2s;}
+.switch input:checked + .switch-track{background:var(--gold-dim);border-color:var(--gold-border);}
+.switch input:checked + .switch-track::before{transform:translate(18px,-50%);background:var(--gold);}
+.switch input:disabled + .switch-track{opacity:0.45;cursor:not-allowed;}
+.tg-msg{font-size:0.68rem;letter-spacing:0.05em;text-transform:uppercase;min-height:1em;margin-top:0.9rem;color:var(--gold);}
+.tg-msg.err{color:var(--danger);}
+</style>
+</head>
+<body>
+<canvas id="starfield"></canvas>
+<div class="orb"></div>
+
+<div class="page-center" style="align-items:flex-start;text-align:left;">
+  <div class="tg-wrap">
+    <a class="tg-back" href="tracker.html">← Back to tracker</a>
+
+    <div class="card">
+      <div class="card-body">
+        <div class="tg-icon">🔔</div>
+        <div class="tg-status" id="tgStatus"><span class="dot-status off" id="tgDot"></span><span id="tgStatusTxt">Checking status…</span></div>
+        <p class="tg-desc">Get your revision reminders sent straight to Telegram — due reviews, daily nudges, and streak alerts. No spam, you can disconnect anytime.</p>
+
+        <button class="btn btn-gold" id="connectBtn" style="width:100%;display:none;" onclick="connectTelegram()">Connect Telegram →</button>
+        <button class="btn btn-ghost" id="reconnectBtn" style="width:100%;display:none;" onclick="connectTelegram()">Open Telegram again</button>
+
+        <div class="tg-row" id="reminderRow" style="display:none;">
+          <div>
+            <div class="tg-row-label">Reminders enabled</div>
+            <div class="tg-row-sub">Turn off to pause notifications without disconnecting</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="remindersToggle" onchange="toggleReminders(this.checked)">
+            <span class="switch-track"></span>
+          </label>
+        </div>
+
+        <div class="tg-msg" id="tgMsg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const sb = window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL, REVM2_CONFIG.SUPABASE_ANON);
+const BOT_USERNAME = 'revm2_bot'; // from @BotFather
+let currentUser = null;
+
+function setMsg(text, isErr){
+  const el = document.getElementById('tgMsg');
+  el.textContent = text || '';
+  el.className = 'tg-msg' + (isErr ? ' err' : '');
+}
+
+async function init(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){ window.location.href = 'login.html'; return; }
+  currentUser = session.user;
+
+  const { data: profile, error } = await sb.from('user_profiles')
+    .select('telegram_linked,reminders_enabled')
+    .eq('id', currentUser.id).single();
+
+  if(error){ setMsg('Could not load your settings. Refresh to try again.', true); return; }
+
+  renderStatus(profile);
+}
+
+function renderStatus(profile){
+  const dot = document.getElementById('tgDot');
+  const txt = document.getElementById('tgStatusTxt');
+  const connectBtn = document.getElementById('connectBtn');
+  const reconnectBtn = document.getElementById('reconnectBtn');
+  const row = document.getElementById('reminderRow');
+  const toggle = document.getElementById('remindersToggle');
+
+  if(profile?.telegram_linked){
+    dot.className = 'dot-status on';
+    txt.textContent = 'Telegram connected';
+    connectBtn.style.display = 'none';
+    reconnectBtn.style.display = 'block';
+    row.style.display = 'flex';
+    toggle.checked = profile.reminders_enabled !== false;
+  } else {
+    dot.className = 'dot-status off';
+    txt.textContent = 'Telegram not connected';
+    connectBtn.style.display = 'block';
+    reconnectBtn.style.display = 'none';
+    row.style.display = 'none';
+  }
+}
+
+function connectTelegram(){
+  // Deep link carries the user's id as the /start payload so the bot
+  // (via the n8n workflow) knows which Supabase row to attach the chat_id to.
+  const link = `https://t.me/${BOT_USERNAME}?start=${currentUser.id}`;
+  window.open(link, '_blank');
+  setMsg('Opened Telegram — send /start to the bot, then come back here.');
+
+  // Poll briefly for the link to land, since the bot writes telegram_linked
+  // asynchronously once the user hits /start.
+  let tries = 0;
+  const poll = setInterval(async () => {
+    tries++;
+    const { data: profile } = await sb.from('user_profiles')
+      .select('telegram_linked,reminders_enabled').eq('id', currentUser.id).single();
+    if(profile?.telegram_linked){
+      clearInterval(poll);
+      setMsg('Telegram connected ✅');
+      logEvent('telegram_connected');
+      renderStatus(profile);
+    } else if(tries >= 20){ // ~60s
+      clearInterval(poll);
+    }
+  }, 3000);
+}
+
+async function toggleReminders(enabled){
+  setMsg('');
+  const { error } = await sb.from('user_profiles')
+    .update({ reminders_enabled: enabled }).eq('id', currentUser.id);
+  if(error){
+    setMsg('Could not save — try again.', true);
+    document.getElementById('remindersToggle').checked = !enabled;
+  } else {
+    setMsg(enabled ? 'Reminders turned on.' : 'Reminders paused.');
+  }
+}
+
+init();
+initStarfield();
+</script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>
