@@ -1,70 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>RevM² — Study Smarter</title>
-<meta name="description" content="The complete study OS for JEE, NEET, CAT and UPSC. Ebbinghaus tracker, timer, marks calculator, rank predictor. Free forever.">
-<link rel="stylesheet" href="style.css">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#c8a96e">
-<style>
-.hero{position:relative;height:100vh;min-height:580px;display:flex;align-items:flex-end;overflow:hidden;}
-.hero-content{position:relative;z-index:2;padding:0 3rem 5.5rem;max-width:580px;}
-.hero h1{font-size:clamp(2.8rem,7vw,5rem);font-weight:900;line-height:1.0;letter-spacing:-0.03em;color:var(--white);text-transform:uppercase;margin-bottom:1.1rem;}
-.hero-desc{font-size:0.9rem;color:var(--muted);max-width:400px;line-height:1.75;margin-bottom:1.75rem;}
-.hero-actions{display:flex;gap:0.75rem;flex-wrap:wrap;}
-.scroll-hint{position:absolute;bottom:1.75rem;left:50%;transform:translateX(-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:0.35rem;opacity:0.3;}
-.scroll-hint span{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--white);}
-.scroll-line{width:1px;height:36px;background:linear-gradient(to bottom,var(--white),transparent);animation:scrollDown 1.8s ease-in-out infinite;}
-@keyframes scrollDown{0%{transform:scaleY(0);transform-origin:top;opacity:0;}50%{transform:scaleY(1);transform-origin:top;opacity:1;}100%{transform:scaleY(1);transform-origin:bottom;opacity:0;}}
-.stats-strip{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--s1);display:flex;justify-content:center;flex-wrap:wrap;gap:0;}
-.stat-strip-item{padding:1.1rem 2.5rem;text-align:center;border-right:1px solid var(--border);}
-.stat-strip-item:last-child{border-right:none;}
-.stat-strip-num{font-size:1.5rem;font-weight:900;color:var(--gold);display:block;letter-spacing:-0.02em;}
-.stat-strip-label{font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);}
-.full-section{padding:5rem 3rem;max-width:1100px;margin:0 auto;position:relative;z-index:2;}
-.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);}
-.feat-card{background:var(--s1);padding:1.75rem;transition:background 0.15s;}
-.feat-card:hover{background:var(--s2);}
-.feat-icon{width:36px;height:36px;background:var(--gold-dim);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;color:var(--gold);margin-bottom:1rem;}
-.feat-card h3{font-size:0.88rem;font-weight:600;color:var(--white);margin-bottom:0.4rem;letter-spacing:-0.01em;}
-.feat-card p{font-size:0.78rem;color:var(--muted);line-height:1.65;}
-.feat-tag{display:inline-block;margin-top:0.75rem;font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);background:var(--gold-dim);padding:0.15rem 0.5rem;}
-.tracks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.75rem;}
-.track-card{background:var(--s2);border:1px solid var(--border);padding:1.25rem 1rem;text-align:center;transition:all 0.15s;}
-.track-card:hover{border-color:var(--gold-border);}
-.track-abbr{font-size:0.95rem;font-weight:900;color:var(--gold);margin-bottom:0.3rem;letter-spacing:0.02em;}
-.track-name{font-size:0.78rem;font-weight:500;color:var(--white);margin-bottom:0.2rem;}
-.track-subs{font-size:0.68rem;color:var(--muted);}
-.steps{position:relative;margin-top:1.5rem;}
-.steps::before{content:'';position:absolute;left:19px;top:0;bottom:0;width:1px;background:var(--border);}
-.step{display:flex;gap:1.25rem;padding:1.25rem 0;}
-.step-num{width:38px;height:38px;flex-shrink:0;background:var(--black);border:1px solid var(--gold-border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--gold);position:relative;z-index:1;}
-.step h3{font-size:0.88rem;font-weight:600;color:var(--white);margin-bottom:0.25rem;padding-top:0.55rem;}
-.step p{font-size:0.8rem;color:var(--muted);line-height:1.65;}
-.story-card{background:var(--s2);border:1px solid var(--border);padding:2.25rem;position:relative;overflow:hidden;}
-.story-card::after{content:'M²';position:absolute;right:1.5rem;top:0.5rem;font-size:7rem;font-weight:900;color:rgba(200,169,110,0.04);line-height:1;pointer-events:none;}
-.story-card p{font-size:0.88rem;color:var(--muted);line-height:1.8;max-width:600px;}
-.story-card p+p{margin-top:0.9rem;}
-.story-card strong{color:var(--gold);font-weight:500;}
-.divider{height:1px;background:var(--border);}
-</style>
-</head>
-<body>
-<canvas id="starfield"></canvas>
-<div class="orb"></div>
-
-<nav class="topnav">
-  <a href="index.html"><div class="rm2-logo" data-size="nav"></div></a>
-  <ul class="topnav-links">
-    <li><a href="#features">Features</a></li>
-    <li><a href="#exams">Exams</a></li>
-    <li><a href="#how">How it works</a></li>
-    <li><a href="#story">Story</a></li>
-  </ul>
-  <a class="topnav-cta" href="login.html">Launch app →</a>
-</nav>
-
 <div class="hero">
   <div class="hero-content">
     <h1>Master<br>Every<br>Revision.</h1>
@@ -157,3 +90,4 @@
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
 </body>
 </html>
+
