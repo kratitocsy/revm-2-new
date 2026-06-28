@@ -1,3 +1,4 @@
+}
 /* ============================================================
    RevM² — shared.js
    Animated logo component + shared constants + utilities
@@ -55,8 +56,6 @@ async function requireAuth(){
     if(!session){ window.location.href='login.html'; return null; }
     return session;
   }catch(e){ window.location.href='login.html'; return null; }
-}
-
 /* ── ANALYTICS / EVENT LOGGING ───────────────────────────── */
 /* Fire-and-forget. Call after `const sb = supabase.createClient(...)` exists on the page.
    Usage: logEvent('feature_used', 'timer'); logEvent('review_completed'); */
@@ -266,3 +265,4 @@ window.RevM2Logo = (()=>{
   else init();
   return {init};
 })();
+
