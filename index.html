@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RevM² — Study Smarter</title>
+<meta name="description" content="The complete study OS for JEE, NEET, CAT and UPSC. Ebbinghaus tracker, timer, marks calculator, rank predictor. Free forever.">
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c8a96e">
+<style>
+/* ── Brain Hero ───────────────────────────────────────────── */
+.hero{
+  position:relative;
+  height:100vh;min-height:620px;
+  display:flex;align-items:center;   /* vertically centre text */
+  overflow:hidden;
+  background:transparent;
+}
+
+/* Full-viewport 3D canvas — brain bleeds edge to edge on right */
+.hero-brain-canvas{
+  position:absolute;
+  left:40%;right:0;
+  top:0;bottom:0;
+  z-index:1;
+  overflow:hidden;
+  cursor:grab;
+}
+.hero-brain-canvas:active{ cursor:grabbing; }
+
+/* Gradient fade on left edge — blends brain into dark bg */
+.hero-brain-canvas::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    to right,
+    var(--bg) 0%,
+    rgba(7,9,13,0.8) 12%,
+    transparent 42%
+  );
+  z-index:4;
+  pointer-events:none;
+}
+/* Bottom fade */
+.hero-brain-canvas::after{
+  content:'';
+  position:absolute;
+  left:0;right:0;bottom:0;height:28%;
+  background:linear-gradient(to bottom, transparent, var(--bg));
+  z-index:4;
+  pointer-events:none;
+}
+
+/* Left text column — headline on LEFT */
+.hero-content{
+  position:relative;
+  z-index:5;
+  padding:0 3rem 0 3.5rem;
+  max-width:520px;
+}
+
+/* BIGGER HEADLINE — the key request */
+.hero h1{
+  font-size:clamp(3.6rem,8vw,6.2rem);
+  font-weight:900;
+  line-height:0.96;
+  letter-spacing:-0.04em;
+  color:var(--white);
+  text-transform:uppercase;
+  margin-bottom:1.3rem;
+}
+.hero-desc{
+  font-size:0.88rem;color:var(--muted);
+  max-width:380px;line-height:1.8;
+  margin-bottom:1.8rem;
+}
+.hero-actions{display:flex;gap:0.75rem;flex-wrap:wrap;}
+
+/* Neuro legend — shows which colour = which subject */
+.hero-legend{
+  display:flex;gap:1rem;flex-wrap:wrap;
+  margin-bottom:1.8rem;
+}
+.hero-legend-item{
+  display:flex;align-items:center;gap:0.35rem;
+  font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--muted);
+}
+.hero-legend-dot{
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;
+  box-shadow:0 0 6px currentColor;
+}
+
+.scroll-hint{
+  position:absolute;bottom:1.75rem;left:50%;
+  transform:translateX(-50%);z-index:5;
+  display:flex;flex-direction:column;align-items:center;gap:0.35rem;opacity:0.28;
+}
+.scroll-hint span{font-size:0.58rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--white);}
+.scroll-line{width:1px;height:36px;background:linear-gradient(to bottom,var(--white),transparent);animation:scrollDown 1.8s ease-in-out infinite;}
+@keyframes scrollDown{
+  0%  {transform:scaleY(0);transform-origin:top;opacity:0;}
+  50% {transform:scaleY(1);transform-origin:top;opacity:1;}
+  100%{transform:scaleY(1);transform-origin:bottom;opacity:0;}
+}
+.stats-strip{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--s1);display:flex;justify-content:center;flex-wrap:wrap;gap:0;}
+.stat-strip-item{padding:1.1rem 2.5rem;text-align:center;border-right:1px solid var(--border);}
+.stat-strip-item:last-child{border-right:none;}
+.stat-strip-num{font-size:1.5rem;font-weight:900;color:var(--gold);display:block;letter-spacing:-0.02em;}
+.stat-strip-label{font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);}
+.full-section{padding:5rem 3rem;max-width:1100px;margin:0 auto;position:relative;z-index:2;}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);}
+.feat-card{background:var(--s1);padding:1.75rem;transition:background 0.15s;}
+.feat-card:hover{background:var(--s2);}
+.feat-icon{width:36px;height:36px;background:var(--gold-dim);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;color:var(--gold);margin-bottom:1rem;}
+.feat-card h3{font-size:0.88rem;font-weight:600;color:var(--white);margin-bottom:0.4rem;letter-spacing:-0.01em;}
+.feat-card p{font-size:0.78rem;color:var(--muted);line-height:1.65;}
+.feat-tag{display:inline-block;margin-top:0.75rem;font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);background:var(--gold-dim);padding:0.15rem 0.5rem;}
+.tracks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.75rem;}
+.track-card{background:var(--s2);border:1px solid var(--border);padding:1.25rem 1rem;text-align:center;transition:all 0.15s;}
+.track-card:hover{border-color:var(--gold-border);}
+.track-abbr{font-size:0.95rem;font-weight:900;color:var(--gold);margin-bottom:0.3rem;letter-spacing:0.02em;}
+.track-name{font-size:0.78rem;font-weight:500;color:var(--white);margin-bottom:0.2rem;}
+.track-subs{font-size:0.68rem;color:var(--muted);}
+.steps{position:relative;margin-top:1.5rem;}
+.steps::before{content:'';position:absolute;left:19px;top:0;bottom:0;width:1px;background:var(--border);}
+.step{display:flex;gap:1.25rem;padding:1.25rem 0;}
+.step-num{width:38px;height:38px;flex-shrink:0;background:var(--black);border:1px solid var(--gold-border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--gold);position:relative;z-index:1;}
+.step h3{font-size:0.88rem;font-weight:600;color:var(--white);margin-bottom:0.25rem;padding-top:0.55rem;}
+.step p{font-size:0.8rem;color:var(--muted);line-height:1.65;}
+.story-card{background:var(--s2);border:1px solid var(--border);padding:2.25rem;position:relative;overflow:hidden;}
+.story-card::after{content:'M²';position:absolute;right:1.5rem;top:0.5rem;font-size:7rem;font-weight:900;color:rgba(200,169,110,0.04);line-height:1;pointer-events:none;}
+.story-card p{font-size:0.88rem;color:var(--muted);line-height:1.8;max-width:600px;}
+.story-card p+p{margin-top:0.9rem;}
+.story-card strong{color:var(--gold);font-weight:500;}
+.divider{height:1px;background:var(--border);}
+.story-video{position:relative;width:100%;padding-top:56.25%;margin:1.6rem 0;background:#000;border:1px solid var(--border);}
+.story-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
+.story-video-credit{font-size:0.62rem;letter-spacing:0.04em;color:var(--dim,var(--muted));margin-top:0.4rem;opacity:0.7;}
+</style>
+</head>
+<body>
+<canvas id="starfield"></canvas>
+
+<nav class="topnav">
+  <a href="index.html"><div class="rm2-logo" data-size="nav"></div></a>
+  <ul class="topnav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#exams">Exams</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#story">Story</a></li>
+  </ul>
+  <a class="topnav-cta" href="login.html">Launch app →</a>
+</nav>
+
+<div class="hero" id="hero">
+  <!-- 3D Brain — fills right 68% of viewport, bleeds slightly off-screen -->
+  <div class="hero-brain-canvas" id="brainContainer"></div>
+
+  <div class="hero-content">
+    <div class="hero-legend">
+      <div class="hero-legend-item">
+        <div class="hero-legend-dot" style="background:#00d4ff;color:#00d4ff;"></div>Physics
+      </div>
+      <div class="hero-legend-item">
+        <div class="hero-legend-dot" style="background:#39ff14;color:#39ff14;"></div>Chemistry
+      </div>
+      <div class="hero-legend-item">
+        <div class="hero-legend-dot" style="background:#ff8c00;color:#ff8c00;"></div>Maths
+      </div>
+      <div class="hero-legend-item">
+        <div class="hero-legend-dot" style="background:#bf5fff;color:#bf5fff;"></div>Biology
+      </div>
+    </div>
+
+    <h1>Master<br>Every<br>Revision.</h1>
+
+    <p class="hero-desc">The complete study OS for JEE, NEET, CAT and UPSC aspirants. Built on the science of memory. Free, forever.</p>
+
+    <div class="hero-actions">
+      <a class="btn btn-white" href="login.html">Start tracking →</a>
+      <a class="btn btn-ghost" href="#features">See features</a>
+    </div>
+  </div>
+
+  <div class="scroll-hint"><span>Scroll</span><div class="scroll-line"></div></div>
+</div>
+
+<div class="stats-strip">
+  <div class="stat-strip-item"><span class="stat-strip-num">204</span><span class="stat-strip-label">Days tracked</span></div>
+  <div class="stat-strip-item"><span class="stat-strip-num">8</span><span class="stat-strip-label">Revision intervals</span></div>
+  <div class="stat-strip-item"><span class="stat-strip-num">10+</span><span class="stat-strip-label">Exams supported</span></div>
+  <div class="stat-strip-item"><span class="stat-strip-num">₹0</span><span class="stat-strip-label">Forever free</span></div>
+</div>
+
+<div class="full-section" id="features">
+  <div class="eyebrow">// What's inside</div>
+  <h2 class="section-title">Six tools.<br>One dashboard.</h2>
+  <p class="section-desc">Built around the science of how memory actually works.</p>
+  <div class="features-grid">
+    <div class="feat-card"><div class="feat-icon">EB</div><h3>Ebbinghaus Tracker</h3><p>8 scientifically optimal revision intervals per topic — 5m, 12h, +1d, +2d, +4d, +7d, +15d, +30d. Never lose what you studied.</p><span class="feat-tag">Core</span></div>
+    <div class="feat-card"><div class="feat-icon">⏱</div><h3>Study Timer</h3><p>Pomodoro and deep work modes. Subject-wise time logging. Daily heatmap. Full session history across days.</p><span class="feat-tag">Focus</span></div>
+    <div class="feat-card"><div class="feat-icon">∑</div><h3>Marks Calculator</h3><p>Enter responses, select exam and shift. Official NTA marking scheme applied instantly. Crowdsourced for accuracy.</p><span class="feat-tag">Results</span></div>
+    <div class="feat-card"><div class="feat-icon">%</div><h3>Rank Predictor</h3><p>Score → percentile → rank. Based on NTA formula + real student submissions. More accurate as community grows.</p><span class="feat-tag">Predict</span></div>
+    <div class="feat-card"><div class="feat-icon">🎓</div><h3>College Predictor</h3><p>JoSAA official cutoff data. Enter rank and category, see which IITs, NITs and IIITs are reachable.</p><span class="feat-tag">Predict</span></div>
+    <div class="feat-card"><div class="feat-icon">📊</div><h3>Analytics</h3><p>Study streaks, subject balance charts, revision completion heatmaps. See exactly how you're performing over time.</p><span class="feat-tag">Insights</span></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<div class="full-section" id="exams">
+  <div class="eyebrow">// Supported exams</div>
+  <h2 class="section-title">Your exam.<br>Your track.</h2>
+  <p class="section-desc">RevM² auto-detects your exam from subjects. No manual setup.</p>
+  <div class="tracks-grid">
+    <div class="track-card"><div class="track-abbr">JEE</div><div class="track-name">JEE Main & Adv</div><div class="track-subs">Physics · Chemistry · Maths</div></div>
+    <div class="track-card"><div class="track-abbr">NEET</div><div class="track-name">NEET UG</div><div class="track-subs">Physics · Chemistry · Biology</div></div>
+    <div class="track-card"><div class="track-abbr">IAT</div><div class="track-name">IISER Aptitude</div><div class="track-subs">PCM + Biology</div></div>
+    <div class="track-card"><div class="track-abbr">NEST</div><div class="track-name">NEST</div><div class="track-subs">PCM + Biology</div></div>
+    <div class="track-card"><div class="track-abbr">CAT</div><div class="track-name">CAT</div><div class="track-subs">Quant · LR · VA · DI</div></div>
+    <div class="track-card"><div class="track-abbr">UPSC</div><div class="track-name">UPSC CSE</div><div class="track-subs">GS1·GS2·GS3·GS4·CSAT</div></div>
+    <div class="track-card"><div class="track-abbr">GATE</div><div class="track-name">GATE</div><div class="track-subs">Core + Aptitude</div></div>
+    <div class="track-card"><div class="track-abbr">—</div><div class="track-name">Custom</div><div class="track-subs">Any subject, any exam</div></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<div class="full-section" id="how">
+  <div class="eyebrow">// How it works</div>
+  <h2 class="section-title">Up in 60 seconds.</h2>
+  <p class="section-desc">No tutorials needed. The app guides you through everything.</p>
+  <div class="steps">
+    <div class="step"><div class="step-num">01</div><div><h3>Pick your subjects</h3><p>Select from the list or type any subject. RevM² auto-detects your exam — JEE, NEET, CAT, UPSC or custom.</p></div></div>
+    <div class="step"><div class="step-num">02</div><div><h3>Set your timeline</h3><p>Enter your exam date. RevM² builds your entire revision calendar — every session, every interval, pre-planned.</p></div></div>
+    <div class="step"><div class="step-num">03</div><div><h3>Study and mark done</h3><p>Open your tracker daily. See exactly what to revise. Tick intervals. The Ebbinghaus curve does the rest.</p></div></div>
+    <div class="step"><div class="step-num">04</div><div><h3>On result day</h3><p>Enter your responses. Get score, percentile, rank and college list in under 30 seconds.</p></div></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<div class="full-section" id="story">
+  <div class="eyebrow">// Our story</div>
+  <h2 class="section-title">Why RevM²?</h2>
+  <div class="story-card">
+    <p>As a student, I kept running into the same wall: I'd sit for hours, finally feel like a topic had clicked — and a few days later, it was gone. Not "rusty." Gone, like I'd never opened the book.</p>
+    <p>That sent me down a rabbit hole, and that's where I found <strong>Hermann Ebbinghaus</strong>. Back in 1885, this German psychologist ran an experiment on himself — memorizing meaningless syllables and testing his own recall over days and weeks. What he found became one of psychology's most replicated results: the <strong>forgetting curve</strong>. Without any reinforcement, memory doesn't decay in a straight line — it falls off a cliff almost immediately, then keeps fading, fast at first and slower later. Within a day, a huge chunk of what felt "learned" is already slipping.</p>
+    <p>But Ebbinghaus found the fix too: if you revisit that information at the right moments — not too early, not too late — each review flattens the curve a little more, and the memory sticks for longer each time. That's <strong>spaced repetition</strong>, and it's why RevM²'s tracker is built around 8 specific intervals (5m, 12h, +1d, +2d, +4d, +7d, +15d, +30d) instead of just "revise sometime."</p>
+    <p>Once I understood that, I couldn't just keep it to myself. I built RevM² so any student — not just me — could get the benefit of this without having to track 8 intervals across dozens of topics by hand on paper. It does the scheduling, you just show up and tick the box.</p>
+    <div class="story-video">
+      <iframe src="https://www.youtube.com/embed/Ssdq4IfI9Sc" title="RevM² — the forgetting curve, explained" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+    </div>
+    <div class="story-video-credit">Credit — Snehit Mishra. No copyright claim made over this video; all rights reserved to Snehit Mishra.</div>
+    <p>If you ever forget to show up, that's covered too — connect Telegram or your email under Reminders, and RevM² will nudge you when a revision is due, so a missed day doesn't quietly turn into a forgotten topic.</p>
+    <p>The name carries two meanings. <strong>M² is Memory Squared</strong> — the science of reinforcing what you learn until it's permanent. And M² is also <strong>Mom × Dad</strong> — both their names start with M. Every student carrying the weight of their family's expectations deserves a tool built with that same intention.</p>
+    <p>Everything on RevM² is free. No paywalls. Built for the student in a tier-3 city with a phone and a dream, just as much as for anyone else.</p>
+    <p style="margin-top:1.4rem;padding-top:1.4rem;border-top:1px solid var(--border);">This is early, built by one student, and it won't be perfect. If something's broken, confusing, or you think it could be better — I want to hear it, good or bad. Message the <a href="https://t.me/revm2_bot" target="_blank" style="color:var(--gold);">Telegram bot</a>, drop a note on Reddit, or email <a href="mailto:revisionnm2@gmail.com" style="color:var(--gold);">revisionnm2@gmail.com</a>. Criticism included — that's how this gets better.</p>
+  </div>
+</div>
+
+<footer class="page-footer" style="position:relative;z-index:2;">
+  <a href="index.html"><div class="rm2-logo" data-size="small" style="opacity:0.6"></div></a>
+  <p>Built with intent. Free forever. © 2026 RevM²</p>
+  <div class="page-footer-links">
+    <a href="#features">Features</a>
+    <a href="#exams">Exams</a>
+    <a href="login.html">Launch app</a>
+  </div>
+</footer>
+
+<script src="shared.js"></script>
+<script>initStarfield();</script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
+<!-- Three.js + Brain 3D -->
+<script>
+/* ============================================================
+   RevM² — brain3d.js  v4
+   Image brain + canvas lightning.
+   • Auto slow-rotate (CSS perspective trick on image)
+   • Scroll → rotate Y + zoom in
+   • Mouse hover over container → tilt toward cursor
+   • Touch drag → manual rotate
+   • Thunderbolts fire between chapter nodes continuously
+   • On hover/touch over brain → burst fire all nearby nodes
+   ============================================================ */
+
+(function () {
+  'use strict';
+
+  const SUBJECT_COLORS = {
+    Physics:   { css: '#00d4ff' },
+    Chemistry: { css: '#39ff14' },
+    Maths:     { css: '#ff8c00' },
+    Biology:   { css: '#bf5fff' },
+    Default:   { css: '#ffd700' },
+  };
+
+  const CHAPTER_POOL = {
+    Physics:   ['Kinematics','Laws of Motion','Work & Energy','Rotational Motion','Gravitation','SHM','Waves','Thermodynamics','Electrostatics','Current Electricity','Magnetism','EMI','Optics','Modern Physics','Semiconductors','Fluid Mechanics'],
+    Chemistry: ['Mole Concept','Atomic Structure','Chemical Bonding','Thermodynamics','Equilibrium','Redox','Electrochemistry','Organic Reactions','Hydrocarbons','Aldehydes & Ketones','Amines','Polymers','p-Block Elements','d-Block Elements','Solutions'],
+    Maths:     ['Limits & Continuity','Differentiation','Integration','Differential Eq','Matrices & Det','Probability','Permutation','Complex Numbers','Vectors','3D Geometry','Conic Sections','Sequences & Series','Trigonometry','Statistics','Binomial Theorem'],
+    Biology:   ['Cell Biology','Genetics','Evolution','Human Physiology','Plant Physiology','Ecology','Reproduction','Biotechnology','Biomolecules','Animal Kingdom','Plant Kingdom','Microbes']
+  };
+
+  function randomChapters(n) {
+    const subjects = Object.keys(CHAPTER_POOL), out = [];
+    while (out.length < n) {
+      const sub  = subjects[Math.floor(Math.random() * subjects.length)];
+      const pool = CHAPTER_POOL[sub];
+      const ch   = pool[Math.floor(Math.random() * pool.length)];
+      if (!out.find(x => x.name === ch)) out.push({ name: ch, subject: sub });
+    }
+    return out;
+  }
+
+  /* Node positions on the brain surface (fraction of container w/h) */
+  const NODE_POSITIONS = [
+    { x:0.52,y:0.13 },{ x:0.64,y:0.09 },{ x:0.76,y:0.11 },
+    { x:0.88,y:0.18 },{ x:0.96,y:0.30 },{ x:0.98,y:0.44 },
+    { x:0.95,y:0.57 },{ x:0.88,y:0.68 },{ x:0.77,y:0.75 },
+    { x:0.64,y:0.78 },{ x:0.53,y:0.72 },{ x:0.45,y:0.60 },
+    { x:0.43,y:0.47 },{ x:0.47,y:0.34 },{ x:0.57,y:0.24 },
+    { x:0.70,y:0.20 },{ x:0.82,y:0.33 },{ x:0.78,y:0.50 },
+    { x:0.65,y:0.55 },{ x:0.60,y:0.40 },
+  ];
+
+  /* Connections between nodes */
+  const CONNECTIONS = [
+    [0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],
+    [9,10],[10,11],[11,12],[12,13],[13,14],[14,15],[15,16],
+    [16,17],[17,18],[18,19],[19,13],[15,2],[16,3],[17,5],
+    [18,9],[0,14],[1,15],[2,16],[3,17],[6,9],[7,10],
+    [11,14],[12,0],[19,15],[18,11],[17,12],
+  ];
+
+  window.BrainViz = {
+    mount(target, opts = {}) {
+      const container = typeof target === 'string'
+        ? document.querySelector(target) : target;
+      if (!container) return null;
+
+      container.style.position = 'relative';
+      container.style.overflow = 'hidden';
+
+      /* ── Wrapper that gets CSS transform (rotate/zoom) ── */
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = `
+        position:absolute;inset:0;
+        transform-origin:center center;
+        transform:perspective(900px) rotateY(0deg) scale(1);
+        transition:transform 0.08s linear;
+        will-change:transform;
+      `;
+      container.appendChild(wrapper);
+
+      /* ── Brain image ── */
+      const img = document.createElement('img');
+      img.src = 'brain.jpg';
+      img.onerror = () => console.error('[BrainViz] brain.jpg failed to load — check file exists at site root');
+      img.onload = () => console.log('[BrainViz] brain.jpg loaded successfully');
+      img.alt = '';
+      img.draggable = false;
+      img.style.cssText = `
+        position:absolute;inset:0;
+        width:100%;height:100%;
+        object-fit:cover;object-position:right center;
+        z-index:1;pointer-events:none;user-select:none;
+        display:block;
+      `;
+      wrapper.appendChild(img);
+
+      /* ── Synapse canvas ── */
+      const canvas = document.createElement('canvas');
+      canvas.style.cssText = `
+        position:absolute;inset:0;width:100%;height:100%;
+        z-index:2;pointer-events:none;
+      `;
+      wrapper.appendChild(canvas);
+      const ctx = canvas.getContext('2d');
+
+      /* ── Label overlay (outside wrapper so labels don't distort) ── */
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:absolute;inset:0;z-index:10;pointer-events:none;overflow:hidden;';
+      container.appendChild(overlay);
+
+      /* ── Chapters & labels ── */
+      const N = NODE_POSITIONS.length;
+      const chapters = randomChapters(N);
+      const labels = chapters.map((ch, i) => {
+        const sc = SUBJECT_COLORS[ch.subject] || SUBJECT_COLORS.Default;
+        const el = document.createElement('div');
+        el.innerHTML = `<div style="
+          background:rgba(4,6,12,0.93);
+          border:1px solid ${sc.css}55;
+          border-left:2.5px solid ${sc.css};
+          padding:0.28rem 0.65rem 0.32rem;
+          border-radius:0 3px 3px 0;
+          line-height:1.3;
+          box-shadow:0 0 18px ${sc.css}22;
+        ">
+          <div style="color:${sc.css};font-size:0.52rem;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:0.08rem;font-family:Inter,Arial,sans-serif;">${ch.subject}</div>
+          <div style="color:#fff;font-size:0.74rem;font-weight:700;font-family:Inter,Arial,sans-serif;">${ch.name}</div>
+        </div>`;
+        el.style.cssText = `
+          position:absolute;opacity:0;white-space:nowrap;
+          pointer-events:none;
+          transform:translate(-50%,-50%) scale(0.82) translateY(6px);
+          transition:opacity 0.32s ease,transform 0.32s cubic-bezier(0.34,1.56,0.64,1);
+          filter:drop-shadow(0 0 10px ${sc.css}44);
+        `;
+        overlay.appendChild(el);
+        return { el, sc };
+      });
+
+      /* ── Resize ── */
+      function resize() {
+        canvas.width  = container.clientWidth;
+        canvas.height = container.clientHeight;
+      }
+      resize();
+      const ro = new ResizeObserver(resize);
+      ro.observe(container);
+
+      /* ── State ── */
+      // Transform state
+      let rotY      = 0;   // degrees, auto-rotate accumulates here
+      let tiltX     = 0;   // mouse tilt X (degrees)
+      let tiltY     = 0;   // mouse tilt Y (degrees)
+      let scale     = 1.0;
+      let scrollProg= 0;   // 0→1 as user scrolls one viewport
+
+      // Touch drag
+      let touchStartX = 0, touchStartRotY = 0, isDragging = false;
+
+      // Synapse state
+      const sparks      = [];
+      const nodeGlow    = new Array(N).fill(0);
+      const nodeFiring  = new Array(N).fill(false);
+      let labelTimeout  = [];
+
+      /* ── Show a label briefly ── */
+      function showLabel(i) {
+        const W = canvas.width, H = canvas.height;
+        const p = NODE_POSITIONS[i];
+        const lbl = labels[i];
+        lbl.el.style.left = (p.x * W) + 'px';
+        lbl.el.style.top  = (p.y * H) + 'px';
+        lbl.el.style.opacity = '1';
+        lbl.el.style.transform = 'translate(-50%,-50%) scale(1) translateY(0)';
+        clearTimeout(labelTimeout[i]);
+        labelTimeout[i] = setTimeout(() => {
+          lbl.el.style.opacity = '0';
+          lbl.el.style.transform = 'translate(-50%,-50%) scale(0.85) translateY(4px)';
+        }, 2400);
+      }
+
+      /* ── Fire a single node: glow + shoot sparks ── */
+      function fireNode(i, burst = false) {
+        if (nodeFiring[i]) return;
+        nodeFiring[i] = true;
+        nodeGlow[i]   = 1.0;
+        showLabel(i);
+
+        const edgesToFire = CONNECTIONS
+          .filter(c => c[0] === i || c[1] === i)
+          .slice(0, burst ? 6 : 3);
+
+        edgesToFire.forEach(c => {
+          const to = c[0] === i ? c[1] : c[0];
+          sparks.push({
+            from: i, to,
+            t: 0,
+            speed: burst
+              ? (0.028 + Math.random() * 0.018)
+              : (0.016 + Math.random() * 0.012),
+            triggered: false
+          });
+        });
+
+        setTimeout(() => { nodeFiring[i] = false; }, burst ? 400 : 700);
+      }
+
+      /* ── Auto fire sequence ── */
+      let fireQueue = [...Array(N).keys()].sort(() => Math.random() - 0.5);
+      let fireIdx   = 0, lastFire = 0;
+      const FIRE_MS = 720;
+
+      /* ── Burst on hover / touch ── */
+      let lastBurst = 0;
+      function burst(cx, cy) {
+        const now = Date.now();
+        if (now - lastBurst < 600) return;
+        lastBurst = now;
+        const W = canvas.width, H = canvas.height;
+        // Find 3 closest nodes to pointer
+        const dists = NODE_POSITIONS.map((p, i) => ({
+          i, d: Math.hypot(p.x * W - cx, p.y * H - cy)
+        })).sort((a, b) => a.d - b.d);
+        dists.slice(0, 3).forEach(({ i }) => fireNode(i, true));
+      }
+
+      /* ── Mouse events ── */
+      container.addEventListener('mousemove', e => {
+        const r  = container.getBoundingClientRect();
+        const mx = e.clientX - r.left;
+        const my = e.clientY - r.top;
+        const W  = r.width, H = r.height;
+        // Tilt: ±12° based on mouse position relative to centre
+        tiltY = ((mx / W) - 0.5) * 24;
+        tiltX = -((my / H) - 0.5) * 14;
+        burst(mx, my);
+      });
+      container.addEventListener('mouseleave', () => {
+        tiltX = 0; tiltY = 0;
+      });
+
+      /* ── Touch events ── */
+      container.addEventListener('touchstart', e => {
+        const t = e.touches[0];
+        touchStartX   = t.clientX;
+        touchStartRotY = rotY;
+        isDragging    = true;
+        const r = container.getBoundingClientRect();
+        burst(t.clientX - r.left, t.clientY - r.top);
+      }, { passive: true });
+
+      container.addEventListener('touchmove', e => {
+        if (!isDragging) return;
+        const t   = e.touches[0];
+        const dx  = t.clientX - touchStartX;
+        rotY      = touchStartRotY + dx * 0.35;  // drag sensitivity
+        const r   = container.getBoundingClientRect();
+        burst(t.clientX - r.left, t.clientY - r.top);
+      }, { passive: true });
+
+      container.addEventListener('touchend', () => { isDragging = false; });
+
+      /* ── Scroll ── */
+      function onScroll() {
+        const sy = window.scrollY, vh = window.innerHeight;
+        scrollProg = Math.min(1, sy / vh);
+        // Scroll rotates brain & zooms in
+        scale = 1.0 + scrollProg * 0.32;
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+
+      /* ── Apply CSS transform to wrapper ── */
+      let autoAngle = 0;
+      function applyTransform() {
+        const totalRotY = rotY + tiltY + autoAngle + scrollProg * 35;
+        const totalRotX = tiltX - scrollProg * 8;
+        wrapper.style.transform = `
+          perspective(900px)
+          rotateX(${totalRotX}deg)
+          rotateY(${totalRotY}deg)
+          scale(${scale})
+        `;
+      }
+
+      /* ── Lightning bolt ── */
+      function drawLightning(x1, y1, x2, y2, progress, alpha) {
+        if (progress <= 0 || alpha <= 0) return;
+        const segs = 9;
+        const pts  = [{ x: x1, y: y1 }];
+        const seed = x1 * 100 + y1; // semi-stable per frame
+        for (let i = 1; i < segs; i++) {
+          const t  = i / segs;
+          const px = x1 + (x2 - x1) * t;
+          const py = y1 + (y2 - y1) * t;
+          const jitter = (1 - Math.abs(t - 0.5) * 2) * 16;
+          pts.push({
+            x: px + (Math.sin(seed + i * 3.7) * jitter),
+            y: py + (Math.cos(seed + i * 2.3) * jitter)
+          });
+        }
+        pts.push({ x: x2, y: y2 });
+        const end = Math.ceil(progress * segs);
+
+        // Outer glow
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < end && i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.strokeStyle = `rgba(120,200,255,${alpha * 0.28})`;
+        ctx.lineWidth   = 7;
+        ctx.lineCap     = 'round';
+        ctx.shadowColor = 'rgba(80,180,255,0.7)';
+        ctx.shadowBlur  = 12;
+        ctx.stroke();
+
+        // Core
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < end && i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.strokeStyle = `rgba(210,240,255,${alpha})`;
+        ctx.lineWidth   = 1.6;
+        ctx.shadowBlur  = 0;
+        ctx.stroke();
+      }
+
+      /* ── Glow dot ── */
+      function drawNode(x, y, g) {
+        if (g < 0.01) return;
+        const r = 22 * g;
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+        grad.addColorStop(0,   `rgba(200,230,255,${g})`);
+        grad.addColorStop(0.35,`rgba(80,160,255,${g * 0.55})`);
+        grad.addColorStop(1,   `rgba(0,80,200,0)`);
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+        // White core
+        ctx.beginPath();
+        ctx.arc(x, y, 2.8 * g, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(220,240,255,${g})`;
+        ctx.fill();
+      }
+
+      /* ── Main animation loop ── */
+      let frameId, lastRAF = 0;
+
+      function animate(now) {
+        frameId = requestAnimationFrame(animate);
+        const dt = Math.min(now - lastRAF, 50); lastRAF = now;
+        const W  = canvas.width, H = canvas.height;
+
+        // Auto slow rotate (stops when user is dragging)
+        if (!isDragging) autoAngle += dt * 0.012;
+
+        applyTransform();
+
+        // Auto fire
+        if (now - lastFire > FIRE_MS) {
+          lastFire = now;
+          const idx = fireQueue[fireIdx % fireQueue.length];
+          fireIdx++;
+          if (fireIdx >= fireQueue.length) {
+            fireQueue = fireQueue.sort(() => Math.random() - 0.5);
+            fireIdx   = 0;
+          }
+          fireNode(idx, false);
+        }
+
+        ctx.clearRect(0, 0, W, H);
+        ctx.shadowBlur = 0;
+
+        // Draw sparks
+        for (let i = sparks.length - 1; i >= 0; i--) {
+          const s = sparks[i];
+          s.t += s.speed;
+          if (s.t >= 1) {
+            // Trigger destination node when bolt arrives
+            if (!s.triggered) {
+              s.triggered = true;
+              nodeGlow[s.to] = Math.max(nodeGlow[s.to], 0.85);
+              showLabel(s.to);
+            }
+            sparks.splice(i, 1);
+            continue;
+          }
+          const fp = NODE_POSITIONS[s.from], tp = NODE_POSITIONS[s.to];
+          const alpha = Math.sin(s.t * Math.PI) * 0.92;
+          drawLightning(
+            fp.x * W, fp.y * H,
+            tp.x * W, tp.y * H,
+            Math.min(s.t * 1.8, 1),
+            alpha
+          );
+          // Light up destination as bolt approaches
+          if (s.t > 0.7) nodeGlow[s.to] = Math.max(nodeGlow[s.to], (s.t - 0.7) * 2.5);
+        }
+
+        // Draw nodes
+        NODE_POSITIONS.forEach((p, i) => {
+          if (nodeGlow[i] > 0.01) {
+            drawNode(p.x * W, p.y * H, nodeGlow[i]);
+            nodeGlow[i] *= 0.90;
+          }
+          // Ambient dot always visible
+          ctx.beginPath();
+          ctx.arc(p.x * W, p.y * H, 2.2, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(100,200,255,0.28)';
+          ctx.fill();
+        });
+      }
+
+      requestAnimationFrame(animate);
+
+      return {
+        destroy() {
+          cancelAnimationFrame(frameId);
+          ro.disconnect();
+          window.removeEventListener('scroll', onScroll);
+          wrapper.remove();
+          overlay.remove();
+        }
+      };
+    }
+  };
+
+})();
+
+</script>
+<script>
+  // Mount brain on home page
+  let _brain = null;
+  function mountBrain() {
+    const container = document.getElementById('brainContainer');
+    if (!container || typeof BrainViz === 'undefined') return;
+    if (container.clientWidth === 0 || container.clientHeight === 0) {
+      requestAnimationFrame(mountBrain);
+      return;
+    }
+    if (_brain) { _brain.destroy(); _brain = null; }
+    _brain = BrainViz.mount(container, { mode: 'home' });
+  }
+  document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(mountBrain));
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    requestAnimationFrame(mountBrain);
+  }
+</script>
+</body>
+</html>
