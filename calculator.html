@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RevM² — Marks Calculator</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c8a96e">
+<style>
+.calc-wrap{padding:1.75rem;max-width:820px;overflow-y:auto;}
+.exam-tabs{display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+.exam-tab{padding:0.45rem 1rem;border:1px solid var(--border2);background:var(--s1);color:var(--muted);font-family:var(--font);font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.05em;text-transform:uppercase;transition:all 0.15s;}
+.exam-tab:hover{border-color:var(--gold-border);color:var(--text);}
+.exam-tab.active{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+.q-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.75rem;margin-bottom:1.25rem;}
+.q-section-title{font-size:0.65rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin:1rem 0 0.6rem;}
+.q-row{display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0;border-bottom:1px solid var(--border);}
+.q-num{font-size:0.7rem;color:var(--muted);width:28px;flex-shrink:0;}
+.q-opts{display:flex;gap:0.3rem;flex:1;}
+.q-opt{width:32px;height:28px;border:1px solid var(--border2);background:var(--black);color:var(--muted);font-family:var(--font);font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.12s;display:flex;align-items:center;justify-content:center;}
+.q-opt:hover{border-color:var(--gold-border);color:var(--text);}
+.q-opt.selected-A{background:rgba(56,189,248,0.15);border-color:var(--cyan);color:var(--cyan);}
+.q-opt.selected-B{background:rgba(74,222,128,0.15);border-color:var(--success);color:var(--success);}
+.q-opt.selected-C{background:rgba(251,191,36,0.15);border-color:var(--warn);color:var(--warn);}
+.q-opt.selected-D{background:rgba(248,113,113,0.15);border-color:var(--danger);color:var(--danger);}
+.q-opt.skipped{background:rgba(100,100,100,0.15);border-color:var(--muted);color:var(--muted);}
+.answer-key-row{display:flex;align-items:center;gap:0.5rem;}
+.answer-key-row select{background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.2rem 0.4rem;font-family:var(--font);font-size:0.72rem;outline:none;color-scheme:dark;}
+.result-card{background:var(--s2);border:1px solid var(--gold-border);padding:1.5rem;margin-top:1.25rem;}
+.result-title{font-size:0.62rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:0.75rem;}
+.result-score{font-size:3rem;font-weight:900;color:var(--white);letter-spacing:-0.04em;line-height:1;margin-bottom:0.5rem;}
+.result-breakdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.75rem;margin-top:1rem;}
+.result-sub{background:var(--s1);border:1px solid var(--border);padding:0.85rem;text-align:center;}
+.result-sub-name{font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.25rem;}
+.result-sub-score{font-size:1.3rem;font-weight:700;color:var(--white);}
+.result-sub-detail{font-size:0.65rem;color:var(--muted);margin-top:0.15rem;}
+.submit-contribution{margin-top:1.25rem;padding:1rem;background:var(--gold-dim);border:1px solid var(--gold-border);font-size:0.8rem;color:var(--text);}
+.submit-contribution label{display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;}
+.submit-contribution input[type=checkbox]{margin-top:2px;accent-color:var(--gold);}
+.ad-slot{background:var(--s1);border:1px solid var(--border);padding:0.75rem;text-align:center;font-size:0.65rem;color:var(--dim);letter-spacing:0.08em;text-transform:uppercase;margin:1rem 0;}
+</style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <a class="sidebar-logo" href="index.html"><div class="rm2-logo" data-size="small"></div></a>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Study</div>
+      <div class="nav-item" onclick="location.href='tracker.html'"><span class="nav-icon">📋</span>Tracker</div>
+      <div class="nav-item" onclick="location.href='tracker.html'"><span class="nav-icon">⏱</span>Study Timer</div>
+      <div class="nav-item" onclick="location.href='tracker.html'"><span class="nav-icon">📊</span>Analytics</div>
+      <div class="nav-section">Community</div>
+      <div class="nav-item" onclick="location.href='groups.html'"><span class="nav-icon">👥</span>Study Groups</div>
+      <div class="nav-section">Tools</div>
+      <div class="nav-item active"><span class="nav-icon">∑</span>Marks Calc</div>
+      <div class="nav-item" onclick="location.href='predictor.html'"><span class="nav-icon">%</span>Rank Predictor</div>
+      <div class="nav-item" onclick="location.href='college.html'"><span class="nav-icon">🎓</span>College Predictor</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-track" id="sTrack">—</div>
+      <div class="sidebar-exam" id="sExam">—</div>
+    </div>
+  </aside>
+
+  <!-- MOBILE NAV BACKDROP -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
+  <div class="app-main">
+    <div class="topbar">
+      <button class="hamburger-btn" onclick="openMobileSidebar()" aria-label="Open menu">☰</button>
+      <div><div class="topbar-title">Marks Calculator</div><div class="topbar-sub">Enter your responses · Get your score instantly</div></div>
+      <div class="topbar-right"><span class="badge-track" id="topTrack">—</span></div>
+    </div>
+
+    <div class="calc-wrap">
+      <div class="eyebrow">// Select exam</div>
+      <div class="exam-tabs">
+        <button class="exam-tab active" onclick="setExam('jee_main',this)">JEE Main</button>
+        <button class="exam-tab" onclick="setExam('jee_adv',this)">JEE Advanced</button>
+        <button class="exam-tab" onclick="setExam('neet',this)">NEET UG</button>
+        <button class="exam-tab" onclick="setExam('bitsat',this)">BITSAT</button>
+        <button class="exam-tab" onclick="setExam('cat',this)">CAT</button>
+        <button class="exam-tab" onclick="setExam('upsc',this)">UPSC</button>
+      </div>
+
+      <div class="field" style="max-width:280px;margin-bottom:1rem;">
+        <label>Shift / Session</label>
+        <select id="shiftSel" style="background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.6rem 0.85rem;font-family:var(--font);font-size:0.85rem;outline:none;width:100%;color-scheme:dark;"></select>
+      </div>
+
+      <div class="ad-slot"><!-- ADSENSE --></div>
+
+      <div id="questionArea"></div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:1.25rem;flex-wrap:wrap;">
+        <button class="btn btn-gold" onclick="calculate()">Calculate score →</button>
+        <button class="btn btn-ghost" onclick="clearAll()">Clear all</button>
+      </div>
+
+      <div id="resultArea"></div>
+    </div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+  <script src="floating-timer.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const sb=window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL,REVM2_CONFIG.SUPABASE_ANON);
+requireAuth();
+logEvent('feature_used','calculator');
+const cfg=Store.get('revm2_config',{});
+document.getElementById('sTrack').textContent=cfg.track||'—';
+document.getElementById('sExam').textContent=cfg.exam||'—';
+document.getElementById('topTrack').textContent=cfg.track||'—';
+
+/* Exam configs */
+const EXAMS={
+  jee_main:{
+    name:'JEE Main',
+    shifts:['Jan 2027 — Shift 1','Jan 2027 — Shift 2','Apr 2027 — Shift 1','Apr 2027 — Shift 2'],
+    sections:[
+      {name:'Physics',   questions:20, mcq:true,  correct:4, wrong:-1},
+      {name:'Physics NI',questions:5,  mcq:false, correct:4, wrong:0},
+      {name:'Chemistry', questions:20, mcq:true,  correct:4, wrong:-1},
+      {name:'Chemistry NI',questions:5,mcq:false,correct:4, wrong:0},
+      {name:'Mathematics',questions:20,mcq:true,  correct:4, wrong:-1},
+      {name:'Mathematics NI',questions:5,mcq:false,correct:4,wrong:0}
+    ],
+    maxMarks:300
+  },
+  jee_adv:{
+    name:'JEE Advanced',
+    shifts:['2027 — Paper 1','2027 — Paper 2'],
+    sections:[
+      {name:'Physics Paper 1',questions:18,mcq:true,correct:3,wrong:-1},
+      {name:'Chemistry Paper 1',questions:18,mcq:true,correct:3,wrong:-1},
+      {name:'Maths Paper 1',questions:18,mcq:true,correct:3,wrong:-1}
+    ],
+    maxMarks:180
+  },
+  neet:{
+    name:'NEET UG',
+    shifts:['2027 — Single shift'],
+    sections:[
+      {name:'Physics',   questions:35,mcq:true,correct:4,wrong:-1},
+      {name:'Physics B', questions:15,mcq:true,correct:4,wrong:-1},
+      {name:'Chemistry', questions:35,mcq:true,correct:4,wrong:-1},
+      {name:'Chemistry B',questions:15,mcq:true,correct:4,wrong:-1},
+      {name:'Botany',    questions:35,mcq:true,correct:4,wrong:-1},
+      {name:'Botany B',  questions:15,mcq:true,correct:4,wrong:-1},
+      {name:'Zoology',   questions:35,mcq:true,correct:4,wrong:-1},
+      {name:'Zoology B', questions:15,mcq:true,correct:4,wrong:-1}
+    ],
+    maxMarks:720
+  },
+  bitsat:{
+    name:'BITSAT',
+    shifts:['2027 — Slot 1','2027 — Slot 2'],
+    sections:[
+      {name:'Physics',   questions:30,mcq:true,correct:3,wrong:-1},
+      {name:'Chemistry', questions:30,mcq:true,correct:3,wrong:-1},
+      {name:'English',   questions:15,mcq:true,correct:3,wrong:-1},
+      {name:'LR',        questions:10,mcq:true,correct:3,wrong:-1},
+      {name:'Mathematics',questions:40,mcq:true,correct:3,wrong:-1}
+    ],
+    maxMarks:390
+  },
+  cat:{
+    name:'CAT',
+    shifts:['2026 — Slot 1','2026 — Slot 2','2026 — Slot 3'],
+    sections:[
+      {name:'VARC',questions:24,mcq:true,correct:3,wrong:-1},
+      {name:'DILR',questions:20,mcq:true,correct:3,wrong:-1},
+      {name:'QA',  questions:22,mcq:true,correct:3,wrong:-1}
+    ],
+    maxMarks:198
+  },
+  upsc:{
+    name:'UPSC Prelims',
+    shifts:['2027 — GS Paper 1','2027 — CSAT'],
+    sections:[
+      {name:'GS Paper 1',questions:100,mcq:true,correct:2,wrong:-0.66},
+      {name:'CSAT',      questions:80, mcq:true,correct:2.5,wrong:-0.83}
+    ],
+    maxMarks:200
+  }
+};
+
+let currentExam='jee_main';
+let answers={}; // {secIdx_qIdx: 'A'|'B'|'C'|'D'|'*'(skip)}
+let answerKey={}; // {secIdx_qIdx: 'A'|'B'|'C'|'D'}
+
+function setExam(key,btn){
+  currentExam=key; answers={}; answerKey={};
+  document.querySelectorAll('.exam-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  // shifts
+  const shiftSel=document.getElementById('shiftSel');
+  shiftSel.innerHTML=EXAMS[key].shifts.map(s=>`<option>${s}</option>`).join('');
+  renderQuestions();
+  document.getElementById('resultArea').innerHTML='';
+}
+
+function renderQuestions(){
+  const exam=EXAMS[currentExam];
+  let html='';
+  exam.sections.forEach((sec,si)=>{
+    html+=`<div class="q-section-title">${escHtml(sec.name)} — ${sec.questions} questions · +${sec.correct}/${sec.wrong} marking</div>`;
+    html+=`<div class="q-grid">`;
+    for(let q=0;q<sec.questions;q++){
+      const key=`${si}_${q}`;
+      const sel=answers[key];
+      const akey=answerKey[key]||'';
+      html+=`<div class="q-row">
+        <span class="q-num">Q${q+1}</span>
+        <div class="q-opts">`;
+      if(sec.mcq){
+        ['A','B','C','D'].forEach(opt=>{
+          html+=`<button class="q-opt ${sel===opt?'selected-'+opt:''}" onclick="selAns(${si},${q},'${opt}')">${opt}</button>`;
+        });
+      } else {
+        html+=`<input type="number" style="width:80px;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.25rem 0.5rem;font-family:var(--font);font-size:0.75rem;outline:none;" placeholder="Answer" value="${answers[key]||''}" onchange="selAns(${si},${q},this.value)" oninput="selAns(${si},${q},this.value)">`;
+      }
+      html+=`</div>`;
+      if(sec.mcq){
+        html+=`<div class="answer-key-row" title="Enter answer key">
+          <select onchange="setKey(${si},${q},this.value)" style="background:var(--black);border:1px solid var(--border2);color:var(--muted);padding:0.2rem 0.3rem;font-family:var(--font);font-size:0.65rem;outline:none;color-scheme:dark;">
+            <option value="">Key</option>
+            <option value="A" ${akey==='A'?'selected':''}>A</option>
+            <option value="B" ${akey==='B'?'selected':''}>B</option>
+            <option value="C" ${akey==='C'?'selected':''}>C</option>
+            <option value="D" ${akey==='D'?'selected':''}>D</option>
+          </select>
+        </div>`;
+      }
+      html+=`</div>`;
+    }
+    html+='</div>';
+  });
+  document.getElementById('questionArea').innerHTML=html;
+}
+
+function selAns(si,q,val){
+  const key=`${si}_${q}`;
+  answers[key]=val;
+}
+
+function setKey(si,q,val){
+  const key=`${si}_${q}`;
+  if(val) answerKey[key]=val;
+  else delete answerKey[key];
+}
+
+function calculate(){
+  const exam=EXAMS[currentExam];
+  let total=0;
+  const breakdown=[];
+  exam.sections.forEach((sec,si)=>{
+    let secScore=0,correct=0,wrong=0,skip=0;
+    for(let q=0;q<sec.questions;q++){
+      const key=`${si}_${q}`;
+      const ans=answers[key];
+      const akey=answerKey[key];
+      if(!ans||ans===''){skip++;continue;}
+      if(!sec.mcq){
+        if(akey&&ans==akey){secScore+=sec.correct;correct++;}
+        else if(akey){secScore+=sec.wrong;wrong++;}
+        continue;
+      }
+      if(!akey){skip++;continue;}
+      if(ans===akey){secScore+=sec.correct;correct++;}
+      else{secScore+=sec.wrong;wrong++;}
+    }
+    total+=secScore;
+    breakdown.push({name:sec.name,score:Math.round(secScore*10)/10,correct,wrong,skip,max:sec.questions*sec.correct});
+  });
+
+  const pct=Math.round(total/exam.maxMarks*100);
+  let bHtml=breakdown.map(b=>`
+    <div class="result-sub">
+      <div class="result-sub-name">${escHtml(b.name)}</div>
+      <div class="result-sub-score">${b.score}</div>
+      <div class="result-sub-detail">✓${b.correct} ✗${b.wrong} —${b.skip}</div>
+    </div>`).join('');
+
+  document.getElementById('resultArea').innerHTML=`
+    <div class="result-card">
+      <div class="result-title">Your score — ${escHtml(exam.name)}</div>
+      <div class="result-score">${Math.round(total*10)/10} <span style="font-size:1.2rem;color:var(--muted)">/ ${exam.maxMarks}</span></div>
+      <div style="font-size:0.82rem;color:var(--muted);margin-top:0.25rem">${pct}% — ${getGrade(pct)}</div>
+      <div class="result-breakdown">${bHtml}</div>
+      <div class="submit-contribution">
+        <label>
+          <input type="checkbox" id="shareScore" checked>
+          <span>Share my score anonymously to help improve percentile predictions for everyone. Your name is never shared.</span>
+        </label>
+        <button class="btn btn-gold btn-sm" style="margin-top:0.75rem" onclick="submitContribution(${Math.round(total*10)/10})">Submit to community →</button>
+      </div>
+    </div>
+    <div style="margin-top:0.75rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+      <a class="btn btn-ghost btn-sm" href="predictor.html">Predict my rank →</a>
+      <a class="btn btn-ghost btn-sm" href="college.html">College predictor →</a>
+    </div>`;
+}
+
+function getGrade(pct){
+  if(pct>=95)return'Exceptional 🔥';
+  if(pct>=85)return'Excellent';
+  if(pct>=70)return'Good';
+  if(pct>=50)return'Average';
+  return'Needs improvement';
+}
+
+async function submitContribution(score){
+  if(!document.getElementById('shareScore').checked) return;
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){ alert('Please sign in to share your score.'); return; }
+  const payload={
+    exam:currentExam,
+    shift:document.getElementById('shiftSel').value,
+    score,
+    submitted_at:new Date().toISOString(),
+    user_id:session.user.id
+  };
+  await sb.from('score_submissions').insert(payload);
+  alert('✓ Score submitted. Thank you for helping the community!');
+}
+
+function clearAll(){answers={};answerKey={};renderQuestions();document.getElementById('resultArea').innerHTML='';}
+
+// init
+setExam('jee_main',document.querySelector('.exam-tab.active'));
+</script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>
