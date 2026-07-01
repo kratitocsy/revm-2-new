@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RevM² — Study Groups</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c8a96e">
+<style>
+.gw{max-width:980px;margin:0 auto;padding:1.5rem;}
+.gw-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:1.25rem;}
+.gw-tabs{display:flex;gap:0.4rem;margin-bottom:1.25rem;}
+.gw-tab{padding:0.45rem 0.9rem;font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;border:1px solid var(--border2);background:var(--s1);color:var(--muted);cursor:pointer;font-family:var(--font);}
+.gw-tab.active{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+.gw-search{display:flex;gap:0.5rem;margin-bottom:1.25rem;}
+.gw-search input{flex:1;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.55rem 0.85rem;font-family:var(--font);font-size:0.8rem;outline:none;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.85rem;}
+.gcard{background:var(--s1);border:1px solid var(--border);padding:1rem;display:flex;flex-direction:column;gap:0.5rem;}
+.gcard-top{display:flex;align-items:center;justify-content:space-between;}
+.gcard-name{font-size:0.88rem;font-weight:700;color:var(--white);}
+.gcard-sub{font-size:0.7rem;color:var(--muted);}
+.vis-badge{font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;padding:0.15rem 0.5rem;border-radius:99px;border:1px solid var(--border2);}
+.vis-badge.public{color:var(--success);border-color:rgba(74,222,128,0.3);}
+.vis-badge.private{color:var(--muted);}
+.field{margin-bottom:0.9rem;}
+.field label{display:block;font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.35rem;}
+.field input,.field select,.field textarea{width:100%;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.55rem 0.75rem;font-family:var(--font);font-size:0.82rem;outline:none;color-scheme:dark;}
+.field-row{display:flex;gap:0.75rem;}
+.field-row .field{flex:1;}
+/* GROUP DETAIL */
+.gd-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;margin-bottom:1rem;}
+.gd-back{font-size:0.7rem;color:var(--muted);text-decoration:none;cursor:pointer;}
+.gd-back:hover{color:var(--gold);}
+.member-row{display:flex;align-items:center;gap:0.75rem;padding:0.65rem 0.85rem;border-bottom:1px solid var(--border);}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;color:var(--muted);flex-shrink:0;transition:all 0.3s;}
+.avatar.live{filter:saturate(1) grayscale(0);box-shadow:0 0 0 2px var(--gold),0 0 12px rgba(200,169,110,0.6);color:var(--gold);animation:pulseGlow 2s ease-in-out infinite;}
+.avatar.paused{filter:grayscale(1);opacity:0.55;}
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 0 2px var(--gold),0 0 8px rgba(200,169,110,0.4);}50%{box-shadow:0 0 0 2px var(--gold),0 0 16px rgba(200,169,110,0.8);}}
+.member-name{font-size:0.82rem;color:var(--text);font-weight:600;}
+.member-meta{font-size:0.68rem;color:var(--muted);}
+.member-role{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--gold);margin-left:0.4rem;}
+.member-actions{margin-left:auto;display:flex;gap:0.4rem;}
+.icon-btn{background:none;border:1px solid var(--border2);color:var(--muted);font-size:0.68rem;padding:0.3rem 0.55rem;cursor:pointer;font-family:var(--font);}
+.icon-btn:hover{border-color:var(--gold);color:var(--gold);}
+.icon-btn.danger:hover{border-color:var(--danger);color:var(--danger);}
+.tag-pill{font-size:0.58rem;letter-spacing:0.05em;text-transform:uppercase;padding:0.1rem 0.4rem;border-radius:99px;margin-left:0.3rem;}
+.tag-scholar{background:rgba(200,169,110,0.18);color:var(--gold);border:1px solid var(--gold);}
+.tag-runner_up{background:rgba(74,222,128,0.12);color:var(--success);border:1px solid rgba(74,222,128,0.4);}
+.tag-hustler{background:rgba(255,255,255,0.08);color:var(--text);border:1px solid var(--border2);}
+.invite-box{display:flex;gap:0.5rem;align-items:center;background:var(--s1);border:1px solid var(--border);padding:0.65rem 0.85rem;margin-bottom:1rem;}
+.invite-box input{flex:1;background:transparent;border:none;color:var(--muted);font-size:0.74rem;outline:none;}
+.empty-state{text-align:center;padding:2.5rem 1rem;color:var(--muted);font-size:0.8rem;}
+</style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <a class="sidebar-logo" href="index.html"><div class="rm2-logo" data-size="small"></div></a>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Study</div>
+      <div class="nav-item" onclick="go('tracker.html')"><span class="nav-icon">📋</span>Tracker</div>
+      <div class="nav-item active"><span class="nav-icon">👥</span>Study Groups</div>
+      <div class="nav-item" onclick="go('store.html')"><span class="nav-icon">🪙</span>M² Store</div>
+    </nav>
+  </aside>
+
+  <!-- MOBILE NAV BACKDROP -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
+  <div class="app-main">
+    <div class="topbar">
+      <button class="hamburger-btn" onclick="openMobileSidebar()" aria-label="Open menu">☰</button>
+      <div><div class="topbar-title">Study Groups</div><div class="topbar-sub">PC Yeolpumta — study together, live</div></div>
+    </div>
+
+    <div class="gw" id="listView">
+      <div class="gw-head">
+        <div class="gw-tabs">
+          <button class="gw-tab active" data-tab="mine" onclick="setTab('mine',this)">My Groups</button>
+          <button class="gw-tab" data-tab="discover" onclick="setTab('discover',this)">Discover</button>
+        </div>
+        <button class="btn btn-gold btn-sm" onclick="openCreateModal()">+ Create group</button>
+      </div>
+
+      <div class="gw-search" id="discoverSearch" style="display:none;">
+        <input type="text" id="searchBox" placeholder="Search public groups by name…" oninput="renderDiscover()">
+      </div>
+
+      <div class="grid" id="groupGrid"></div>
+    </div>
+
+    <!-- ═══ GROUP DETAIL VIEW ═══ -->
+    <div class="gw" id="detailView" style="display:none;">
+      <a class="gd-back" onclick="closeDetail()">← Back to groups</a>
+      <div class="gd-head">
+        <div>
+          <div class="gcard-name" id="gdName" style="font-size:1.1rem;"></div>
+          <div class="gcard-sub" id="gdMeta"></div>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;" id="gdActions">
+          <span id="gdCoinBal" style="font-size:0.78rem;color:var(--gold);">🪙 —</span>
+        </div>
+      </div>
+
+      <!-- CHALLENGE PANEL -->
+      <div class="card" style="margin-bottom:1rem;border-color:rgba(200,169,110,0.3);">
+        <div class="card-header">
+          <span class="card-title">⚡ Challenges</span>
+          <button class="btn btn-gold btn-sm" onclick="openChallengeModal()">+ Give a Challenge</button>
+        </div>
+        <div id="challengeList" class="card-body" style="padding:0.5rem 0.85rem;font-size:0.76rem;color:var(--muted);">Loading…</div>
+      </div>
+
+      <div class="invite-box" id="inviteBox" style="display:none;">
+        <span style="font-size:0.7rem;color:var(--muted);">Invite link:</span>
+        <input id="inviteLinkInput" readonly>
+        <button class="icon-btn" onclick="copyInvite()">Copy</button>
+        <button class="icon-btn" id="regenInviteBtn" onclick="regenInvite()">Regenerate</button>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem;" id="adminSettingsCard" style="display:none;">
+        <div class="card-header"><span class="card-title">Admin settings</span></div>
+        <div class="card-body">
+          <div class="field-row">
+            <div class="field">
+              <label>Visibility</label>
+              <select id="visSelect" onchange="updateGroupSetting('visibility',this.value)">
+                <option value="public">Public — searchable</option>
+                <option value="private">Private — invite link only</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Member limit</label>
+              <input type="number" id="limitInput" min="1" onchange="updateGroupSetting('member_limit',Number(this.value))">
+            </div>
+            <div class="field">
+              <label>Day resets at</label>
+              <select id="resetHourSelect" onchange="updateGroupSetting('day_reset_hour',Number(this.value))"></select>
+            </div>
+          </div>
+          <p style="font-size:0.68rem;color:var(--dim);">"Day resets at" controls when the live study-day rolls over for leaderboards, streaks and bets in this group — change it anytime.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Members</span><span class="gcard-sub" id="memberCount"></span></div>
+        <div id="memberList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE GROUP MODAL -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <h3>Create a study group</h3>
+    <div class="field"><label>Group name</label><input id="cgName" placeholder="e.g. JEE 2027 Grind"></div>
+    <div class="field"><label>Description (optional)</label><textarea id="cgDesc" rows="2"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label>Visibility</label>
+        <select id="cgVis"><option value="public">Public</option><option value="private">Private</option></select>
+      </div>
+      <div class="field"><label>Member limit</label>
+        <select id="cgLimit"><option>20</option><option selected>50</option><option>100</option><option>1000</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeCreateModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="createGroup()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHALLENGE MODAL -->
+<div class="modal-overlay" id="challengeModal">
+  <div class="modal">
+    <h3>⚡ Give a Challenge</h3>
+    <p style="font-size:0.74rem;color:var(--muted);margin-bottom:0.8rem;">Challenge 2 or more group members. Whoever studies the most hours by today's day-reset wins. Put M² coins in the bounty — top scorer takes 80%, 2nd takes 15%, 3rd takes 5%.</p>
+    <div class="field"><label>Challenge title (optional)</label><input id="chTitle" placeholder="e.g. Who's the real grinder today?"></div>
+    <div class="field">
+      <label>Invite members (search by username)</label>
+      <input id="chUserSearch" placeholder="Type username to add…" oninput="searchChallengeUsers()">
+      <div id="chUserResults" style="margin-top:0.35rem;"></div>
+      <div id="chSelectedUsers" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.5rem;"></div>
+    </div>
+    <div class="field"><label>Your bounty pledge (M² coins) — optional</label><input type="number" id="chBounty" min="0" placeholder="0" style="width:100%;"></div>
+    <div id="chBountyNote" style="font-size:0.68rem;color:var(--muted);margin-top:0.25rem;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeChallengeModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="createChallenge()">Start Challenge</button>
+    </div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+  <script src="floating-timer.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const sb = window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL, REVM2_CONFIG.SUPABASE_ANON);
+function go(url){ window.location.href = url; }
+
+let me = null;
+let myGroups = [];     // groups I'm a member of, with my role
+let activeTab = 'mine';
+let currentGroup = null;
+let presenceChannel = null;
+
+async function init(){
+  RevM2Loader.show('Loading your groups…');
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){ window.location.href='login.html'; return; }
+  me = session.user;
+
+  // private-group join via ?invite=<token> in the URL
+  const inviteToken = new URLSearchParams(location.search).get('invite');
+  if(inviteToken) await joinViaInvite(inviteToken);
+
+  await loadMyGroups();
+  renderList();
+
+  const groupParam = new URLSearchParams(location.search).get('group');
+  if(groupParam) openGroup(groupParam);
+  RevM2Loader.hide();
+}
+
+async function loadMyGroups(){
+  const { data, error } = await sb.from('group_members')
+    .select('group_id, role, study_groups(*)')
+    .eq('user_id', me.id);
+  if(error){ console.error(error); return; }
+  myGroups = (data||[]).map(r=>({...r.study_groups, my_role:r.role}));
+}
+
+function setTab(tab, el){
+  activeTab = tab;
+  document.querySelectorAll('.gw-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('discoverSearch').style.display = tab==='discover' ? 'flex' : 'none';
+  if(tab==='discover') renderDiscover(); else renderList();
+}
+
+function renderList(){
+  const grid = document.getElementById('groupGrid');
+  if(!myGroups.length){
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">You haven't joined any groups yet. Create one, or hit Discover to find a public group.</div>`;
+    return;
+  }
+  grid.innerHTML = myGroups.map(g=>groupCardHtml(g, true)).join('');
+}
+
+async function renderDiscover(){
+  const q = document.getElementById('searchBox').value.trim();
+  let query = sb.from('study_groups').select('*').eq('visibility','public').order('created_at',{ascending:false}).limit(40);
+  if(q) query = query.ilike('name', `%${q}%`);
+  const { data, error } = await query;
+  const grid = document.getElementById('groupGrid');
+  if(error){ grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">Couldn't load groups.</div>`; return; }
+  const myIds = new Set(myGroups.map(g=>g.id));
+  const results = (data||[]).filter(g=>!myIds.has(g.id));
+  if(!results.length){ grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">No public groups match yet — be the first to create one.</div>`; return; }
+  grid.innerHTML = results.map(g=>groupCardHtml(g, false)).join('');
+}
+
+function groupCardHtml(g, joined){
+  const officialBadge = g.is_official ? `<span class="vis-badge" style="color:var(--gold);border-color:var(--gold);">OFFICIAL</span>` : '';
+  return `<div class="gcard">
+    <div class="gcard-top">
+      <span class="gcard-name">${escHtml(g.name)}</span>
+      ${officialBadge || `<span class="vis-badge ${g.visibility}">${g.visibility}</span>`}
+    </div>
+    <div class="gcard-sub">${escHtml(g.description||'No description')}</div>
+    <div class="gcard-sub">${g.is_official ? `${(g.member_limit||0).toLocaleString()} cap` : `Limit: ${g.member_limit}`} · resets ${fmtHour(g.day_reset_hour)}</div>
+    <button class="btn ${joined?'btn-ghost':'btn-gold'} btn-sm" style="margin-top:0.3rem;"
+      onclick="${joined ? `openGroup('${g.id}')` : `joinPublicGroup('${g.id}')`}">${joined?'Open':'Join'}</button>
+  </div>`;
+}
+
+function fmtHour(h){
+  if(h===0) return '12 AM';
+  if(h===12) return '12 PM';
+  return h<12 ? `${h} AM` : `${h-12} PM`;
+}
+
+async function createGroup(){
+  const name = document.getElementById('cgName').value.trim();
+  if(!name){ alert('Group name required'); return; }
+  const payload = {
+    name,
+    description: document.getElementById('cgDesc').value.trim(),
+    owner_id: me.id,
+    visibility: document.getElementById('cgVis').value,
+    member_limit: Number(document.getElementById('cgLimit').value)
+  };
+  const { data, error } = await sb.from('study_groups').insert(payload).select().single();
+  if(error){ alert('Could not create group: '+error.message); return; }
+  await sb.from('group_members').insert({ group_id:data.id, user_id:me.id, role:'admin' });
+  closeCreateModal();
+  await loadMyGroups();
+  openGroup(data.id);
+}
+
+async function joinPublicGroup(groupId){
+  const { count } = await sb.from('group_members').select('*',{count:'exact',head:true}).eq('group_id',groupId);
+  const { data: g } = await sb.from('study_groups').select('member_limit').eq('id',groupId).single();
+  if(g && count >= g.member_limit){ alert('This group is full.'); return; }
+  const { error } = await sb.from('group_members').insert({ group_id:groupId, user_id:me.id, role:'member' });
+  if(error){ alert('Could not join: '+error.message); return; }
+  await loadMyGroups();
+  openGroup(groupId);
+}
+
+async function joinViaInvite(token){
+  const { data: g, error } = await sb.from('study_groups').select('id,member_limit').eq('invite_token',token).single();
+  if(error || !g){ return; }
+  const { count } = await sb.from('group_members').select('*',{count:'exact',head:true}).eq('group_id',g.id);
+  if(count >= g.member_limit){ alert('This group is full.'); return; }
+  await sb.from('group_members').insert({ group_id:g.id, user_id:me.id, role:'member' }); // no-op if already a member (PK conflict)
+}
+
+function openCreateModal(){ document.getElementById('createModal').classList.add('show'); }
+function closeCreateModal(){ document.getElementById('createModal').classList.remove('show'); }
+
+/* ── GROUP DETAIL ───────────────────────────────────────── */
+async function openGroup(groupId){
+  const { data: g, error } = await sb.from('study_groups').select('*').eq('id',groupId).single();
+  if(error){ alert('Could not load group.'); return; }
+  const { data: membership } = await sb.from('group_members').select('role').eq('group_id',groupId).eq('user_id',me.id).single();
+  currentGroup = { ...g, my_role: membership?.role || null };
+
+  document.getElementById('listView').style.display='none';
+  document.getElementById('detailView').style.display='block';
+  renderGroupDetail();
+  await loadMembers();
+  await loadCoinBalance();
+  await loadChallenges();
+  subscribeLivePresence(groupId);
+}
+
+function closeDetail(){
+  document.getElementById('detailView').style.display='none';
+  document.getElementById('listView').style.display='block';
+  if(presenceChannel){ sb.removeChannel(presenceChannel); presenceChannel=null; }
+  currentGroup = null;
+}
+
+function renderGroupDetail(){
+  const g = currentGroup;
+  document.getElementById('gdName').textContent = g.name;
+  document.getElementById('gdMeta').textContent = `${g.visibility==='public'?'Public':'Private'} · limit ${g.member_limit} · day resets ${fmtHour(g.day_reset_hour)}`;
+
+  const isAdmin = g.my_role === 'admin';
+  const actions = document.getElementById('gdActions');
+  actions.innerHTML = '';
+  if(!isAdmin && g.my_role){
+    actions.innerHTML = `<button class="btn btn-danger btn-sm" onclick="leaveGroup()">Leave group</button>`;
+  }
+
+  document.getElementById('adminSettingsCard').style.display = isAdmin ? 'block' : 'none';
+
+  // any member of a private group can see + share the invite link;
+  // only admins can rotate it (regenerate invalidates it for everyone).
+  const canInvite = !!g.my_role && g.visibility==='private';
+  document.getElementById('inviteBox').style.display = canInvite ? 'flex' : 'none';
+  document.getElementById('regenInviteBtn').style.display = isAdmin ? 'inline-block' : 'none';
+  if(canInvite){
+    document.getElementById('inviteLinkInput').value = `${location.origin}${location.pathname}?invite=${g.invite_token}`;
+  }
+
+  if(isAdmin){
+    const lockedOfficial = !!g.is_official;
+    document.getElementById('visSelect').value = g.visibility;
+    document.getElementById('visSelect').disabled = lockedOfficial; // official groups stay public, forever
+    document.getElementById('limitInput').value = g.member_limit;
+    document.getElementById('limitInput').disabled = lockedOfficial;
+    const sel = document.getElementById('resetHourSelect');
+    sel.innerHTML = Array.from({length:24},(_,h)=>`<option value="${h}" ${h===g.day_reset_hour?'selected':''}>${fmtHour(h)}</option>`).join('');
+    if(lockedOfficial){
+      const note = document.getElementById('officialNote');
+      if(!note){
+        document.getElementById('adminSettingsCard').querySelector('.card-body').insertAdjacentHTML('afterbegin',
+          `<p id="officialNote" style="font-size:0.7rem;color:var(--gold);margin-bottom:0.75rem;">🏆 Official exam group — stays public with an open member cap. Adminship here is earned: study the most hours, lead the daily leaderboard for 8 straight months, and it auto-transfers to you. Lose the #1 spot 3 times as admin and it reverts to the site.</p>`);
+      }
+    }
+  }
+}
+
+async function updateGroupSetting(field, value){
+  const { error } = await sb.from('study_groups').update({ [field]: value }).eq('id', currentGroup.id);
+  if(error){ alert('Update failed: '+error.message); return; }
+  currentGroup[field] = value;
+  renderGroupDetail();
+}
+
+function copyInvite(){
+  navigator.clipboard.writeText(document.getElementById('inviteLinkInput').value);
+}
+async function regenInvite(){
+  if(currentGroup.my_role !== 'admin'){ alert('Only the group admin can regenerate the invite link.'); return; }
+  const { data, error } = await sb.from('study_groups')
+    .update({ invite_token: null }) // trigger default regen isn't automatic on update — generate client-side instead
+    .eq('id', currentGroup.id).select().single();
+  // generate a fresh random token client-side since default only applies on insert
+  const fresh = crypto.randomUUID().replace(/-/g,'');
+  await sb.from('study_groups').update({ invite_token: fresh }).eq('id', currentGroup.id);
+  currentGroup.invite_token = fresh;
+  renderGroupDetail();
+}
+
+async function leaveGroup(){
+  if(!confirm('Leave this group?')) return;
+  await sb.from('group_members').delete().eq('group_id',currentGroup.id).eq('user_id',me.id);
+  await loadMyGroups();
+  closeDetail();
+  renderList();
+}
+
+async function loadMembers(){
+  const { data, error } = await sb.from('group_members')
+    .select('user_id, role, joined_at')
+    .eq('group_id', currentGroup.id)
+    .order('joined_at',{ascending:true});
+  if(error){ document.getElementById('memberList').innerHTML = ''; return; }
+
+  document.getElementById('memberCount').textContent = `${data.length} / ${currentGroup.member_limit}`;
+
+  // batch-fetch display names, today's totals, tags — kept simple via a couple of queries
+  const userIds = data.map(m=>m.user_id);
+  const { data: profiles } = await sb.from('user_profiles').select('id,track').in('id', userIds.length?userIds:['00000000-0000-0000-0000-000000000000']);
+  const nameOf = id => (profiles||[]).find(p=>p.id===id)?.track || id.slice(0,6); // swap for a real display_name column when added
+
+  const { data: tags } = await sb.from('user_tags').select('user_id,tag').eq('group_id',currentGroup.id).in('user_id', userIds.length?userIds:['x']);
+  const tagsOf = id => (tags||[]).filter(t=>t.user_id===id);
+
+  let streakOf = () => null;
+  if(currentGroup.is_official){
+    const { data: streaks } = await sb.from('group_leadership_streaks').select('user_id,current_streak').eq('group_id',currentGroup.id).in('user_id', userIds.length?userIds:['x']);
+    streakOf = id => (streaks||[]).find(s=>s.user_id===id)?.current_streak ?? 0;
+  }
+
+  document.getElementById('memberList').innerHTML = data.map(m=>{
+    const isAdmin = m.role==='admin';
+    const iAmAdmin = currentGroup.my_role==='admin';
+    const myTags = tagsOf(m.user_id).map(t=>`<span class="tag-pill tag-${t.tag}">${t.tag.replace('_',' ')}</span>`).join('');
+    const streakNote = currentGroup.is_official ? `<div class="member-meta" style="color:var(--gold);">🔥 ${streakOf(m.user_id)}-day lead streak (240 = auto-admin)</div>` : '';
+    return `<div class="member-row" data-user="${m.user_id}">
+      <div class="avatar" id="av-${m.user_id}">${(nameOf(m.user_id)||'?')[0].toUpperCase()}</div>
+      <div>
+        <div class="member-name">${escHtml(nameOf(m.user_id))}${isAdmin?'<span class="member-role">Admin</span>':''}${myTags}</div>
+        <div class="member-meta" id="meta-${m.user_id}">Not studying right now</div>
+        ${streakNote}
+      </div>
+      ${iAmAdmin && m.user_id!==me.id ? `<div class="member-actions">
+        <button class="icon-btn" onclick="viewAnalytics('${m.user_id}')">Stats</button>
+        ${(!currentGroup.is_official || m.user_id!==currentGroup.system_owner_id) ? `
+          <button class="icon-btn" onclick="transferAdmin('${m.user_id}')">Make admin</button>
+          <button class="icon-btn danger" onclick="kickMember('${m.user_id}')">Kick</button>` : ''}
+      </div>` : `<div class="member-actions"><button class="icon-btn" onclick="viewAnalytics('${m.user_id}')">Stats</button></div>`}
+    </div>`;
+  }).join('') || `<div class="empty-state">No members yet.</div>`;
+}
+
+async function kickMember(userId){
+  if(!confirm('Remove this member from the group?')) return;
+  await sb.from('group_members').delete().eq('group_id',currentGroup.id).eq('user_id',userId);
+  loadMembers();
+}
+
+async function transferAdmin(userId){
+  if(!confirm('Transfer adminship to this member? You will become a regular member.')) return;
+  await sb.from('group_members').update({ role:'admin' }).eq('group_id',currentGroup.id).eq('user_id',userId);
+  await sb.from('group_members').update({ role:'member' }).eq('group_id',currentGroup.id).eq('user_id',me.id);
+  await sb.from('study_groups').update({ owner_id:userId }).eq('id',currentGroup.id);
+  currentGroup.my_role = 'member';
+  renderGroupDetail();
+  loadMembers();
+}
+
+function viewAnalytics(userId){
+  // Phase 3 will build the full heatmap/streak view — placeholder hookup for now.
+  window.location.href = `analytics-user.html?user=${userId}&group=${currentGroup.id}`;
+}
+
+async function loadCoinBalance(){
+  const { data } = await sb.from('user_wallets').select('coins').eq('user_id',me.id).single();
+  document.getElementById('gdCoinBal').textContent = `🪙 ${(data?.coins||0).toLocaleString()} M²`;
+}
+
+let challengeSelected = [];
+async function loadChallenges(){
+  const { data } = await sb.from('group_challenges')
+    .select('*, challenge_participants(user_id,coins_pledged,result,coins_won)')
+    .eq('group_id',currentGroup.id).order('created_at',{ascending:false}).limit(10);
+  const el = document.getElementById('challengeList');
+  if(!data?.length){ el.innerHTML=`<span style="color:var(--dim);">No challenges yet — throw down the first one.</span>`; return; }
+  el.innerHTML = data.map(c=>{
+    const pool = (c.challenge_participants||[]).reduce((s,p)=>s+(p.coins_pledged||0),0);
+    const count = c.challenge_participants?.length||0;
+    const status = c.status==='open'?`<span style="color:var(--gold);">LIVE</span>`:`<span style="color:var(--success);">Resolved</span>`;
+    const inIt = (c.challenge_participants||[]).some(p=>p.user_id===me.id);
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:0.55rem 0;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-size:0.8rem;font-weight:600;color:var(--white);">${escHtml(c.title||'Challenge')}</div>
+        <div style="font-size:0.68rem;color:var(--muted);">${count} participants · 🪙 ${pool.toLocaleString()} pot · ${status}</div>
+      </div>
+      ${c.status==='open'&&!inIt?`<button class="btn btn-gold btn-sm" onclick="joinChallenge('${c.id}')">Join</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+let challengeSearchResults=[];
+async function searchChallengeUsers(){
+  const q=document.getElementById('chUserSearch').value.trim();
+  if(q.length<2){document.getElementById('chUserResults').innerHTML='';return;}
+  const {data}=await sb.from('user_profiles').select('id,display_name').ilike('display_name',`%${q}%`).limit(6);
+  const alreadyIds=new Set([me.id,...challengeSelected.map(u=>u.id)]);
+  document.getElementById('chUserResults').innerHTML=(data||[]).filter(u=>!alreadyIds.has(u.id))
+    .map(u=>`<div onclick="selectChallengeUser('${u.id}','${escHtml(u.display_name||u.id)}')" style="cursor:pointer;padding:0.35rem 0.6rem;background:var(--s2);border:1px solid var(--border);font-size:0.76rem;color:var(--text);margin-top:0.2rem;">${escHtml(u.display_name||u.id)}</div>`).join('')||'<div style="font-size:0.72rem;color:var(--dim);margin-top:0.3rem;">No users found</div>';
+}
+function selectChallengeUser(id,name){if(challengeSelected.find(u=>u.id===id))return;challengeSelected.push({id,name});document.getElementById('chUserSearch').value='';document.getElementById('chUserResults').innerHTML='';renderSelectedUsers();}
+function removeChallUser(id){challengeSelected=challengeSelected.filter(u=>u.id!==id);renderSelectedUsers();}
+function renderSelectedUsers(){
+  document.getElementById('chSelectedUsers').innerHTML=challengeSelected.map(u=>`<span style="background:var(--s2);border:1px solid var(--border);font-size:0.72rem;padding:0.25rem 0.55rem;color:var(--text);">${escHtml(u.name)} <span onclick="removeChallUser('${u.id}')" style="cursor:pointer;color:var(--danger);margin-left:0.25rem;">✕</span></span>`).join('');
+  const n=challengeSelected.length+1;
+  document.getElementById('chBountyNote').textContent=n>=4?'Split: 80% / 15% / 5%':n===3?'Split: 85% / 15%':n===2?'Winner takes all':'';
+}
+function openChallengeModal(){challengeSelected=[];renderSelectedUsers();document.getElementById('challengeModal').classList.add('show');}
+function closeChallengeModal(){document.getElementById('challengeModal').classList.remove('show');}
+async function createChallenge(){
+  if(challengeSelected.length<2){alert('Challenge at least 2 other members.');return;}
+  const bounty=Math.max(0,parseInt(document.getElementById('chBounty').value)||0);
+  if(bounty>0){const {data:w}=await sb.from('user_wallets').select('coins').eq('user_id',me.id).single();if((w?.coins||0)<bounty){alert('Not enough M² coins.');return;}}
+  const today=new Date().toISOString().split('T')[0];
+  const {data:ch,error}=await sb.from('group_challenges').insert({group_id:currentGroup.id,created_by:me.id,title:document.getElementById('chTitle').value.trim()||'Study Challenge',challenge_date:today,bounty_pool:bounty}).select().single();
+  if(error){alert('Could not create: '+error.message);return;}
+  await sb.from('challenge_participants').insert([{challenge_id:ch.id,user_id:me.id,coins_pledged:bounty},...challengeSelected.map(u=>({challenge_id:ch.id,user_id:u.id,coins_pledged:0}))]);
+  if(bounty>0) await sb.rpc('spend_coins',{uid:me.id,amount:bounty});
+  closeChallengeModal();await loadChallenges();await loadCoinBalance();
+}
+async function joinChallenge(challengeId){
+  const pledge=parseInt(prompt('Pledge M² coins to the bounty (0 for none):')||'0')||0;
+  if(pledge>0){const {data:w}=await sb.from('user_wallets').select('coins').eq('user_id',me.id).single();if((w?.coins||0)<pledge){alert('Not enough coins.');return;}await sb.rpc('spend_coins',{uid:me.id,amount:pledge});}
+  await sb.from('challenge_participants').insert({challenge_id:challengeId,user_id:me.id,coins_pledged:pledge});
+  await loadChallenges();await loadCoinBalance();
+}
+
+/* ── LIVE PRESENCE (glow/B&W avatars) ──────────────────────
+   Listens for study_sessions changes scoped to this group via
+   Supabase Realtime (Postgres Changes). Phase 2 wires up the
+   actual start/pause/stop timer UI that writes these rows. */
+function subscribeLivePresence(groupId){
+  if(presenceChannel) sb.removeChannel(presenceChannel);
+  presenceChannel = sb.channel(`group-presence-${groupId}`)
+    .on('postgres_changes', { event:'*', schema:'public', table:'study_sessions', filter:`group_id=eq.${groupId}` },
+      payload => applyPresence(payload.new || payload.old))
+    .subscribe();
+  refreshPresenceSnapshot(groupId);
+}
+
+async function refreshPresenceSnapshot(groupId){
+  const { data } = await sb.from('study_sessions').select('user_id,started_at,paused_at,ended_at,subject')
+    .eq('group_id',groupId).is('ended_at', null);
+  (data||[]).forEach(applyPresence);
+}
+
+function applyPresence(s){
+  if(!s) return;
+  const av = document.getElementById('av-'+s.user_id);
+  const meta = document.getElementById('meta-'+s.user_id);
+  if(!av || !meta) return;
+  if(s.ended_at){ av.className='avatar'; meta.textContent='Not studying right now'; return; }
+  if(s.paused_at){ av.className='avatar paused'; meta.textContent=`Paused · ${s.subject||'—'}`; return; }
+  av.className='avatar live';
+  meta.textContent=`🔴 Live now · ${s.subject||'studying'}`;
+}
+
+init();
+</script>
+</body>
+</html>
