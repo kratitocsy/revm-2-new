@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RevM² — Study Partners</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c8a96e">
+<style>
+.pw{max-width:820px;margin:0 auto;padding:1.5rem;}
+.pw-search{display:flex;gap:0.5rem;margin-bottom:1.5rem;}
+.pw-search input{flex:1;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.65rem 0.9rem;font-family:var(--font);font-size:0.85rem;outline:none;}
+.pw-search input:focus{border-color:var(--gold);}
+.pw-section{margin-bottom:2rem;}
+.pw-section-title{font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.7rem;display:flex;align-items:center;gap:0.5rem;}
+.pw-badge{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border);border-radius:99px;font-size:0.6rem;padding:0.05rem 0.5rem;}
+.p-row{display:flex;align-items:center;gap:0.75rem;padding:0.65rem 0.85rem;border-bottom:1px solid var(--border);background:var(--s1);}
+.p-row:first-child{border-top:1px solid var(--border);}
+.p-avatar{width:40px;height:40px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;color:var(--muted);flex-shrink:0;overflow:hidden;border:2px solid var(--border2);}
+.p-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.p-avatar .default-avatar-icon{width:60%;height:60%;color:inherit;}
+.p-name{font-size:0.82rem;font-weight:600;color:var(--text);}
+.p-meta{font-size:0.68rem;color:var(--muted);}
+.p-actions{margin-left:auto;display:flex;gap:0.4rem;flex-shrink:0;}
+.btn-tiny{font-size:0.68rem;padding:0.35rem 0.7rem;border:1px solid var(--border2);background:none;color:var(--muted);cursor:pointer;font-family:var(--font);white-space:nowrap;}
+.btn-tiny:hover{border-color:var(--gold);color:var(--gold);}
+.btn-tiny.gold{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+.btn-tiny.gold:hover{background:var(--gold);color:#000;}
+.btn-tiny.danger:hover{border-color:var(--danger);color:var(--danger);}
+.pw-empty{font-size:0.76rem;color:var(--dim);padding:0.85rem;background:var(--s1);border:1px solid var(--border);text-align:center;}
+.pw-hint{font-size:0.72rem;color:var(--muted);margin-bottom:1.25rem;line-height:1.5;}
+.status-pill{font-size:0.65rem;color:var(--muted);padding:0.3rem 0.6rem;}
+</style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <a class="sidebar-logo" href="index.html"><div class="rm2-logo" data-size="small"></div></a>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Study</div>
+      <div class="nav-item" onclick="location.href='tracker.html'"><span class="nav-icon">📋</span>Tracker</div>
+      <div class="nav-item" onclick="location.href='groups.html'"><span class="nav-icon">👥</span>Study Groups</div>
+      <div class="nav-item active"><span class="nav-icon">🧑‍🤝‍🧑</span>Study Partners</div>
+      <div class="nav-item" onclick="location.href='store.html'"><span class="nav-icon">🪙</span>M² Store</div>
+    </nav>
+  </aside>
+
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
+  <div class="app-main">
+    <div class="topbar">
+      <button class="hamburger-btn" onclick="openMobileSidebar()" aria-label="Open menu">☰</button>
+      <div><div class="topbar-title">Study Partners</div><div class="topbar-sub">Find people by username, become study partners</div></div>
+    </div>
+
+    <div class="pw">
+      <div class="pw-search">
+        <input id="searchIn" placeholder="Search by username…" oninput="onSearchInput()">
+      </div>
+      <div class="pw-section" id="searchResultsSection" style="display:none;">
+        <div class="pw-section-title">Results</div>
+        <div id="searchResults"></div>
+      </div>
+
+      <div class="pw-section">
+        <div class="pw-section-title">Incoming requests <span class="pw-badge" id="incomingCount" style="display:none;"></span></div>
+        <div id="incomingList"><div class="pw-empty">No incoming requests.</div></div>
+      </div>
+
+      <div class="pw-section">
+        <div class="pw-section-title">Sent requests</div>
+        <div id="outgoingList"><div class="pw-empty">No pending sent requests.</div></div>
+      </div>
+
+      <div class="pw-section">
+        <div class="pw-section-title">Your study partners <span class="pw-badge" id="friendsCount" style="display:none;"></span></div>
+        <p class="pw-hint">Once you're both connected, 1:1 live cam and chat unlock here. (Coming in the next update — for now this list confirms who's connected.)</p>
+        <div id="friendsList"><div class="pw-empty">No study partners yet — search a username above to send a request.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script src="floating-timer.js"></script>
+<script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const sb=window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL,REVM2_CONFIG.SUPABASE_ANON);
+let me=null;
+
+const DEFAULT_AVATAR_ICON = `<svg class="default-avatar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="2.6"/><path d="M6.5 14.2c0-2 2.3-3.4 5.5-3.4s5.5 1.4 5.5 3.4"/><path d="M3 19.5h18"/><path d="M6.5 19.5v-2.3M17.5 19.5v-2.3"/></svg>`;
+function avatarHtml(url){ return url ? `<img src="${escHtml(url)}" alt="">` : DEFAULT_AVATAR_ICON; }
+
+async function init(){
+  RevM2Loader.show('Loading study partners…');
+  const session = await requireAuth();
+  if(!session){ return; }
+  me = session.user;
+  await Promise.all([loadIncoming(), loadOutgoing(), loadFriends()]);
+  RevM2Loader.hide();
+}
+
+/* ── SEARCH ───────────────────────────────────────────────── */
+let searchTimer=null, searchToken=0;
+function onSearchInput(){
+  const q=document.getElementById('searchIn').value.trim();
+  clearTimeout(searchTimer);
+  if(q.length<2){ document.getElementById('searchResultsSection').style.display='none'; return; }
+  searchTimer=setTimeout(()=>runSearch(q), 350);
+}
+
+async function runSearch(q){
+  const myToken=++searchToken;
+  const {data,error}=await sb.rpc('search_users_by_username',{p_query:q});
+  if(myToken!==searchToken) return;
+  const section=document.getElementById('searchResultsSection');
+  section.style.display='block';
+  if(error||!data||!data.length){
+    document.getElementById('searchResults').innerHTML='<div class="pw-empty">No matching usernames.</div>';
+    return;
+  }
+  document.getElementById('searchResults').innerHTML = data.map(u=>rowHtml(u)).join('');
+}
+
+function rowHtml(u){
+  const name = '@'+escHtml(u.username);
+  const meta = escHtml(u.track||'');
+  let action='';
+  if(u.friend_status==='self') action = `<span class="status-pill">That's you</span>`;
+  else if(u.friend_status==='friends') action = `<span class="status-pill">✓ Study partner</span>`;
+  else if(u.friend_status==='pending_outgoing') action = `<span class="status-pill">Requested</span>`;
+  else if(u.friend_status==='pending_incoming') action = `<button class="btn-tiny gold" onclick="quickAccept('${u.id}')">Respond below ↓</button>`;
+  else action = `<button class="btn-tiny gold" onclick="sendRequest('${u.username}', this)">+ Add friend</button>`;
+  return `<div class="p-row">
+    <div class="p-avatar">${avatarHtml(u.avatar_url)}</div>
+    <div><div class="p-name">${name}</div><div class="p-meta">${meta}</div></div>
+    <div class="p-actions">${action}</div>
+  </div>`;
+}
+
+function quickAccept(){
+  document.getElementById('incomingList').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+async function sendRequest(username, btn){
+  if(btn){ btn.disabled=true; btn.textContent='Sending…'; }
+  const {error}=await sb.rpc('send_friend_request',{p_username:username});
+  if(error){ alert(error.message||'Could not send request.'); if(btn){btn.disabled=false; btn.textContent='+ Add friend';} return; }
+  await loadOutgoing();
+  onSearchInput(); // refresh badges in results
+  const q=document.getElementById('searchIn').value.trim();
+  if(q.length>=2) runSearch(q);
+}
+
+/* ── INCOMING / OUTGOING / FRIENDS ───────────────────────── */
+async function loadIncoming(){
+  const {data,error}=await sb.rpc('list_incoming_requests');
+  const el=document.getElementById('incomingList');
+  const badge=document.getElementById('incomingCount');
+  if(error||!data||!data.length){ el.innerHTML='<div class="pw-empty">No incoming requests.</div>'; badge.style.display='none'; return; }
+  badge.style.display='inline-block'; badge.textContent=data.length;
+  el.innerHTML=data.map(r=>`<div class="p-row">
+    <div class="p-avatar">${avatarHtml(r.avatar_url)}</div>
+    <div><div class="p-name">@${escHtml(r.username)}</div><div class="p-meta">${escHtml(r.track||'')} · wants to be study partners</div></div>
+    <div class="p-actions">
+      <button class="btn-tiny gold" onclick="respond('${r.friendship_id}',true,this)">Accept</button>
+      <button class="btn-tiny danger" onclick="respond('${r.friendship_id}',false,this)">Decline</button>
+    </div>
+  </div>`).join('');
+}
+
+async function respond(id, accept, btn){
+  if(btn) btn.closest('.p-actions').querySelectorAll('button').forEach(b=>b.disabled=true);
+  const {error}=await sb.rpc('respond_friend_request',{p_friendship_id:id,p_accept:accept});
+  if(error){ alert(error.message||'Could not respond.'); }
+  await Promise.all([loadIncoming(), loadFriends()]);
+}
+
+async function loadOutgoing(){
+  const {data,error}=await sb.rpc('list_outgoing_requests');
+  const el=document.getElementById('outgoingList');
+  if(error||!data||!data.length){ el.innerHTML='<div class="pw-empty">No pending sent requests.</div>'; return; }
+  el.innerHTML=data.map(r=>`<div class="p-row">
+    <div class="p-avatar">${avatarHtml(r.avatar_url)}</div>
+    <div><div class="p-name">@${escHtml(r.username)}</div><div class="p-meta">${escHtml(r.track||'')} · request pending</div></div>
+    <div class="p-actions"><button class="btn-tiny" onclick="cancelReq('${r.friendship_id}',this)">Cancel</button></div>
+  </div>`).join('');
+}
+
+async function cancelReq(id, btn){
+  if(btn) btn.disabled=true;
+  await sb.rpc('cancel_friend_request',{p_friendship_id:id});
+  await loadOutgoing();
+}
+
+async function loadFriends(){
+  const {data,error}=await sb.rpc('list_friends');
+  const el=document.getElementById('friendsList');
+  const badge=document.getElementById('friendsCount');
+  if(error||!data||!data.length){ el.innerHTML='<div class="pw-empty">No study partners yet — search a username above to send a request.</div>'; badge.style.display='none'; return; }
+  badge.style.display='inline-block'; badge.textContent=data.length;
+  el.innerHTML=data.map(f=>`<div class="p-row">
+    <div class="p-avatar">${avatarHtml(f.avatar_url)}</div>
+    <div><div class="p-name">@${escHtml(f.username)}</div><div class="p-meta">${escHtml(f.track||'')}</div></div>
+    <div class="p-actions">
+      <button class="btn-tiny" disabled title="Coming soon">🎥 Cam</button>
+      <button class="btn-tiny" disabled title="Coming soon">💬 Chat</button>
+      <button class="btn-tiny danger" onclick="unfriend('${f.friendship_id}',this)">Remove</button>
+    </div>
+  </div>`).join('');
+}
+
+async function unfriend(id, btn){
+  if(!confirm('Remove this study partner?')) return;
+  if(btn) btn.disabled=true;
+  await sb.rpc('remove_friend',{p_friendship_id:id});
+  await loadFriends();
+}
+
+init();
+</script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>
