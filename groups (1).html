@@ -1,0 +1,2310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RevM² — Study Groups</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#c8a96e">
+<style>
+.gw{max-width:980px;margin:0 auto;padding:1.5rem;}
+.gw-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:1.25rem;}
+.gw-tabs{display:flex;gap:0.4rem;margin-bottom:1.25rem;}
+.gw-tab{padding:0.45rem 0.9rem;font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;border:1px solid var(--border2);background:var(--s1);color:var(--muted);cursor:pointer;font-family:var(--font);}
+.gw-tab.active{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+.gw-search{display:flex;gap:0.5rem;margin-bottom:1.25rem;}
+.gw-search input{flex:1;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.55rem 0.85rem;font-family:var(--font);font-size:0.8rem;outline:none;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.85rem;}
+.gcard{background:var(--s1);border:1px solid var(--border);padding:1rem;display:flex;flex-direction:column;gap:0.5rem;}
+.gcard-top{display:flex;align-items:center;justify-content:space-between;}
+.gcard-name{font-size:0.88rem;font-weight:700;color:var(--white);}
+.gcard-sub{font-size:0.7rem;color:var(--muted);}
+.vis-badge{font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;padding:0.15rem 0.5rem;border-radius:99px;border:1px solid var(--border2);}
+.vis-badge.public{color:var(--success);border-color:rgba(74,222,128,0.3);}
+.vis-badge.private{color:var(--muted);}
+.field{margin-bottom:0.9rem;}
+.field label{display:block;font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.35rem;}
+.field input,.field select,.field textarea{width:100%;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.55rem 0.75rem;font-family:var(--font);font-size:0.82rem;outline:none;color-scheme:dark;}
+.field-row{display:flex;gap:0.75rem;}
+.field-row .field{flex:1;}
+/* GROUP DETAIL */
+.gd-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;margin-bottom:1rem;}
+.gd-back{font-size:0.7rem;color:var(--muted);text-decoration:none;cursor:pointer;}
+.gd-back:hover{color:var(--gold);}
+.member-row{display:flex;align-items:center;gap:0.75rem;padding:0.65rem 0.85rem;border-bottom:1px solid var(--border);}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;color:var(--muted);flex-shrink:0;transition:all 0.3s;overflow:hidden;}
+.avatar.live{filter:saturate(1) grayscale(0);box-shadow:0 0 0 2px var(--gold),0 0 12px rgba(200,169,110,0.6);color:var(--gold);animation:pulseGlow 2s ease-in-out infinite;}
+.avatar.paused{filter:grayscale(1);opacity:0.55;border-color:transparent;box-shadow:none;}
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 0 2px var(--gold),0 0 8px rgba(200,169,110,0.4);}50%{box-shadow:0 0 0 2px var(--gold),0 0 16px rgba(200,169,110,0.8);}}
+/* Admins get a cyan glow instead of the regular member gold glow, everywhere an avatar renders */
+.avatar.admin{border:2px solid rgba(56,189,248,0.5);}
+.avatar.live.admin{box-shadow:0 0 0 2px var(--cyan),0 0 12px rgba(56,189,248,0.6);color:var(--cyan);animation:pulseGlowAdmin 2s ease-in-out infinite;}
+.avatar.paused.admin{filter:grayscale(1);opacity:0.55;border-color:transparent;box-shadow:none;color:var(--muted);}
+@keyframes pulseGlowAdmin{0%,100%{box-shadow:0 0 0 2px var(--cyan),0 0 8px rgba(56,189,248,0.4);}50%{box-shadow:0 0 0 2px var(--cyan),0 0 16px rgba(56,189,248,0.8);}}
+.avatar-img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.default-avatar-icon{width:62%;height:62%;color:inherit;}
+.member-name{font-size:0.82rem;color:var(--text);font-weight:600;}
+.member-meta{font-size:0.68rem;color:var(--muted);}
+.member-role{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--cyan);margin-left:0.4rem;}
+.member-actions{margin-left:auto;display:flex;gap:0.4rem;}
+.icon-btn{background:none;border:1px solid var(--border2);color:var(--muted);font-size:0.68rem;padding:0.3rem 0.55rem;cursor:pointer;font-family:var(--font);}
+.icon-btn:hover{border-color:var(--gold);color:var(--gold);}
+.icon-btn.danger:hover{border-color:var(--danger);color:var(--danger);}
+.tag-pill{font-size:0.58rem;letter-spacing:0.05em;text-transform:uppercase;padding:0.1rem 0.4rem;border-radius:99px;margin-left:0.3rem;}
+.tag-scholar{background:rgba(200,169,110,0.18);color:var(--gold);border:1px solid var(--gold);}
+.tag-runner_up{background:rgba(74,222,128,0.12);color:var(--success);border:1px solid rgba(74,222,128,0.4);}
+.tag-hustler{background:rgba(255,255,255,0.08);color:var(--text);border:1px solid var(--border2);}
+.invite-box{display:flex;gap:0.5rem;align-items:center;background:var(--s1);border:1px solid var(--border);padding:0.65rem 0.85rem;margin-bottom:1rem;}
+.invite-box input{flex:1;background:transparent;border:none;color:var(--muted);font-size:0.74rem;outline:none;}
+.empty-state{text-align:center;padding:2.5rem 1rem;color:var(--muted);font-size:0.8rem;}
+
+/* ── CURRENT FOCUS TIME (hero card) ─────────────────────── */
+.focus-card{background:linear-gradient(150deg,var(--s1),var(--s2) 130%);border:1px solid var(--gold-border);padding:1.15rem 1.3rem;margin-bottom:1rem;}
+.focus-top{display:flex;align-items:flex-start;justify-content:space-between;gap:0.75rem;}
+.focus-label{font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:0.35rem;}
+.focus-time{font-size:2.5rem;font-weight:900;color:var(--text);letter-spacing:-0.03em;line-height:1;font-variant-numeric:tabular-nums;transition:color 0.3s;}
+.focus-time.live{color:var(--gold);text-shadow:0 0 18px rgba(200,169,110,0.35);}
+.focus-sub{font-size:0.74rem;color:var(--muted);margin-top:0.4rem;}
+.focus-avatar{width:54px;height:54px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:700;color:var(--gold);border:2px solid var(--gold);box-shadow:0 0 16px rgba(200,169,110,0.4);flex-shrink:0;transition:all 0.3s;overflow:hidden;}
+.focus-avatar.idle{border-color:var(--border2);color:var(--muted);box-shadow:none;}
+.focus-avatar.paused-state{border-color:var(--border2);color:var(--muted);box-shadow:none;filter:grayscale(1);opacity:0.7;}
+.focus-avatar.admin{color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 16px rgba(56,189,248,0.4);}
+.focus-avatar.admin.idle,.focus-avatar.admin.paused-state{border-color:var(--border2);color:var(--muted);box-shadow:none;}
+.focus-avatar .avatar-img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.focus-avatar .default-avatar-icon{width:58%;height:58%;color:inherit;}
+.focus-progress{margin-top:0.9rem;background:var(--s2);height:6px;border-radius:99px;overflow:hidden;}
+.focus-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--warn));border-radius:99px;transition:width 0.6s ease;}
+.focus-controls{display:flex;gap:0.5rem;margin-top:0.9rem;flex-wrap:wrap;align-items:center;}
+.focus-controls select{background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.42rem 0.6rem;font-family:var(--font);font-size:0.72rem;outline:none;}
+.focus-controls select:focus{border-color:var(--gold);}
+
+/* ── STUDYING NOW (live member grid) ────────────────────── */
+.live-grid-sub{font-size:0.7rem;color:var(--gold);font-weight:600;}
+.live-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:1.1rem 0.5rem;}
+.live-tile{display:flex;flex-direction:column;align-items:center;gap:0.4rem;text-align:center;}
+.live-tile-avatar{width:52px;height:52px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:var(--muted);border:2px solid var(--border2);position:relative;transition:all 0.3s;overflow:hidden;cursor:pointer;}
+.live-tile-avatar.speaking{animation:speakPulse 1.05s ease-in-out infinite;}
+@keyframes speakPulse{0%,100%{box-shadow:0 0 0 3px rgba(56,189,248,0.28),0 0 12px rgba(56,189,248,0.4);}50%{box-shadow:0 0 0 6px rgba(56,189,248,0.5),0 0 22px rgba(56,189,248,0.8);}}
+/* Expandable tile lightbox — sizing adapts per device via the media query below */
+.tile-expand-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.82);display:none;align-items:center;justify-content:center;z-index:500;padding:1rem;}
+.tile-expand-overlay.show{display:flex;}
+/* Speaker view — the focused person's video fills most of the box; everyone
+   else rides along underneath as a row of tappable thumbnails (Zoom-style),
+   so switching who's "big" never means leaving the call view. */
+.tile-expand-box{background:var(--s1);border:1px solid var(--border2);border-radius:16px;padding:1.1rem;display:flex;flex-direction:column;gap:0.8rem;position:relative;width:min(760px,94vw);max-height:92vh;}
+.tile-expand-media{width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--s2);border:1px solid var(--border2);position:relative;}
+.tile-expand-media video{width:100%;height:100%;object-fit:cover;}
+.tile-expand-media video.self{transform:scaleX(-1);}
+.tile-expand-media .default-avatar-icon{width:26%;height:26%;color:var(--muted);}
+.tile-expand-media img.avatar-img{width:100%;height:100%;object-fit:cover;}
+.tile-expand-close{position:absolute;top:0.6rem;right:0.8rem;background:rgba(0,0,0,0.5);border:none;color:#fff;font-size:1.4rem;line-height:1;cursor:pointer;width:32px;height:32px;border-radius:50%;z-index:2;display:flex;align-items:center;justify-content:center;}
+.tile-expand-nametag{position:absolute;left:0.7rem;bottom:0.7rem;display:flex;align-items:center;gap:0.4rem;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:0.35rem 0.65rem;border-radius:8px;font-size:0.8rem;font-weight:700;color:#fff;z-index:2;}
+.tile-expand-nametag .hand-emoji{font-size:0.9rem;animation:handWave 1.2s ease-in-out infinite;display:inline-block;}
+.expand-thumb-strip{display:flex;gap:0.6rem;overflow-x:auto;padding:0.15rem 0.1rem;}
+.expand-thumb{display:flex;flex-direction:column;align-items:center;gap:0.3rem;flex-shrink:0;cursor:pointer;width:66px;}
+.expand-thumb-media{width:66px;height:66px;border-radius:12px;overflow:hidden;background:var(--s2);border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;position:relative;transition:border-color 0.15s,transform 0.15s;}
+.expand-thumb:hover .expand-thumb-media{border-color:var(--gold);transform:translateY(-2px);}
+.expand-thumb-media video{width:100%;height:100%;object-fit:cover;}
+.expand-thumb-media video.self{transform:scaleX(-1);}
+.expand-thumb-media .default-avatar-icon{width:44%;height:44%;color:var(--muted);}
+.expand-thumb-media img.avatar-img{width:100%;height:100%;object-fit:cover;}
+.expand-thumb-hand{position:absolute;top:1px;right:1px;font-size:0.72rem;filter:drop-shadow(0 0 2px rgba(0,0,0,0.8));}
+.expand-thumb-name{font-size:0.6rem;color:var(--muted);max-width:66px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+@media (max-width:700px){
+  .tile-expand-box{width:96vw;padding:0.8rem;}
+  .tile-expand-media{aspect-ratio:4/5;}
+}
+/* Raise-hand badge shown on a live-grid tile */
+.live-tile-hand{position:absolute;top:1px;left:1px;font-size:0.7rem;background:rgba(0,0,0,0.6);border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;z-index:2;animation:handWave 1.2s ease-in-out infinite;}
+@keyframes handWave{0%,100%{transform:rotate(0deg);}25%{transform:rotate(-16deg);}75%{transform:rotate(16deg);}}
+.cam-toggle-btn.hand-on{background:rgba(255,214,10,0.22);box-shadow:0 2px 14px rgba(255,214,10,0.35),inset 0 1px 1px rgba(255,255,255,0.18);color:#ffd60a;}
+/* Raise-hand toasts */
+.hand-toast-container{position:fixed;top:76px;right:16px;display:flex;flex-direction:column;gap:0.5rem;z-index:900;max-width:280px;}
+.hand-toast{background:var(--s1);border:1px solid var(--gold);border-radius:10px;padding:0.6rem 0.85rem;font-size:0.76rem;color:var(--text);display:flex;align-items:center;gap:0.5rem;box-shadow:0 4px 18px rgba(0,0,0,0.4);animation:handToastIn 0.25s ease;}
+@keyframes handToastIn{from{opacity:0;transform:translateX(24px);}to{opacity:1;transform:translateX(0);}}
+@media (max-width:600px){ .hand-toast-container{left:16px;right:16px;max-width:none;} }
+.live-tile-avatar.live{color:var(--gold);border-color:var(--gold);box-shadow:0 0 14px rgba(200,169,110,0.55);animation:tilePulse 2.2s ease-in-out infinite;}
+.live-tile-avatar.paused{color:var(--muted);border-color:var(--border2);opacity:0.55;box-shadow:none;}
+@keyframes tilePulse{0%,100%{box-shadow:0 0 10px rgba(200,169,110,0.35);}50%{box-shadow:0 0 20px rgba(200,169,110,0.8);}}
+/* Admins glow cyan in the live grid instead of gold/warn, so their role reads at a glance */
+.live-tile-avatar.admin{border-color:rgba(56,189,248,0.5);}
+.live-tile-avatar.live.admin{color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 14px rgba(56,189,248,0.55);animation:tilePulseAdmin 2.2s ease-in-out infinite;}
+.live-tile-avatar.paused.admin{color:var(--muted);border-color:var(--border2);opacity:0.55;box-shadow:none;}
+@keyframes tilePulseAdmin{0%,100%{box-shadow:0 0 10px rgba(56,189,248,0.35);}50%{box-shadow:0 0 20px rgba(56,189,248,0.8);}}
+.live-tile-avatar .avatar-img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.live-tile-avatar .default-avatar-icon{width:60%;height:60%;color:inherit;}
+.live-tile-avatar .cam-video{width:100%;height:100%;object-fit:cover;border-radius:50%;background:#000;}
+.live-tile-avatar .cam-video.self{transform:scaleX(-1);}
+.cam-toggle-wrap{display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;justify-content:center;}
+/* frosted glass circle buttons — matches chat.html call style */
+.cam-toggle-btn{width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all 0.18s ease;background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 2px 10px rgba(0,0,0,0.25),inset 0 1px 1px rgba(255,255,255,0.2);color:rgba(255,255,255,0.85);font-size:0.6rem;font-family:var(--font);letter-spacing:0.02em;gap:3px;}
+.cam-toggle-btn svg{width:16px;height:16px;flex-shrink:0;}
+.cam-toggle-btn:hover{transform:translateY(-2px) scale(1.07);filter:brightness(1.12);}
+.cam-toggle-btn.on{background:rgba(255,59,48,0.22);box-shadow:0 2px 14px rgba(255,59,48,0.35),inset 0 1px 1px rgba(255,255,255,0.18);color:#ff3b30;}
+.cam-toggle-btn.on::before{content:'';} /* remove old dot pseudo-element */
+.cam-toggle-btn.voice-on{background:rgba(255,149,0,0.20);box-shadow:0 2px 14px rgba(255,149,0,0.32),inset 0 1px 1px rgba(255,255,255,0.18);color:#ff9500;}
+/* mute/mic inline pill — now a circle too */
+.cam-mic-btn{width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 2px 8px rgba(0,0,0,0.2),inset 0 1px 1px rgba(255,255,255,0.18);color:rgba(255,255,255,0.85);transition:all 0.18s ease;}
+.cam-mic-btn:hover{transform:translateY(-2px) scale(1.07);filter:brightness(1.12);}
+.cam-mic-btn svg{width:14px;height:14px;}
+.cam-mic-btn.muted{background:rgba(255,214,10,0.20);color:#ffd60a;box-shadow:0 2px 8px rgba(255,214,10,0.32);}
+.cam-mic-btn.deafened{background:rgba(255,45,120,0.20);color:#ff2d78;box-shadow:0 2px 8px rgba(255,45,120,0.32);}
+/* control bar — sits below the grid, its own frosted panel so it reads as one unit */
+.call-controls-bar{display:flex;align-items:center;justify-content:center;gap:0.7rem;flex-wrap:wrap;margin-top:1.1rem;padding:0.7rem 1rem;background:rgba(255,255,255,0.025);border:1px solid var(--border2);border-radius:16px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);}
+.studying-now-header{display:flex;flex-direction:column;align-items:flex-start;gap:0.3rem;}
+.live-tile-dot{position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;background:var(--dim);border:2px solid var(--s1);}
+.live-tile-dot.on{background:var(--success);}
+.live-tile-dot.pause{background:var(--warn);}
+/* Device icon shown inside the tile when the member has no purchased avatar / camera feed:
+   a phone glyph while their timer is running (studying on device), a desk-clock glyph otherwise. */
+.live-tile-avatar .device-icon{width:56%;height:56%;color:inherit;}
+/* Voice waveform glyph — shown full-size in the tile when a member is voice-only
+   (camera off, mic on), and as a small corner badge when camera + voice are both on. */
+.voice-wave-icon rect{transform-box:fill-box;transform-origin:center;animation:voiceWaveBar 0.9s ease-in-out infinite;}
+.voice-wave-icon rect:nth-child(1){animation-delay:0.30s;}
+.voice-wave-icon rect:nth-child(2){animation-delay:0.15s;}
+.voice-wave-icon rect:nth-child(3){animation-delay:0s;}
+.voice-wave-icon rect:nth-child(4){animation-delay:0.15s;}
+.voice-wave-icon rect:nth-child(5){animation-delay:0.30s;}
+@keyframes voiceWaveBar{0%,100%{transform:scaleY(0.45);}50%{transform:scaleY(1);}}
+.live-tile-avatar .default-avatar-icon.voice-wave-icon{width:52%;height:52%;color:inherit;}
+.live-tile-voice-badge{position:absolute;bottom:-2px;right:-2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.35),inset 0 1px 1px rgba(255,255,255,0.12);z-index:2;}
+.live-tile-voice-badge .voice-wave-icon{width:60%;height:60%;color:#fff;}
+.live-tile-name{font-size:0.66rem;color:var(--muted);font-weight:600;max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.live-tile-name.live{color:var(--gold);font-weight:700;}
+.live-tile-name.live.admin{color:var(--cyan);}
+.live-tile-time{font-size:0.62rem;color:var(--muted);font-variant-numeric:tabular-nums;}
+.live-tile-time.live{color:var(--gold);}
+.live-tile-time.live.admin{color:var(--cyan);}
+.live-tile-add{width:52px;height:52px;border-radius:50%;background:var(--s2);border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;font-size:1.15rem;color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.live-tile-add:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ── VIDEO GRID (Zoom-style) — swaps in automatically once anyone
+   joins the video/voice call; reverts to the plain circle roster
+   (.live-grid above) the moment the call is empty again. ── */
+.video-grid-wrap{display:none;flex-direction:column;gap:0.7rem;}
+.video-grid-wrap.active{display:flex;}
+.live-grid.vg-hidden{display:none;}
+
+.vg-spotlight{width:100%;aspect-ratio:16/9;max-height:320px;border-radius:14px;overflow:hidden;position:relative;background:var(--s2);border:1px solid var(--border2);cursor:pointer;}
+.vg-spotlight video{width:100%;height:100%;object-fit:cover;display:block;}
+.vg-spotlight video.self{transform:scaleX(-1);}
+.vg-spotlight .default-avatar-icon,.vg-spotlight .voice-wave-icon{width:80px;height:80px;color:var(--muted);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}
+.vg-spotlight.speaking{box-shadow:inset 0 0 0 3px var(--gold);}
+.vg-spotlight-nametag{position:absolute;left:0.8rem;bottom:0.8rem;display:flex;align-items:center;gap:0.55rem;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:0.4rem 0.8rem;border-radius:9px;font-size:0.82rem;font-weight:700;color:#fff;z-index:2;}
+.vg-spotlight-timer{font-size:0.72rem;font-weight:600;color:var(--gold);font-variant-numeric:tabular-nums;}
+.vg-spotlight-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.4rem;height:100%;color:var(--muted);font-size:0.78rem;text-align:center;padding:0 1rem;}
+
+.vg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:0.6rem;}
+.vg-tile{position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:var(--s2);border:1px solid var(--border2);cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s;}
+.vg-tile:hover{border-color:var(--gold);}
+.vg-tile.pinned{border-color:var(--gold);}
+.vg-tile.speaking{box-shadow:inset 0 0 0 2px var(--gold);}
+.vg-tile video{width:100%;height:100%;object-fit:cover;display:block;}
+.vg-tile video.self{transform:scaleX(-1);}
+.vg-tile .default-avatar-icon,.vg-tile .voice-wave-icon{width:34%;height:34%;color:var(--muted);position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);}
+.vg-tile-nametag{position:absolute;left:0.3rem;right:0.3rem;bottom:0.3rem;display:flex;align-items:center;justify-content:space-between;gap:0.3rem;font-size:0.6rem;font-weight:700;color:#fff;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:0.22rem 0.4rem;border-radius:6px;z-index:2;}
+.vg-tile-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.vg-tile-time{font-variant-numeric:tabular-nums;color:var(--gold);flex-shrink:0;}
+.vg-tile-pinbtn,.vg-tile-hidebtn{position:absolute;top:0.28rem;width:19px;height:19px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;color:#fff;opacity:0;transition:opacity 0.15s;z-index:3;}
+.vg-tile-pinbtn{right:0.28rem;}
+.vg-tile-hidebtn{left:0.28rem;}
+.vg-tile:hover .vg-tile-pinbtn,.vg-tile:hover .vg-tile-hidebtn,.vg-tile.pinned .vg-tile-pinbtn{opacity:1;}
+.vg-tile-pinbtn.on{color:var(--gold);opacity:1;}
+.vg-tile-pinbtn svg,.vg-tile-hidebtn svg{width:11px;height:11px;}
+.vg-tile-voicebadge{position:absolute;top:0.28rem;left:0.28rem;width:19px;height:19px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;color:#fff;z-index:2;}
+.vg-tile-voicebadge svg{width:11px;height:11px;}
+
+.vg-pager{display:flex;align-items:center;justify-content:center;gap:0.9rem;}
+.vg-pager-btn{width:28px;height:28px;border-radius:50%;background:var(--s2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;color:var(--fg);cursor:pointer;flex-shrink:0;}
+.vg-pager-btn:disabled{opacity:0.3;cursor:default;}
+.vg-pager-label{font-size:0.7rem;color:var(--muted);font-variant-numeric:tabular-nums;min-width:2.6rem;text-align:center;}
+.vg-hidden-note{font-size:0.68rem;color:var(--muted);text-align:center;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+
+/* ── GROUP CHAT ────────────────────────────────────────────── */
+.gc-scroll{height:320px;overflow-y:auto;padding:0.85rem;display:flex;flex-direction:column;gap:0.55rem;}
+.gc-empty{margin:auto;color:var(--muted);font-size:0.78rem;text-align:center;}
+.gc-row{display:flex;gap:0.5rem;max-width:100%;}
+.gc-row.mine{flex-direction:row-reverse;}
+.gc-avatar{width:26px;height:26px;border-radius:50%;background:var(--s2);border:1px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:var(--muted);overflow:hidden;}
+.gc-avatar img{width:100%;height:100%;object-fit:cover;}
+.gc-col{display:flex;flex-direction:column;gap:0.15rem;max-width:75%;}
+.gc-row.mine .gc-col{align-items:flex-end;}
+.gc-name{font-size:0.64rem;color:var(--muted);font-weight:600;padding:0 0.2rem;}
+.gc-name .admin-star{color:var(--cyan);}
+.gc-bubble{padding:0.5rem 0.75rem;font-size:0.8rem;line-height:1.45;border-radius:13px;word-wrap:break-word;position:relative;}
+.gc-row.theirs .gc-bubble{background:var(--s2);border:1px solid var(--border2);color:var(--fg);border-bottom-left-radius:4px;}
+.gc-row.mine .gc-bubble{background:linear-gradient(135deg,var(--gold) 0%,#a5824f 100%);color:#0a0a0a;border-bottom-right-radius:4px;}
+.gc-bubble.deleted{font-style:italic;opacity:0.55;}
+.gc-time{font-size:0.6rem;color:var(--muted);padding:0 0.2rem;}
+.gc-row.mine .gc-time{text-align:right;}
+.gc-del-btn{position:absolute;top:-8px;right:-8px;width:18px;height:18px;border-radius:50%;background:var(--s1);border:1px solid var(--border2);color:var(--muted);font-size:0.65rem;line-height:1;display:none;align-items:center;justify-content:center;cursor:pointer;}
+.gc-bubble:hover .gc-del-btn{display:flex;}
+.gc-day-divider{text-align:center;font-size:0.62rem;color:var(--muted);margin:0.3rem 0;}
+.gc-composer{display:flex;align-items:flex-end;gap:0.5rem;padding:0.7rem 0.85rem;border-top:1px solid var(--border2);}
+.gc-textarea{flex:1;resize:none;max-height:110px;background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:0.5rem 0.7rem;color:var(--fg);font-size:0.8rem;font-family:inherit;line-height:1.4;}
+.gc-textarea:focus{outline:none;border-color:var(--gold);}
+.gc-send-btn{width:34px;height:34px;border-radius:50%;background:var(--gold);border:none;display:flex;align-items:center;justify-content:center;color:#0a0a0a;cursor:pointer;flex-shrink:0;}
+.gc-send-btn:disabled{opacity:0.35;cursor:default;}
+.rh-banner{background:linear-gradient(135deg,var(--s1) 0%,rgba(200,169,110,0.08) 100%);border:1px solid var(--gold);border-radius:8px;padding:1.1rem 1.3rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+.rh-banner.candidate{border-color:var(--success);background:linear-gradient(135deg,var(--s1) 0%,rgba(74,222,128,0.08) 100%);}
+.rh-banner-text{flex:1;min-width:220px;}
+.rh-banner-text h4{font-size:0.85rem;color:var(--gold);margin-bottom:0.25rem;}
+.rh-banner.candidate .rh-banner-text h4{color:var(--success);}
+.rh-banner-text p{font-size:0.75rem;color:var(--muted);line-height:1.4;}
+.rh-banner-dismiss{background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;line-height:1;padding:0.2rem;}
+</style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <a class="sidebar-logo" href="index.html"><div class="rm2-logo" data-size="small"></div></a>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Study</div>
+      <div class="nav-item" onclick="go('tracker.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 11h6M9 15h6"/></svg></span>Tracker</div>
+      <div class="nav-item active"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7.5" r="3.5"/><path d="M17.5 11a3.5 3.5 0 1 0 0-7"/><path d="M22 21v-1.5a4 4 0 0 0-3-3.87"/></svg></span>Study Groups</div>
+      <div class="nav-item" onclick="go('partners.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="7" cy="5" r="2.3"/><path d="M4 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><circle cx="17" cy="5" r="2.3"/><path d="M14 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><path d="M10 14.5h4"/></svg></span>Study Partners</div>
+      <div class="nav-item" onclick="go('store.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg></span>M² Store</div>
+    </nav>
+  </aside>
+
+  <!-- MOBILE NAV BACKDROP -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
+  <!-- RAISE-HAND TOASTS -->
+  <div class="hand-toast-container" id="handToastContainer"></div>
+
+  <div class="app-main">
+    <div class="topbar">
+      <button class="hamburger-btn" onclick="openMobileSidebar()" aria-label="Open menu">☰</button>
+      <div><div class="topbar-title">Study Groups</div><div class="topbar-sub">RevM² — study together, live</div></div>
+    </div>
+
+    <div class="gw" id="listView">
+      <div class="gw-head">
+        <div class="gw-tabs">
+          <button class="gw-tab active" data-tab="mine" onclick="setTab('mine',this)">My Groups</button>
+          <button class="gw-tab" data-tab="discover" onclick="setTab('discover',this)">Discover</button>
+        </div>
+        <button class="btn btn-gold btn-sm" onclick="openCreateModal()">+ Create group</button>
+      </div>
+
+      <div id="revheadBannerMount"></div>
+
+      <div class="gw-search" id="discoverSearch" style="display:none;">
+        <input type="text" id="searchBox" placeholder="Search public groups by name…" oninput="renderDiscover()">
+      </div>
+
+      <div class="grid" id="groupGrid"></div>
+    </div>
+
+    <!-- ═══ GROUP DETAIL VIEW ═══ -->
+    <div class="gw" id="detailView" style="display:none;">
+      <a class="gd-back" onclick="closeDetail()">← Back to groups</a>
+      <div class="gd-head">
+        <div>
+          <div class="gcard-name" id="gdName" style="font-size:1.1rem;"></div>
+          <div class="gcard-sub" id="gdMeta"></div>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;" id="gdActions">
+          <span id="gdCoinBal" style="font-size:0.78rem;color:var(--gold);"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg> —</span>
+        </div>
+      </div>
+
+      <!-- CURRENT FOCUS TIME -->
+      <div class="card focus-card" id="focusCard">
+        <div class="focus-top">
+          <div>
+            <div class="focus-label">Current Focus Time</div>
+            <div class="focus-time" id="focusTime">0:00:00</div>
+            <div class="focus-sub" id="focusSub">Not studying right now</div>
+          </div>
+          <div class="focus-avatar idle" id="focusAvatar">—</div>
+        </div>
+        <div class="focus-progress"><div class="focus-progress-fill" id="focusProgressFill"></div></div>
+        <div class="focus-controls" id="focusControls"></div>
+      </div>
+
+      <!-- STUDYING NOW -->
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-header studying-now-header">
+          <span class="card-title"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M12 2c1 3-3 4.5-3 8a3 3 0 0 0 6 0c1.5 1 2 2.8 2 4.3A6.3 6.3 0 0 1 5.5 14C5.5 8 12 6 12 2Z"/></svg> RevMGrid</span>
+          <span class="live-grid-sub" id="liveGridSub">—</span>
+        </div>
+        <div class="card-body">
+          <div class="live-grid" id="liveGrid"></div>
+          <div class="video-grid-wrap" id="videoGridWrap">
+            <div class="vg-spotlight" id="vgSpotlight"></div>
+            <div class="vg-grid" id="vgGrid"></div>
+            <div class="vg-pager" id="vgPager" style="display:none;">
+              <button class="vg-pager-btn" id="vgPrevBtn" onclick="vgChangePage(-1)" title="Previous"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+              <span class="vg-pager-label" id="vgPagerLabel">1/1</span>
+              <button class="vg-pager-btn" id="vgNextBtn" onclick="vgChangePage(1)" title="Next"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+            </div>
+            <div class="vg-hidden-note" id="vgHiddenNote" style="display:none;" onclick="vgUnhideAll()"></div>
+          </div>
+          <div class="call-controls-bar" id="callControlsBar">
+            <button class="cam-toggle-btn" id="camToggleBtn" onclick="toggleCamCall()" title="Join/leave video">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6.5" width="12" height="11" rx="2"/><path d="M17.5 10.2 21 8v8l-3.5-2.2z"/></svg>
+            </button>
+            <button class="cam-toggle-btn" id="voiceToggleBtn" onclick="toggleVoiceCall()" title="Join/leave voice">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5v3.5M9 21h6"/></svg>
+            </button>
+            <button class="cam-mic-btn" id="camMicBtn" onclick="toggleCamMic()" style="display:none;" title="Mute/unmute">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5v3.5M9 21h6"/></svg>
+            </button>
+            <button class="cam-mic-btn" id="deafenBtn" onclick="toggleDeafen()" style="display:none;" title="Quiet study — stop listening, keep your time recorded">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M7.5 12h9"/></svg>
+            </button>
+            <button class="cam-toggle-btn" id="raiseHandBtn" onclick="toggleRaiseHand()" style="display:none;" title="Raise hand — let everyone know you want to ask something">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12"/><path d="M11 12V4.5a1.5 1.5 0 0 1 3 0V12"/><path d="M14 12V6a1.5 1.5 0 0 1 3 0v9"/><path d="M17 11a1.5 1.5 0 0 1 3 0v4c0 3.5-2.5 6.5-6 6.5h-2c-2.2 0-3.6-.8-5-2.5L3.7 15.2c-.6-.8-.4-1.9.4-2.4.7-.5 1.6-.4 2.2.2L8 15"/></svg>
+            </button>
+          </div>
+          <div id="voiceAudioContainer" style="display:none;"></div>
+          <div class="tile-expand-overlay" id="tileExpandOverlay" onclick="closeTileExpand(event)">
+            <div class="tile-expand-box" onclick="event.stopPropagation()">
+              <button class="tile-expand-close" onclick="closeTileExpand()" title="Back to grid view" aria-label="Close">&times;</button>
+              <div class="tile-expand-media" id="tileExpandMedia"></div>
+              <div class="expand-thumb-strip" id="expandThumbStrip"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GROUP CHAT -->
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-header">
+          <span class="card-title"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M21 12c0 4.14-3.98 7.5-8.5 7.5-1.06 0-2.07-.18-3-.52L4 20l1.18-3.98A7.3 7.3 0 0 1 3.5 12C3.5 7.86 7.48 4.5 12 4.5S21 7.86 21 12z"/></svg> Group Chat</span>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <div class="gc-scroll" id="gcScroll"><div class="gc-empty" id="gcEmpty">No messages yet — say hi 👋</div></div>
+          <div class="gc-composer">
+            <textarea id="gcInput" class="gc-textarea" placeholder="Message the group…" rows="1" oninput="gcAutoGrow(this)" onkeydown="gcHandleKeydown(event)"></textarea>
+            <button class="gc-send-btn" id="gcSendBtn" onclick="sendGroupChatMessage()" disabled title="Send">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHALLENGE PANEL -->
+      <div class="card" style="margin-bottom:1rem;border-color:rgba(200,169,110,0.3);">
+        <div class="card-header">
+          <span class="card-title"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg> Challenges</span>
+          <button class="btn btn-gold btn-sm" onclick="openChallengeModal()">+ Give a Challenge</button>
+        </div>
+        <div id="challengeList" class="card-body" style="padding:0.5rem 0.85rem;font-size:0.76rem;color:var(--muted);">Loading…</div>
+      </div>
+
+      <div class="invite-box" id="inviteBox" style="display:none;">
+        <span style="font-size:0.7rem;color:var(--muted);">Invite link:</span>
+        <input id="inviteLinkInput" readonly>
+        <button class="icon-btn" onclick="copyInvite()">Copy</button>
+        <button class="icon-btn" onclick="regenInvite()">Regenerate</button>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem;" id="adminSettingsCard" style="display:none;">
+        <div class="card-header"><span class="card-title">Admin settings</span></div>
+        <div class="card-body">
+          <div class="field-row">
+            <div class="field">
+              <label>Visibility</label>
+              <select id="visSelect" onchange="updateGroupSetting('visibility',this.value)">
+                <option value="public">Public — searchable</option>
+                <option value="private">Private — invite link only</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Member limit</label>
+              <input type="number" id="limitInput" min="1" onchange="updateGroupSetting('member_limit',Number(this.value))">
+            </div>
+            <div class="field">
+              <label>Day resets at</label>
+              <select id="resetHourSelect" onchange="updateGroupSetting('day_reset_hour',Number(this.value))"></select>
+            </div>
+          </div>
+          <p style="font-size:0.68rem;color:var(--dim);">"Day resets at" controls when the live study-day rolls over for leaderboards, streaks and bets in this group — change it anytime.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Members</span><span class="gcard-sub" id="memberCount"></span></div>
+        <div id="memberList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE GROUP MODAL -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <h3>Create a study group</h3>
+    <div class="field"><label>Group name</label><input id="cgName" placeholder="e.g. JEE 2027 Grind"></div>
+    <div class="field"><label>Description (optional)</label><textarea id="cgDesc" rows="2"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label>Visibility</label>
+        <select id="cgVis"><option value="public">Public</option><option value="private">Private</option></select>
+      </div>
+      <div class="field"><label>Member limit</label>
+        <select id="cgLimit"><option>20</option><option selected>50</option><option>100</option><option>1000</option></select>
+      </div>
+    </div>
+    <div class="field" id="cgRevheadRow" style="display:none;">
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+        <input type="checkbox" id="cgRevhead" style="width:auto;">
+        <span>Make this an official RevHead community group <span style="color:var(--gold);">(verified badge)</span></span>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeCreateModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="createGroup()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHALLENGE MODAL -->
+<div class="modal-overlay" id="challengeModal">
+  <div class="modal">
+    <h3><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg> Give a Challenge</h3>
+    <p style="font-size:0.74rem;color:var(--muted);margin-bottom:0.8rem;">Challenge 2 or more group members. Whoever studies the most hours by today's day-reset wins. Put M² coins in the bounty — top scorer takes 80%, 2nd takes 15%, 3rd takes 5%.</p>
+    <div class="field"><label>Challenge title (optional)</label><input id="chTitle" placeholder="e.g. Who's the real grinder today?"></div>
+    <div class="field">
+      <label>Invite members (search by username)</label>
+      <input id="chUserSearch" placeholder="Type username to add…" oninput="searchChallengeUsers()">
+      <div id="chUserResults" style="margin-top:0.35rem;"></div>
+      <div id="chSelectedUsers" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.5rem;"></div>
+    </div>
+    <div class="field"><label>Your bounty pledge (M² coins) — optional</label><input type="number" id="chBounty" min="0" placeholder="0" style="width:100%;"></div>
+    <div id="chBountyNote" style="font-size:0.68rem;color:var(--muted);margin-top:0.25rem;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeChallengeModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="createChallenge()">Start Challenge</button>
+    </div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+  <script src="floating-timer.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.0.js"></script>
+<script>
+
+const sb = window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL, REVM2_CONFIG.SUPABASE_ANON);
+// go() comes from shared.js now (adds the branded page-transition buffer)
+
+/* ── Metered TURN credentials (same as chat.html) ────────────
+   TURN is used ONLY by the ~15-20% of peers that can't do P2P.
+   Fill these in from your Metered.ca dashboard.
+   Leave empty → falls back to STUN-only (no relay, no cost). */
+const METERED_APP_DOMAIN = 'revm2.metered.live';
+const METERED_API_KEY    = '750826d81cf1efa37341c785599505a59e5d';
+
+let me = null;
+let myGroups = [];     // groups I'm a member of, with my role
+let activeTab = 'mine';
+let currentGroup = null;
+let presenceChannel = null;
+let iAmVerifiedRevHead = false;
+
+async function init(){
+  RevM2Loader.show('Loading your groups…');
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){ window.location.href='login.html'; return; }
+  me = session.user;
+
+  const { data: myProfile } = await sb.from('user_profiles').select('is_revhead,revhead_status').eq('id', me.id).single();
+  iAmVerifiedRevHead = !!(myProfile?.is_revhead && myProfile?.revhead_status === 'verified');
+  const revheadRow = document.getElementById('cgRevheadRow');
+  if(revheadRow) revheadRow.style.display = iAmVerifiedRevHead ? 'block' : 'none';
+
+  // private-group join via ?invite=<token> in the URL
+  const inviteToken = new URLSearchParams(location.search).get('invite');
+  if(inviteToken) await joinViaInvite(inviteToken);
+
+  await loadMyGroups();
+  renderList();
+  await renderRevheadBanner(myProfile);
+
+  const groupParam = new URLSearchParams(location.search).get('group');
+  if(groupParam) openGroup(groupParam);
+  RevM2Loader.hide();
+}
+
+async function loadMyGroups(){
+  const { data, error } = await sb.from('group_members')
+    .select('group_id, role, study_groups(*)')
+    .eq('user_id', me.id);
+  if(error){ console.error(error); return; }
+  myGroups = (data||[]).map(r=>({...r.study_groups, my_role:r.role}));
+}
+
+function setTab(tab, el){
+  activeTab = tab;
+  document.querySelectorAll('.gw-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('discoverSearch').style.display = tab==='discover' ? 'flex' : 'none';
+  if(tab==='discover') renderDiscover(); else renderList();
+}
+
+function renderList(){
+  const grid = document.getElementById('groupGrid');
+  if(!myGroups.length){
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">You haven't joined any groups yet. Create one, or hit Discover to find a public group.</div>`;
+    return;
+  }
+  grid.innerHTML = myGroups.map(g=>groupCardHtml(g, true)).join('');
+  rm2Stagger(grid.children);
+}
+
+async function renderDiscover(){
+  const q = document.getElementById('searchBox').value.trim();
+  let query = sb.from('study_groups').select('*').eq('visibility','public').order('created_at',{ascending:false}).limit(40);
+  if(q) query = query.ilike('name', `%${q}%`);
+  const { data, error } = await query;
+  const grid = document.getElementById('groupGrid');
+  if(error){ grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">Couldn't load groups.</div>`; return; }
+  const myIds = new Set(myGroups.map(g=>g.id));
+  const results = (data||[]).filter(g=>!myIds.has(g.id));
+  if(!results.length){ grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">No public groups match yet — be the first to create one.</div>`; return; }
+  grid.innerHTML = results.map(g=>groupCardHtml(g, false)).join('');
+  rm2Stagger(grid.children);
+}
+
+async function renderRevheadBanner(myProfile){
+  const mount = document.getElementById('revheadBannerMount');
+  if(!mount) return;
+
+  if(myProfile?.revhead_status === 'verified' || myProfile?.revhead_status === 'pending'){
+    mount.innerHTML = ''; // already a RevHead or already in the queue — no need to promote it
+    return;
+  }
+  if(Store.get('revm2_revhead_banner_dismissed', false)){
+    mount.innerHTML = '';
+    return;
+  }
+
+  const { data: candidacy } = await sb.rpc('my_revhead_upgrade_candidacy');
+  const c = candidacy && candidacy[0];
+
+  if(c && !c.already_applied){
+    mount.innerHTML = `
+      <div class="rh-banner candidate">
+        <div class="rh-banner-text">
+          <h4>🎉 "${escHtml(c.group_name)}" is growing fast — ${c.member_count} members</h4>
+          <p>Your group is doing well enough to apply for verified RevHead status — full earning rate, a verified badge, and your own referral code.</p>
+        </div>
+        <a class="btn btn-gold btn-sm" href="revhead.html">Apply now</a>
+        <button class="rh-banner-dismiss" onclick="dismissRevheadBanner()">✕</button>
+      </div>`;
+  } else {
+    mount.innerHTML = `
+      <div class="rh-banner">
+        <div class="rh-banner-text">
+          <h4>Become a RevHead</h4>
+          <p>Manage a JEE, NEET, UPSC or other exam community? Verified RevHeads get an official group, a verified badge, the full earning rate, and their own referral code — reviewed within ~24h.</p>
+        </div>
+        <a class="btn btn-gold btn-sm" href="revhead.html">Learn more</a>
+        <button class="rh-banner-dismiss" onclick="dismissRevheadBanner()">✕</button>
+      </div>`;
+  }
+}
+
+function dismissRevheadBanner(){
+  Store.set('revm2_revhead_banner_dismissed', true);
+  document.getElementById('revheadBannerMount').innerHTML = '';
+}
+
+function groupCardHtml(g, joined){
+  const officialBadge = g.is_official ? `<span class="vis-badge" style="color:var(--gold);border-color:var(--gold);">OFFICIAL</span>` : '';
+  const revheadBadge = g.is_revhead_group ? `<span class="vis-badge" style="color:var(--success);border-color:var(--success);">VERIFIED REVHEAD</span>` : '';
+  return `<div class="gcard">
+    <div class="gcard-top">
+      <span class="gcard-name">${escHtml(g.name)}</span>
+      ${officialBadge || revheadBadge || `<span class="vis-badge ${g.visibility}">${g.visibility}</span>`}
+    </div>
+    <div class="gcard-sub">${escHtml(g.description||'No description')}</div>
+    <div class="gcard-sub">${g.is_official ? `${(g.member_limit||0).toLocaleString()} cap` : `Limit: ${g.member_limit}`} · resets ${fmtHour(g.day_reset_hour)}</div>
+    <button class="btn ${joined?'btn-ghost':'btn-gold'} btn-sm" style="margin-top:0.3rem;"
+      onclick="${joined ? `openGroup('${g.id}')` : `joinPublicGroup('${g.id}')`}">${joined?'Open':'Join'}</button>
+  </div>`;
+}
+
+function fmtHour(h){
+  if(h===0) return '12 AM';
+  if(h===12) return '12 PM';
+  return h<12 ? `${h} AM` : `${h-12} PM`;
+}
+
+async function createGroup(){
+  const name = document.getElementById('cgName').value.trim();
+  if(!name){ alert('Group name required'); return; }
+  const payload = {
+    name,
+    description: document.getElementById('cgDesc').value.trim(),
+    owner_id: me.id,
+    visibility: document.getElementById('cgVis').value,
+    member_limit: Number(document.getElementById('cgLimit').value),
+    is_revhead_group: iAmVerifiedRevHead && !!document.getElementById('cgRevhead')?.checked
+  };
+  const { data, error } = await sb.from('study_groups').insert(payload).select().single();
+  if(error){ alert('Could not create group: '+error.message); return; }
+  await sb.from('group_members').insert({ group_id:data.id, user_id:me.id, role:'admin' });
+  closeCreateModal();
+  await loadMyGroups();
+  openGroup(data.id);
+}
+
+async function joinPublicGroup(groupId){
+  const { count } = await sb.from('group_members').select('*',{count:'exact',head:true}).eq('group_id',groupId);
+  const { data: g } = await sb.from('study_groups').select('member_limit').eq('id',groupId).single();
+  if(g && count >= g.member_limit){ alert('This group is full.'); return; }
+  const { error } = await sb.from('group_members').insert({ group_id:groupId, user_id:me.id, role:'member' });
+  if(error){ alert('Could not join: '+error.message); return; }
+  await loadMyGroups();
+  openGroup(groupId);
+}
+
+async function joinViaInvite(token){
+  const { data: g, error } = await sb.from('study_groups').select('id,member_limit').eq('invite_token',token).single();
+  if(error || !g){ return; }
+  const { count } = await sb.from('group_members').select('*',{count:'exact',head:true}).eq('group_id',g.id);
+  if(count >= g.member_limit){ alert('This group is full.'); return; }
+  await sb.from('group_members').insert({ group_id:g.id, user_id:me.id, role:'member' }); // no-op if already a member (PK conflict)
+}
+
+function openCreateModal(){ document.getElementById('createModal').classList.add('show'); }
+function closeCreateModal(){ document.getElementById('createModal').classList.remove('show'); }
+
+/* ── GROUP DETAIL ───────────────────────────────────────── */
+async function openGroup(groupId){
+  const { data: g, error } = await sb.from('study_groups').select('*').eq('id',groupId).single();
+  if(error){ alert('Could not load group.'); return; }
+  const { data: membership } = await sb.from('group_members').select('role').eq('group_id',groupId).eq('user_id',me.id).single();
+  currentGroup = { ...g, my_role: membership?.role || null };
+
+  document.getElementById('listView').style.display='none';
+  document.getElementById('detailView').style.display='block';
+  renderGroupDetail();
+  loadVgPrefs(groupId);
+  await loadMembers();
+  await loadCoinBalance();
+  await loadChallenges();
+  await loadLiveGrid();
+  await loadGroupChat(groupId);
+  subscribeGroupChat(groupId);
+  renderFocusCard();
+  startFocusTick();
+  startLiveGridTick();
+  subscribeLivePresence(groupId);
+  initCamChannel(groupId);
+}
+
+function closeDetail(){
+  document.getElementById('detailView').style.display='none';
+  document.getElementById('listView').style.display='block';
+  stopFocusTick();
+  stopLiveGridTick();
+  if(presenceChannel){ sb.removeChannel(presenceChannel); presenceChannel=null; }
+  teardownCamCall();
+  teardownGroupChat();
+  currentGroup = null;
+}
+
+function renderGroupDetail(){
+  const g = currentGroup;
+  document.getElementById('gdName').textContent = g.name;
+  document.getElementById('gdMeta').textContent = `${g.visibility==='public'?'Public':'Private'} · limit ${g.member_limit} · day resets ${fmtHour(g.day_reset_hour)}`;
+
+  const isAdmin = g.my_role === 'admin';
+  const actions = document.getElementById('gdActions');
+  actions.innerHTML = '';
+  if(!isAdmin && g.my_role){
+    actions.innerHTML = `<button class="btn btn-danger btn-sm" onclick="leaveGroup()">Leave group</button>`;
+  }
+
+  document.getElementById('adminSettingsCard').style.display = isAdmin ? 'block' : 'none';
+  document.getElementById('inviteBox').style.display = (isAdmin && g.visibility==='private') ? 'flex' : 'none';
+  if(isAdmin){
+    const lockedOfficial = !!g.is_official;
+    document.getElementById('visSelect').value = g.visibility;
+    document.getElementById('visSelect').disabled = lockedOfficial; // official groups stay public, forever
+    document.getElementById('limitInput').value = g.member_limit;
+    document.getElementById('limitInput').disabled = lockedOfficial;
+    const sel = document.getElementById('resetHourSelect');
+    sel.innerHTML = Array.from({length:24},(_,h)=>`<option value="${h}" ${h===g.day_reset_hour?'selected':''}>${fmtHour(h)}</option>`).join('');
+    if(g.visibility==='private'){
+      document.getElementById('inviteLinkInput').value = `${location.origin}${location.pathname}?invite=${g.invite_token}`;
+    }
+    if(lockedOfficial){
+      const note = document.getElementById('officialNote');
+      if(!note){
+        document.getElementById('adminSettingsCard').querySelector('.card-body').insertAdjacentHTML('afterbegin',
+          `<p id="officialNote" style="font-size:0.7rem;color:var(--gold);margin-bottom:0.75rem;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 5H4v2a3 3 0 0 0 3 3M16 5h4v2a3 3 0 0 1-3 3"/><path d="M12 13v3M9 20h6M9.5 20c0-2 1-2.5 2.5-3 1.5.5 2.5 1 2.5 3"/></svg> Official exam group — stays public with an open member cap. Adminship here is earned: study the most hours, lead the daily leaderboard for 8 straight months, and it auto-transfers to you. Lose the #1 spot 3 times as admin and it reverts to the site.</p>`);
+      }
+    }
+  }
+}
+
+async function updateGroupSetting(field, value){
+  const { error } = await sb.from('study_groups').update({ [field]: value }).eq('id', currentGroup.id);
+  if(error){ alert('Update failed: '+error.message); return; }
+  currentGroup[field] = value;
+  renderGroupDetail();
+}
+
+function copyInvite(){
+  navigator.clipboard.writeText(document.getElementById('inviteLinkInput').value);
+}
+async function regenInvite(){
+  const { data, error } = await sb.from('study_groups')
+    .update({ invite_token: null }) // trigger default regen isn't automatic on update — generate client-side instead
+    .eq('id', currentGroup.id).select().single();
+  // generate a fresh random token client-side since default only applies on insert
+  const fresh = crypto.randomUUID().replace(/-/g,'');
+  await sb.from('study_groups').update({ invite_token: fresh }).eq('id', currentGroup.id);
+  currentGroup.invite_token = fresh;
+  renderGroupDetail();
+}
+
+async function leaveGroup(){
+  if(!confirm('Leave this group?')) return;
+  await sb.from('group_members').delete().eq('group_id',currentGroup.id).eq('user_id',me.id);
+  await loadMyGroups();
+  closeDetail();
+  renderList();
+}
+
+async function loadMembers(){
+  const { data, error } = await sb.from('group_members')
+    .select('user_id, role, joined_at')
+    .eq('group_id', currentGroup.id)
+    .order('joined_at',{ascending:true});
+  if(error){ document.getElementById('memberList').innerHTML = ''; return; }
+
+  document.getElementById('memberCount').textContent = `${data.length} / ${currentGroup.member_limit}`;
+
+  // batch-fetch display names, today's totals, tags — kept simple via a couple of queries
+  const userIds = data.map(m=>m.user_id);
+  // avatar_url is optional (only exists once the M² Store avatar item lands) — fall back cleanly if the column isn't there yet.
+  let profiles;
+  { const withAvatar = await sb.from('user_profiles').select('id,track,avatar_url,username').in('id', userIds.length?userIds:['00000000-0000-0000-0000-000000000000']);
+    if(withAvatar.error){
+      const noAvatar = await sb.from('user_profiles').select('id,track').in('id', userIds.length?userIds:['00000000-0000-0000-0000-000000000000']);
+      profiles = noAvatar.data;
+    } else profiles = withAvatar.data;
+  }
+  const nameOf = id => (profiles||[]).find(p=>p.id===id)?.track || id.slice(0,6); // swap for a real display_name column when added
+  const usernameOf = id => (profiles||[]).find(p=>p.id===id)?.username || null;
+  membersCache = {}; avatarCache = {}; rolesCache = {}; usernameCache = {};
+  userIds.forEach(id=>{ membersCache[id]=nameOf(id); avatarCache[id]=(profiles||[]).find(p=>p.id===id)?.avatar_url || null; usernameCache[id]=usernameOf(id); }); // reused by the live-grid render
+  data.forEach(m=>{ rolesCache[m.user_id]=m.role; });
+
+  // friend status vs. me, for the "Add friend" button on every row (best-effort — ignore if RPC not deployed yet)
+  friendStatusCache = {};
+  try{
+    const otherIds = userIds.filter(id=>id!==me.id);
+    if(otherIds.length){
+      const { data: statuses } = await sb.rpc('get_friend_statuses', { p_user_ids: otherIds });
+      (statuses||[]).forEach(s=>{ friendStatusCache[s.user_id] = { status:s.friend_status, friendshipId:s.friendship_id }; });
+    }
+  }catch(e){ /* friends feature optional — group still works without it */ }
+
+  const { data: tags } = await sb.from('user_tags').select('user_id,tag').eq('group_id',currentGroup.id).in('user_id', userIds.length?userIds:['x']);
+  const tagsOf = id => (tags||[]).filter(t=>t.user_id===id);
+
+  let streakOf = () => null;
+  if(currentGroup.is_official){
+    const { data: streaks } = await sb.from('group_leadership_streaks').select('user_id,current_streak').eq('group_id',currentGroup.id).in('user_id', userIds.length?userIds:['x']);
+    streakOf = id => (streaks||[]).find(s=>s.user_id===id)?.current_streak ?? 0;
+  }
+
+  document.getElementById('memberList').innerHTML = data.map(m=>{
+  rm2Stagger(document.getElementById('memberList').children);
+    const isAdmin = m.role==='admin';
+    const iAmAdmin = currentGroup.my_role==='admin';
+    const myTags = tagsOf(m.user_id).map(t=>`<span class="tag-pill tag-${t.tag}">${t.tag.replace('_',' ')}</span>`).join('');
+    const streakNote = currentGroup.is_official ? `<div class="member-meta" style="color:var(--gold);"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M12 2c1 3-3 4.5-3 8a3 3 0 0 0 6 0c1.5 1 2 2.8 2 4.3A6.3 6.3 0 0 1 5.5 14C5.5 8 12 6 12 2Z"/></svg> ${streakOf(m.user_id)}-day lead streak (240 = auto-admin)</div>` : '';
+    return `<div class="member-row" data-user="${m.user_id}">
+      <div class="avatar${isAdmin?' admin':''}" id="av-${m.user_id}">${avatarInner(m.user_id)}</div>
+      <div>
+        <div class="member-name">${escHtml(nameOf(m.user_id))}${isAdmin?'<span class="member-role">Admin</span>':''}${myTags}</div>
+        <div class="member-meta" id="meta-${m.user_id}">Not studying right now</div>
+        ${streakNote}
+      </div>
+      ${iAmAdmin && m.user_id!==me.id ? `<div class="member-actions">
+        <button class="icon-btn" onclick="viewAnalytics('${m.user_id}')">Stats</button>
+        ${friendBtnHtml(m.user_id)}
+        ${(!currentGroup.is_official || m.user_id!==currentGroup.system_owner_id) ? `
+          <button class="icon-btn" onclick="transferAdmin('${m.user_id}')">Make admin</button>
+          <button class="icon-btn danger" onclick="kickMember('${m.user_id}')">Kick</button>` : ''}
+      </div>` : `<div class="member-actions"><button class="icon-btn" onclick="viewAnalytics('${m.user_id}')">Stats</button>${m.user_id!==me.id?friendBtnHtml(m.user_id):''}</div>`}
+    </div>`;
+  }).join('') || `<div class="empty-state">No members yet.</div>`;
+}
+
+async function kickMember(userId){
+  if(!confirm('Remove this member from the group?')) return;
+  await sb.from('group_members').delete().eq('group_id',currentGroup.id).eq('user_id',userId);
+  loadMembers();
+}
+
+async function transferAdmin(userId){
+  if(!confirm('Transfer adminship to this member? You will become a regular member.')) return;
+  await sb.from('group_members').update({ role:'admin' }).eq('group_id',currentGroup.id).eq('user_id',userId);
+  await sb.from('group_members').update({ role:'member' }).eq('group_id',currentGroup.id).eq('user_id',me.id);
+  await sb.from('study_groups').update({ owner_id:userId }).eq('id',currentGroup.id);
+  currentGroup.my_role = 'member';
+  renderGroupDetail();
+  loadMembers();
+}
+
+function viewAnalytics(userId){
+  // Phase 3 will build the full heatmap/streak view — placeholder hookup for now.
+  window.location.href = `analytics-user.html?user=${userId}&group=${currentGroup.id}`;
+}
+
+async function loadCoinBalance(){
+  const { data } = await sb.from('user_wallets').select('coins').eq('user_id',me.id).single();
+  document.getElementById('gdCoinBal').innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg> ${(data?.coins||0).toLocaleString()} M²`;
+}
+
+let challengeSelected = [];
+async function loadChallenges(){
+  const { data } = await sb.from('group_challenges')
+    .select('*, challenge_participants(user_id,coins_pledged,result,coins_won)')
+    .eq('group_id',currentGroup.id).order('created_at',{ascending:false}).limit(10);
+  const el = document.getElementById('challengeList');
+  if(!data?.length){ el.innerHTML=`<span style="color:var(--dim);">No challenges yet — throw down the first one.</span>`; return; }
+  el.innerHTML = data.map(c=>{
+    const pool = (c.challenge_participants||[]).reduce((s,p)=>s+(p.coins_pledged||0),0);
+    const count = c.challenge_participants?.length||0;
+    const status = c.status==='open'?`<span style="color:var(--gold);">LIVE</span>`:`<span style="color:var(--success);">Resolved</span>`;
+    const inIt = (c.challenge_participants||[]).some(p=>p.user_id===me.id);
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:0.55rem 0;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-size:0.8rem;font-weight:600;color:var(--white);">${escHtml(c.title||'Challenge')}</div>
+        <div style="font-size:0.68rem;color:var(--muted);">${count} participants · <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg> ${pool.toLocaleString()} pot · ${status}</div>
+      </div>
+      ${c.status==='open'&&!inIt?`<button class="btn btn-gold btn-sm" onclick="joinChallenge('${c.id}')">Join</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+let challengeSearchResults=[];
+async function searchChallengeUsers(){
+  const q=document.getElementById('chUserSearch').value.trim();
+  if(q.length<2){document.getElementById('chUserResults').innerHTML='';return;}
+  const {data}=await sb.from('user_profiles').select('id,display_name').ilike('display_name',`%${q}%`).limit(6);
+  const alreadyIds=new Set([me.id,...challengeSelected.map(u=>u.id)]);
+  document.getElementById('chUserResults').innerHTML=(data||[]).filter(u=>!alreadyIds.has(u.id))
+    .map(u=>`<div onclick="selectChallengeUser('${u.id}','${escAttr(u.display_name||u.id)}')" style="cursor:pointer;padding:0.35rem 0.6rem;background:var(--s2);border:1px solid var(--border);font-size:0.76rem;color:var(--text);margin-top:0.2rem;">${escHtml(u.display_name||u.id)}</div>`).join('')||'<div style="font-size:0.72rem;color:var(--dim);margin-top:0.3rem;">No users found</div>';
+}
+function selectChallengeUser(id,name){if(challengeSelected.find(u=>u.id===id))return;challengeSelected.push({id,name});document.getElementById('chUserSearch').value='';document.getElementById('chUserResults').innerHTML='';renderSelectedUsers();}
+function removeChallUser(id){challengeSelected=challengeSelected.filter(u=>u.id!==id);renderSelectedUsers();}
+function renderSelectedUsers(){
+  document.getElementById('chSelectedUsers').innerHTML=challengeSelected.map(u=>`<span style="background:var(--s2);border:1px solid var(--border);font-size:0.72rem;padding:0.25rem 0.55rem;color:var(--text);">${escHtml(u.name)} <span onclick="removeChallUser('${u.id}')" style="cursor:pointer;color:var(--danger);margin-left:0.25rem;">✕</span></span>`).join('');
+  const n=challengeSelected.length+1;
+  document.getElementById('chBountyNote').textContent=n>=4?'Split: 80% / 15% / 5%':n===3?'Split: 85% / 15%':n===2?'Winner takes all':'';
+}
+function openChallengeModal(){challengeSelected=[];renderSelectedUsers();document.getElementById('challengeModal').classList.add('show');}
+function closeChallengeModal(){document.getElementById('challengeModal').classList.remove('show');}
+async function createChallenge(){
+  if(challengeSelected.length<2){alert('Challenge at least 2 other members.');return;}
+  const bounty=Math.max(0,parseInt(document.getElementById('chBounty').value)||0);
+  if(bounty>0){const {data:w}=await sb.from('user_wallets').select('coins').eq('user_id',me.id).single();if((w?.coins||0)<bounty){alert('Not enough M² coins.');return;}}
+  const today=new Date().toISOString().split('T')[0];
+  const {data:ch,error}=await sb.from('group_challenges').insert({group_id:currentGroup.id,created_by:me.id,title:document.getElementById('chTitle').value.trim()||'Study Challenge',challenge_date:today,bounty_pool:bounty}).select().single();
+  if(error){alert('Could not create: '+error.message);return;}
+  await sb.from('challenge_participants').insert([{challenge_id:ch.id,user_id:me.id,coins_pledged:bounty},...challengeSelected.map(u=>({challenge_id:ch.id,user_id:u.id,coins_pledged:0}))]);
+  if(bounty>0) await sb.rpc('spend_coins',{uid:me.id,amount:bounty});
+  closeChallengeModal();await loadChallenges();await loadCoinBalance();
+}
+async function joinChallenge(challengeId){
+  const pledge=parseInt(prompt('Pledge M² coins to the bounty (0 for none):')||'0')||0;
+  if(pledge>0){const {data:w}=await sb.from('user_wallets').select('coins').eq('user_id',me.id).single();if((w?.coins||0)<pledge){alert('Not enough coins.');return;}await sb.rpc('spend_coins',{uid:me.id,amount:pledge});}
+  await sb.from('challenge_participants').insert({challenge_id:challengeId,user_id:me.id,coins_pledged:pledge});
+  await loadChallenges();await loadCoinBalance();
+}
+
+/* ── LIVE PRESENCE (glow/B&W avatars) ──────────────────────
+   Listens for study_sessions changes scoped to this group via
+   Supabase Realtime (Postgres Changes). Drives both the plain
+   member-row dot (admin list) and the Studying Now grid + the
+   Current Focus Time card, so every open tab on this group page
+   updates live the moment anyone starts/pauses/resumes/stops. */
+function subscribeLivePresence(groupId){
+  if(presenceChannel) sb.removeChannel(presenceChannel);
+  presenceChannel = sb.channel(`group-presence-${groupId}`)
+    .on('postgres_changes', { event:'*', schema:'public', table:'study_sessions', filter:`group_id=eq.${groupId}` },
+      payload => { applyPresence(payload.new || payload.old); loadLiveGrid(); renderFocusCard(); })
+    .subscribe();
+  refreshPresenceSnapshot(groupId);
+}
+
+async function refreshPresenceSnapshot(groupId){
+  const { data } = await sb.from('study_sessions').select('user_id,started_at,paused_at,ended_at,subject')
+    .eq('group_id',groupId).is('ended_at', null);
+  (data||[]).forEach(applyPresence);
+}
+
+function applyPresence(s){
+  if(!s) return;
+  const av = document.getElementById('av-'+s.user_id);
+  const meta = document.getElementById('meta-'+s.user_id);
+  if(!av || !meta) return;
+  const adminCls = rolesCache[s.user_id]==='admin' ? ' admin' : '';
+  if(s.ended_at){ av.className='avatar'+adminCls; meta.textContent='Not studying right now'; return; }
+  if(s.paused_at){ av.className='avatar paused'+adminCls; meta.textContent=`Paused · ${s.subject||'—'}`; return; }
+  av.className='avatar live'+adminCls;
+  meta.innerHTML=`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--danger);margin-right:0.3rem;vertical-align:1px;"></span>Live now · ${escHtml(s.subject||'studying')}`;
+}
+
+/* ── VIDEO STUDY CALL (WebRTC mesh) ──────────────────────────
+   Lets everyone in "Studying Now" turn their camera on and see
+   each other live, right inside their grid tile. No dedicated
+   video server: Supabase Realtime is only used as the "phone
+   switchboard" — a presence list of who's in the call, plus a
+   broadcast channel to pass WebRTC offers/answers/ICE candidates
+   between browsers. The actual video/audio streams flow directly
+   peer-to-peer once connected. Works best for small groups; each
+   extra camera adds a direct connection for everyone else, so
+   video quality/CPU load rises with more simultaneous cameras.
+   There's no TURN relay configured, so a small number of users on
+   very restrictive networks (e.g. locked-down school/office wifi)
+   may fail to connect — everyone else works fine. */
+let camChannel = null;
+let joinedCam = false;
+let joinedVoice = false;       // voice-only mesh state (mic, no camera)
+let voiceStream = null;        // audio-only MediaStream for voice-only participants
+let micOn = true;
+let deafened = false;       // "quiet study" — stop hearing others while staying joined & tracked
+let handRaised = false;     // raise-hand state, broadcast to everyone in the call
+let expandFocusUserId = null; // who's currently "big" in the speaker view overlay
+let localStream = null;
+const camPeers = {};        // user_id -> RTCPeerConnection
+const remoteStreams = {};   // user_id -> MediaStream
+const voiceAudioEls = {};   // user_id -> hidden <audio> element playing that peer's voice-only stream
+let camActiveUsers = new Set();
+
+/* ── Video-grid (Zoom-style) state ────────────────────────────
+   Pin/hide are per-group, per-device preferences (not synced to
+   other members — hiding someone only affects your own screen).
+   speakingUsers is kept in sync by attachSpeakingDetector's
+   per-frame volume check, and drives which tile gets the
+   automatic spotlight. */
+let vgPinnedIds  = new Set();   // stays visible on every page, exempt from pagination rotation
+let vgHiddenIds  = new Set();   // hidden from MY grid only
+let vgPage       = 0;           // current page of the rotating (non-pinned) tiles
+const VG_PAGE_SIZE = 8;         // tiles per page, not counting the spotlight or pinned tiles
+const speakingUsers = new Set();
+
+function vgPrefKeys(groupId){
+  return { pin: `revm2_vg_pinned_${groupId}`, hide: `revm2_vg_hidden_${groupId}` };
+}
+function loadVgPrefs(groupId){
+  const { pin, hide } = vgPrefKeys(groupId);
+  try{ vgPinnedIds = new Set(JSON.parse(localStorage.getItem(pin) || '[]')); } catch(e){ vgPinnedIds = new Set(); }
+  try{ vgHiddenIds = new Set(JSON.parse(localStorage.getItem(hide) || '[]')); } catch(e){ vgHiddenIds = new Set(); }
+  vgPage = 0;
+}
+function saveVgPrefs(){
+  if(!currentGroup) return;
+  const { pin, hide } = vgPrefKeys(currentGroup.id);
+  localStorage.setItem(pin, JSON.stringify([...vgPinnedIds]));
+  localStorage.setItem(hide, JSON.stringify([...vgHiddenIds]));
+}
+function vgTogglePin(userId, e){
+  if(e) e.stopPropagation();
+  if(vgPinnedIds.has(userId)) vgPinnedIds.delete(userId); else vgPinnedIds.add(userId);
+  saveVgPrefs();
+  renderLiveGridDOM();
+}
+function vgToggleHide(userId, e){
+  if(e) e.stopPropagation();
+  vgHiddenIds.add(userId);
+  vgPinnedIds.delete(userId); // can't stay pinned once hidden
+  saveVgPrefs();
+  renderLiveGridDOM();
+}
+function vgUnhideAll(){
+  vgHiddenIds = new Set();
+  saveVgPrefs();
+  renderLiveGridDOM();
+}
+function vgChangePage(delta){
+  vgPage += delta;
+  renderLiveGridDOM();
+}
+
+/* ── ICE / TURN for group calls ──────────────────────────────
+   Architecture decision (matches chat.html 1:1 approach):
+     iceTransportPolicy = 'all'  →  TURN used ONLY when direct
+     peer-to-peer (host) or STUN (srflx) both fail — i.e. only
+     the ~15-20% of users on symmetric NAT / restrictive networks
+     that genuinely need relay.  Everyone else goes P2P for free.
+
+   Mesh participant threshold:
+     ≤ 4 peers  →  mesh (everyone connects to everyone directly)
+     5+ peers   →  SFU path (stub below — wire up Agora/Livekit
+                   when your SFU is ready; mesh still used as
+                   fallback if SFU URL not configured yet)
+
+   Same Metered free-tier credentials as chat.html. */
+const GROUP_MESH_MAX       = 4;   // max peers before SFU for VIDEO (bandwidth-heavy)
+const GROUP_VOICE_MESH_MAX = 8;   // max peers before SFU for VOICE-ONLY (audio is ~30kbps, much lighter)
+const SFU_URL = '';               // TODO: set to your SFU/Agora endpoint when ready
+
+const _GRP_STUN_ONLY = [{ urls: 'stun:stun.l.google.com:19302' }];
+let _grpIceCache = null, _grpIceFetchedAt = 0;
+const _GRP_ICE_CACHE_MS = 6 * 60 * 60 * 1000;
+
+// Reuse same Metered domain/key as chat.html — defined in the
+// page-level <script> block above (METERED_APP_DOMAIN, METERED_API_KEY).
+// If those constants aren't defined here, fall back to STUN-only.
+async function getGroupIceServers(){
+  const domain = (typeof METERED_APP_DOMAIN !== 'undefined') ? METERED_APP_DOMAIN : '';
+  const key    = (typeof METERED_API_KEY    !== 'undefined') ? METERED_API_KEY    : '';
+  if(!domain || !key) return _GRP_STUN_ONLY;
+  const fresh = _grpIceCache && (Date.now() - _grpIceFetchedAt) < _GRP_ICE_CACHE_MS;
+  if(fresh) return _grpIceCache;
+  try {
+    const res = await fetch(`https://${domain}/api/v1/turn/credentials?apiKey=${key}`);
+    if(!res.ok) throw new Error('group turn fetch failed');
+    const servers = await res.json();
+    if(!Array.isArray(servers) || !servers.length) throw new Error('empty');
+    _grpIceCache = [..._GRP_STUN_ONLY, ...servers];
+    _grpIceFetchedAt = Date.now();
+    return _grpIceCache;
+  } catch(e) {
+    console.warn('Group TURN credentials unavailable, STUN-only:', e);
+    return _GRP_STUN_ONLY;
+  }
+}
+
+/* ── Agora SFU integration ──────────────────────────────────
+   Fires when camActiveUsers.size crosses GROUP_MESH_MAX (video)
+   or GROUP_VOICE_MESH_MAX (voice). Mesh peers already connected
+   stay on mesh; only new joins beyond the threshold route here.
+   sfuJoinInFlight guards against syncCamPresence firing this
+   multiple times while the async join is still in progress. */
+let agoraClient = null;
+let agoraLocalTracks = null;   // published local audio/video tracks
+let sfuJoinInFlight = false;
+let sfuActive = false;
+let sfuUsageTimer = null;
+let sfuSessionStartedAt = null;
+
+function joinViaSFU(groupId){
+  if(sfuActive || sfuJoinInFlight) return true; // already on/joining SFU
+  sfuJoinInFlight = true;
+  startAgoraCall(groupId).finally(() => { sfuJoinInFlight = false; });
+  return true; // true = SFU handling it, caller should not create a mesh peer
+}
+
+async function startAgoraCall(groupId){
+  try{
+    const channelName = `revm2-group-${groupId}`;
+
+    // Token must come from the server — never generate/hold the App
+    // Certificate client-side.
+    const { data: sessionData } = await sb.auth.getSession();
+    const resp = await fetch(`${REVM2_CONFIG.SUPABASE_URL}/functions/v1/agora-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionData.session.access_token}`
+      },
+      body: JSON.stringify({ channel_name: channelName, group_id: groupId })
+    });
+    if(!resp.ok) throw new Error(`token fetch failed: ${resp.status}`);
+    const { token, app_id, uid } = await resp.json();
+
+    agoraClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+
+    agoraClient.on('user-published', async (user, mediaType) => {
+      await agoraClient.subscribe(user, mediaType);
+      const tracks = [];
+      if(user.audioTrack) tracks.push(user.audioTrack.getMediaStreamTrack());
+      if(user.videoTrack) tracks.push(user.videoTrack.getMediaStreamTrack());
+      if(tracks.length){
+        const stream = new MediaStream(tracks);
+        // Reuse the same rendering path mesh peers already use —
+        // remote users appear in the grid identically either way.
+        remoteStreams[String(user.uid)] = stream;
+        attachCamStream(String(user.uid), stream);
+      }
+    });
+    agoraClient.on('user-unpublished', (user) => {
+      delete remoteStreams[String(user.uid)];
+    });
+
+    const joinedUid = await agoraClient.join(app_id, channelName, token, uid || null);
+
+    // Publish whatever local stream is already active (localStream for
+    // video calls, voiceStream for voice-only) — don't re-request
+    // getUserMedia, the mesh path already acquired it.
+    const sourceStream = localStream || voiceStream;
+    const tracksToPublish = [];
+    if(sourceStream){
+      const micTrack = sourceStream.getAudioTracks()[0];
+      const camTrack  = sourceStream.getVideoTracks()[0];
+      if(micTrack) tracksToPublish.push(AgoraRTC.createCustomAudioTrack({ mediaStreamTrack: micTrack }));
+      if(camTrack)  tracksToPublish.push(AgoraRTC.createCustomVideoTrack({ mediaStreamTrack: camTrack }));
+    }
+    agoraLocalTracks = tracksToPublish;
+    if(tracksToPublish.length) await agoraClient.publish(tracksToPublish);
+
+    sfuActive = true;
+    sfuSessionStartedAt = Date.now();
+    // Record usage every 60s so the Agora monthly ledger (and the
+    // auto-flip to Tencent at 90%) actually reflects real call time.
+    sfuUsageTimer = setInterval(() => recordSfuUsageChunk(groupId), 60000);
+
+    console.log('[RevM²] Joined Agora SFU as uid', joinedUid, 'in', channelName);
+  } catch(e){
+    console.error('[RevM²] Agora join failed, falling back to mesh:', e);
+    sfuActive = false;
+    // Caller's syncCamPresence will retry mesh peer creation on the
+    // next presence sync since sfuActive stays false.
+  }
+}
+
+async function recordSfuUsageChunk(groupId){
+  try{
+    await sb.rpc('record_feature_usage', {
+      p_feature_key: joinedCam ? 'group_video' : 'group_voice',
+      p_seconds: 60,
+      p_group_id: groupId,
+      p_new_session: false
+    });
+  } catch(e){ console.warn('SFU usage log failed (non-fatal):', e); }
+}
+
+async function leaveSFU(){
+  if(sfuUsageTimer){ clearInterval(sfuUsageTimer); sfuUsageTimer = null; }
+  // Record the partial final chunk (< 60s) so short calls aren't lost.
+  if(sfuSessionStartedAt && currentGroup?.id){
+    const leftoverSec = Math.floor((Date.now() - sfuSessionStartedAt) % 60000 / 1000);
+    if(leftoverSec > 0) await recordSfuUsageChunk(currentGroup.id);
+  }
+  if(agoraLocalTracks){
+    agoraLocalTracks.forEach(t => { try{ t.close(); }catch(e){} });
+    agoraLocalTracks = null;
+  }
+  if(agoraClient){
+    try{ await agoraClient.leave(); }catch(e){}
+    agoraClient = null;
+  }
+  sfuActive = false;
+  sfuSessionStartedAt = null;
+}
+
+/* ── Relay usage logger for group peers ──────────────────────
+   Same pattern as chat.html's logRelayUsage — fires once per
+   peer connection on 'connected', logs to rtc_relay_log. */
+async function logGroupRelayUsage(peerConn, groupId, peerId){
+  try {
+    const stats = await peerConn.getStats();
+    let localType = null, remoteType = null;
+    stats.forEach(report => {
+      if(report.type === 'candidate-pair' && report.state === 'succeeded' && report.nominated){
+        const local  = stats.get(report.localCandidateId);
+        const remote = stats.get(report.remoteCandidateId);
+        if(local)  localType  = local.candidateType;
+        if(remote) remoteType = remote.candidateType;
+      }
+    });
+    if(!localType) return;
+    const usedRelay = localType === 'relay' || remoteType === 'relay';
+    await sb.from('rtc_relay_log').insert({
+      user_id:          me.id,
+      call_context:     'group',
+      context_id:       String(groupId),
+      used_relay:       usedRelay,
+      local_candidate:  localType,
+      remote_candidate: remoteType,
+      call_type:        'video',
+      duration_seconds: null
+    });
+  } catch(e) {
+    console.warn('group relay log failed (non-fatal):', e);
+  }
+}
+
+function initCamChannel(groupId){
+  if(camChannel) sb.removeChannel(camChannel);
+  joinedCam = false; localStream = null; camActiveUsers = new Set();
+  handRaised = false;
+  if(sfuActive) leaveSFU();
+  Object.keys(camPeers).forEach(closeCamPeer);
+  Object.keys(remoteStreams).forEach(id=>delete remoteStreams[id]);
+  updateCamButtons();
+
+  camChannel = sb.channel(`group-cam-${groupId}`, { config: { presence: { key: me.id } } })
+    .on('presence', { event: 'sync' }, syncCamPresence)
+    .on('broadcast', { event: 'signal' }, ({ payload }) => handleCamSignal(payload))
+    .on('broadcast', { event: 'hand-notify' }, ({ payload }) => handleHandNotify(payload))
+    .subscribe();
+}
+
+const SVG_MIC      = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5v3.5M9 21h6"/></svg>';
+const SVG_MIC_OFF  = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5v3.5M9 21h6"/><path d="M4 3l17 18" stroke="var(--danger)"/></svg>';
+const SVG_VIDEO    = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><rect x="2.5" y="6.5" width="12" height="11" rx="2"/><path d="M17.5 10.2 21 8v8l-3.5-2.2z"/></svg>';
+
+function updateCamButtons(){
+  const btn   = document.getElementById('camToggleBtn');
+  const vbtn  = document.getElementById('voiceToggleBtn');
+  const mic   = document.getElementById('camMicBtn');
+  if(!btn) return;
+
+  // Video button — active state tints gold, title updates for screen readers
+  btn.className = 'cam-toggle-btn' + (joinedCam ? ' on' : '');
+  btn.title = joinedCam ? 'Leave video' : 'Join video';
+
+  // Voice button — only relevant when NOT in video (joins/leaves voice-only).
+  // Previously this doubled as a second mute button while in video, which just
+  // duplicated the mic pill next to it — now it steps aside instead.
+  if(vbtn){
+    if(joinedCam){
+      vbtn.style.display = 'none';
+    } else {
+      vbtn.style.display = 'flex';
+      vbtn.className = 'cam-toggle-btn' + (joinedVoice ? ' voice-on' : '');
+      vbtn.title = joinedVoice ? 'Leave voice' : 'Join voice';
+      vbtn.innerHTML = SVG_MIC;
+    }
+  }
+
+  // Inline mute pill — visible when in any call
+  const inCall = joinedCam || joinedVoice;
+  if(mic){
+    mic.style.display = inCall ? 'flex' : 'none';
+    mic.className = 'cam-mic-btn' + (micOn ? '' : ' muted');
+    mic.title = micOn ? 'Mute' : 'Unmute';
+    mic.innerHTML = micOn ? SVG_MIC : SVG_MIC_OFF;
+  }
+
+  // Quiet study pill — mutes what YOU hear from everyone else, independent of your
+  // own mic. You stay in the grid and your study time keeps recording as normal.
+  const deafenBtn = document.getElementById('deafenBtn');
+  if(deafenBtn){
+    deafenBtn.style.display = inCall ? 'flex' : 'none';
+    deafenBtn.className = 'cam-mic-btn' + (deafened ? ' deafened' : '');
+    deafenBtn.title = deafened ? 'Quiet study on — click to hear others again' : 'Quiet study — stop listening, keep your time recorded';
+  }
+
+  // Raise-hand pill — only meaningful while in a call; notifies everyone else when toggled on
+  const raiseBtn = document.getElementById('raiseHandBtn');
+  if(raiseBtn){
+    raiseBtn.style.display = inCall ? 'flex' : 'none';
+    raiseBtn.className = 'cam-toggle-btn' + (handRaised ? ' hand-on' : '');
+    raiseBtn.title = handRaised ? 'Lower hand' : 'Raise hand — let everyone know you want to ask something';
+  }
+}
+
+// Toggle whether you hear other members of the call. Does not touch your own mic/camera
+// or your presence in the grid — only mutes local playback of everyone else's audio.
+function toggleDeafen(){
+  deafened = !deafened;
+  applyDeafenState();
+  updateCamButtons();
+}
+function applyDeafenState(){
+  document.querySelectorAll('.cam-video:not(.self)').forEach(v => { v.muted = deafened; });
+  Object.values(voiceAudioEls).forEach(el => { el.muted = deafened; });
+}
+
+async function toggleCamCall(){
+  if(!joinedCam){
+    try{
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    } catch(e){
+      alert('Could not access camera/mic. Check your browser permissions and try again.');
+      return;
+    }
+    joinedCam = true;
+    micOn = true;
+    // If already voice-only, stop the voiceStream — video stream now carries audio
+    if(joinedVoice && voiceStream){
+      voiceStream.getTracks().forEach(t=>t.stop());
+      voiceStream = null;
+      // joinedVoice stays true — user is still "in voice" but audio now comes from localStream
+    }
+    await camChannel.track({ online: true, hasVideo: true, hasVoice: true, handRaised });
+  } else {
+    joinedCam = false;
+    if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream = null; }
+    Object.keys(camPeers).forEach(closeCamPeer);
+    if(sfuActive) await leaveSFU();
+    stopSpeakingDetector(me.id);
+    if(joinedVoice){
+      // Stay in voice — re-acquire audio-only stream
+      try{
+        voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        await camChannel.track({ online: true, hasVideo: false, hasVoice: true, handRaised });
+      } catch(e){
+        joinedVoice = false;
+        handRaised = false;
+        await camChannel.untrack();
+      }
+    } else {
+      handRaised = false;
+      await camChannel.untrack();
+    }
+  }
+  updateCamButtons();
+  renderLiveGridDOM();
+}
+
+async function toggleVoiceCall(){
+  if(joinedCam){
+    // In video — voice button acts as mic toggle (mic lives in localStream)
+    toggleCamMic();
+    return;
+  }
+  if(!joinedVoice){
+    try{
+      voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch(e){
+      alert('Could not access microphone. Check your browser permissions and try again.');
+      return;
+    }
+    joinedVoice = true;
+    micOn = true;
+    await camChannel.track({ online: true, hasVideo: false, hasVoice: true, handRaised });
+    // Inject audio into any existing peer connections
+    Object.entries(camPeers).forEach(([, pc]) => {
+      voiceStream.getAudioTracks().forEach(t => {
+        try { pc.addTrack(t, voiceStream); } catch(e){ /* already added */ }
+      });
+    });
+  } else {
+    joinedVoice = false;
+    if(voiceStream){ voiceStream.getTracks().forEach(t=>t.stop()); voiceStream = null; }
+    Object.keys(camPeers).forEach(closeCamPeer);
+    if(sfuActive) await leaveSFU();
+    stopSpeakingDetector(me.id);
+    handRaised = false;
+    await camChannel.untrack();
+  }
+  updateCamButtons();
+  renderLiveGridDOM();
+}
+
+function toggleCamMic(){
+  // Mute/unmute whichever stream(s) are active
+  micOn = !micOn;
+  if(localStream)  localStream.getAudioTracks().forEach(t => t.enabled = micOn);
+  if(voiceStream)  voiceStream.getAudioTracks().forEach(t => t.enabled = micOn);
+  updateCamButtons();
+}
+
+/* ── Raise hand ──────────────────────────────────────────────
+   Broadcasts on the same group-cam channel used for the call
+   itself, so it only makes sense while you're in the call (mirrors
+   the mic/deafen pills). The flag rides along in presence (like
+   hasVideo/hasVoice) so every open tab renders the badge from the
+   normal grid re-render — plus a one-shot broadcast fires a toast
+   the instant a hand goes up, rather than waiting on that tab's
+   own state to notice it. */
+async function toggleRaiseHand(){
+  if(!joinedCam && !joinedVoice) return;
+  handRaised = !handRaised;
+  await camChannel.track({ online: true, hasVideo: joinedCam, hasVoice: true, handRaised });
+  updateCamButtons();
+  renderLiveGridDOM();
+  if(handRaised){
+    camChannel.send({ type: 'broadcast', event: 'hand-notify', payload: { from: me.id, name: membersCache[me.id] || 'Someone' } });
+    showHandToast(null, true);
+  }
+}
+
+function handleHandNotify(payload){
+  if(!payload || payload.from === me.id) return;
+  showHandToast(payload.name || 'Someone', false);
+}
+
+let handToastSeq = 0;
+function showHandToast(name, isSelf){
+  const container = document.getElementById('handToastContainer');
+  if(!container) return;
+  const el = document.createElement('div');
+  el.className = 'hand-toast';
+  el.id = 'hand-toast-' + (++handToastSeq);
+  el.innerHTML = `<span style="font-size:1rem;">✋</span><span>${isSelf ? 'You raised your hand' : `${escHtml(name)} raised their hand`}</span>`;
+  container.appendChild(el);
+  setTimeout(()=>{ el.remove(); }, 5000);
+}
+
+
+function syncCamPresence(){
+  if(!camChannel) return;
+  const state = camChannel.presenceState();
+  camActiveUsers = new Set(Object.keys(state));
+  renderLiveGridDOM();
+  if(!joinedCam && !joinedVoice) return; // not in any call — don't create peers
+
+  // Count active peers (excluding self)
+  const peerCount = [...camActiveUsers].filter(id => id !== me.id).length;
+
+  // Separate thresholds: video mesh degrades at 5+ (bandwidth-heavy),
+  // voice mesh stays fine up to 8 (audio is ~30kbps vs ~1Mbps for video).
+  // Only apply the tighter video threshold when we're actually in a video call.
+  const threshold = joinedCam ? GROUP_MESH_MAX : GROUP_VOICE_MESH_MAX;
+
+  if(peerCount >= threshold){
+    // At or above threshold — attempt SFU; if not configured, warn and fall through to mesh
+    const sfuTookOver = joinViaSFU(currentGroup?.id);
+    if(sfuTookOver) return; // SFU handling the call — don't create any mesh peers
+  }
+
+  camActiveUsers.forEach(id=>{
+    if(id===me.id || camPeers[id]) return;
+    const iInitiate = me.id < id; // deterministic so only one side offers, avoiding glare
+    createCamPeer(id, iInitiate);
+  });
+  Object.keys(camPeers).forEach(id=>{ if(!camActiveUsers.has(id)) closeCamPeer(id); });
+}
+
+function createCamPeer(peerId, iInitiate){
+  // RTCPeerConnection is created synchronously with STUN-only first;
+  // we then swap in full ICE servers (including TURN) asynchronously
+  // before any offer/answer is exchanged, so TURN is available when needed.
+  const pc = new RTCPeerConnection({
+    iceServers: _GRP_STUN_ONLY,
+    iceTransportPolicy: 'all'  // TURN only used when P2P fails — never forced on everyone
+  });
+  camPeers[peerId] = pc;
+
+  // Upgrade ICE config with TURN credentials before negotiation starts
+  getGroupIceServers().then(servers => {
+    if(camPeers[peerId] === pc) {
+      pc.setConfiguration({ iceServers: servers, iceTransportPolicy: 'all' });
+    }
+  });
+
+  if(localStream) localStream.getTracks().forEach(t=>pc.addTrack(t, localStream));
+  // Voice-only participants: add mic track if present and not already covered by localStream
+  if(voiceStream && !localStream) voiceStream.getAudioTracks().forEach(t=>pc.addTrack(t, voiceStream));
+  pc.onicecandidate = e => { if(e.candidate) sendCamSignal(peerId, { kind:'ice', candidate: e.candidate }); };
+  pc.ontrack = e => { remoteStreams[peerId] = e.streams[0]; attachCamStream(peerId, e.streams[0]); };
+  pc.onconnectionstatechange = () => {
+    if(pc.connectionState === 'connected'){
+      // Log whether this specific peer needed relay — only fires for the ~15-20% that do
+      logGroupRelayUsage(pc, currentGroup?.id, peerId);
+    }
+    if(['failed','closed','disconnected'].includes(pc.connectionState)) closeCamPeer(peerId);
+  };
+  if(iInitiate){
+    pc.onnegotiationneeded = async () => {
+      try{
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        sendCamSignal(peerId, { kind:'offer', sdp: pc.localDescription });
+      } catch(e){ console.error(e); }
+    };
+  }
+  return pc;
+}
+
+function closeCamPeer(peerId){
+  const pc = camPeers[peerId];
+  if(pc){ pc.close(); delete camPeers[peerId]; }
+  delete remoteStreams[peerId];
+  stopSpeakingDetector(peerId);
+  detachVoiceAudio(peerId);
+  renderLiveGridDOM();
+}
+
+function sendCamSignal(to, data){
+  camChannel.send({ type:'broadcast', event:'signal', payload: { from: me.id, to, ...data } });
+}
+
+async function handleCamSignal(payload){
+  if(!payload || payload.to !== me.id || !joinedCam) return;
+  const peerId = payload.from;
+  let pc = camPeers[peerId] || createCamPeer(peerId, false);
+  try{
+    if(payload.kind === 'offer'){
+      await pc.setRemoteDescription(payload.sdp);
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      sendCamSignal(peerId, { kind:'answer', sdp: pc.localDescription });
+    } else if(payload.kind === 'answer'){
+      await pc.setRemoteDescription(payload.sdp);
+    } else if(payload.kind === 'ice'){
+      await pc.addIceCandidate(payload.candidate);
+    }
+  } catch(e){ console.error('cam signal error', e); }
+}
+
+// Bind a MediaStream to a tile's <video> element once it exists in the DOM (tiles get rebuilt on every grid refresh).
+// Voice-only peers have no <video> tile to bind to, so their audio is routed to a
+// persistent hidden <audio> element instead (see attachVoiceAudio) — otherwise their
+// mic would never actually be heard by anyone.
+function attachCamStream(userId, stream){
+  const vid = document.getElementById('cam-video-'+userId);
+  if(vid){
+    if(vid.srcObject !== stream) vid.srcObject = stream;
+    if(userId !== me.id) vid.muted = deafened;
+    if(voiceAudioEls[userId]) detachVoiceAudio(userId); // camera came on — drop the audio-only element
+  } else if(userId !== me.id){
+    attachVoiceAudio(userId, stream);
+  }
+  attachSpeakingDetector(userId, stream); // works for both video and voice-only streams
+
+  // Speaker-view overlay isn't rebuilt on every stream event — patch its video(s) directly
+  if(document.getElementById('tileExpandOverlay')?.classList.contains('show')){
+    if(userId === expandFocusUserId) renderExpandMain(userId);
+    const thumbVid = document.getElementById('expand-thumb-video-'+userId);
+    if(thumbVid && thumbVid.srcObject !== stream) thumbVid.srcObject = stream;
+  }
+}
+function attachVoiceAudio(userId, stream){
+  if(!stream || !stream.getAudioTracks().length) return;
+  let el = voiceAudioEls[userId];
+  if(!el){
+    el = document.createElement('audio');
+    el.autoplay = true;
+    el.id = 'voice-audio-'+userId;
+    document.getElementById('voiceAudioContainer').appendChild(el);
+    voiceAudioEls[userId] = el;
+  }
+  if(el.srcObject !== stream) el.srcObject = stream;
+  el.muted = deafened;
+}
+function detachVoiceAudio(userId){
+  const el = voiceAudioEls[userId];
+  if(el){ el.srcObject = null; el.remove(); delete voiceAudioEls[userId]; }
+}
+function reattachAllCamStreams(){
+  if(joinedCam && localStream) attachCamStream(me.id, localStream);
+  else if(joinedVoice && voiceStream) attachSpeakingDetector(me.id, voiceStream);
+  Object.keys(remoteStreams).forEach(id=>attachCamStream(id, remoteStreams[id]));
+  if(expandFocusUserId && document.getElementById('tileExpandOverlay')?.classList.contains('show')){
+    renderExpandMain(expandFocusUserId);
+    renderExpandThumbs(expandFocusUserId);
+  }
+}
+
+/* ── Speaking detection ───────────────────────────────────────
+   Whoever has their mic open — camera on or voice-only — gets a
+   live "speaking" ring on their tile driven by actual mic volume,
+   not just a static mic icon. One AnalyserNode per participant;
+   re-uses the same one across grid re-renders (looked up by id
+   each animation frame, so it survives the tile's DOM being
+   rebuilt). Torn down when the peer/call ends. */
+const speakingAnalysers = {};
+const SPEAK_VOLUME_THRESHOLD = 14; // 0-255 scale; tuned to ignore room-noise floor
+
+function attachSpeakingDetector(userId, stream){
+  if(!stream || !stream.getAudioTracks().length) return;
+  if(speakingAnalysers[userId] && speakingAnalysers[userId].stream === stream) return; // already wired up
+  stopSpeakingDetector(userId);
+  try{
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AudioCtx();
+    const src = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 512;
+    analyser.smoothingTimeConstant = 0.6;
+    src.connect(analyser);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    let rafId;
+    const tick = () => {
+      analyser.getByteFrequencyData(data);
+      let sum = 0; for(let i=0;i<data.length;i++) sum += data[i];
+      const avg = sum / data.length;
+      const isLoud = avg > SPEAK_VOLUME_THRESHOLD;
+      const now = performance.now();
+      if(isLoud) lastSpeakingAt[userId] = now;
+      // Hold "speaking" true for a moment after volume drops so the video-grid
+      // spotlight doesn't flicker between people during normal pauses in speech.
+      const held = (now - (lastSpeakingAt[userId] || 0)) < SPEAK_HOLD_MS;
+      const el = document.getElementById('lt-av-'+userId);
+      if(el) el.classList.toggle('speaking', held);
+      const vgTile = document.getElementById('vg-tile-'+userId);
+      if(vgTile) vgTile.classList.toggle('speaking', held);
+      const wasSpeaking = speakingUsers.has(userId);
+      if(held !== wasSpeaking){
+        if(held) speakingUsers.add(userId); else speakingUsers.delete(userId);
+        vgOnSpeakingChange();
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    tick();
+    speakingAnalysers[userId] = { stream, stop(){ cancelAnimationFrame(rafId); try{ ctx.close(); }catch(e){} } };
+  } catch(e){ console.warn('speaking detector failed for', userId, e); }
+}
+function stopSpeakingDetector(userId){
+  const s = speakingAnalysers[userId];
+  if(s){ s.stop(); delete speakingAnalysers[userId]; }
+  const el = document.getElementById('lt-av-'+userId);
+  if(el) el.classList.remove('speaking');
+  delete lastSpeakingAt[userId];
+  if(speakingUsers.has(userId)){ speakingUsers.delete(userId); vgOnSpeakingChange(); }
+}
+
+// Re-picks the spotlight and re-renders the video grid when who's-speaking
+// changes — debounced a tick so several people toggling at once (e.g. call
+// just connected) only trigger one render, not one per person.
+let lastSpeakingAt = {};
+const SPEAK_HOLD_MS = 700;
+let _vgSpeakingRenderQueued = false;
+function vgOnSpeakingChange(){
+  if(camActiveUsers.size === 0) return; // circle mode — nothing to update
+  if(_vgSpeakingRenderQueued) return;
+  _vgSpeakingRenderQueued = true;
+  setTimeout(()=>{ _vgSpeakingRenderQueued = false; renderLiveGridDOM(); }, 120);
+}
+
+/* ── Speaker view (expandable tile) ─────────────────────────────
+   Tapping/clicking any tile opens a Zoom-style focused view: that
+   person's video fills most of the box, their name (+ raised-hand
+   flag) sits over it, and everyone else rides underneath as a row
+   of small tappable squares — clicking one just swaps who's "big"
+   without closing the overlay. The × always returns to the plain
+   grid of squares. */
+function expandTile(userId){
+  expandFocusUserId = userId;
+  renderExpandMain(userId);
+  renderExpandThumbs(userId);
+  document.getElementById('tileExpandOverlay').classList.add('show');
+}
+
+function presenceFor(userId){
+  const onCam = camActiveUsers.has(userId);
+  const state = camChannel ? camChannel.presenceState() : {};
+  const presKey = Object.keys(state).find(k => k === userId);
+  const presData = presKey ? Object.values(state[presKey])[0] : null;
+  return {
+    hasVideo: onCam && (presData?.hasVideo ?? true),
+    hasVoice: onCam && (presData?.hasVoice ?? false),
+    handRaised: !!(presData?.handRaised)
+  };
+}
+
+function renderExpandMain(userId){
+  const name = membersCache[userId] || userId.slice(0,6);
+  const media = document.getElementById('tileExpandMedia');
+  if(!media) return;
+  const { hasVideo, hasVoice, handRaised: raised } = presenceFor(userId);
+  const stream = userId===me.id ? localStream : remoteStreams[userId];
+
+  let inner;
+  if(hasVideo && stream){
+    inner = `<video autoplay playsinline${userId===me.id?' muted class="self"':''}></video>`;
+  } else if(hasVoice && !hasVideo){
+    inner = DEFAULT_AVATAR_ICON; // voice-only — no account photo here either
+  } else {
+    const isLive = liveTotalsData.find(r=>r.user_id===userId)?.is_live;
+    inner = avatarInner(userId, isLive);
+  }
+  media.innerHTML = inner + `<div class="tile-expand-nametag">${escHtml(name)}${raised ? ' <span class="hand-emoji">✋</span>' : ''}</div>`;
+  if(hasVideo && stream){
+    const v = media.querySelector('video');
+    if(v) v.srcObject = stream;
+  }
+}
+
+function renderExpandThumbs(focusUserId){
+  const strip = document.getElementById('expandThumbStrip');
+  if(!strip) return;
+  const others = liveTotalsData.filter(r => r.user_id !== focusUserId);
+  if(!others.length){ strip.innerHTML=''; return; }
+
+  strip.innerHTML = others.map(r=>{
+    const id = r.user_id;
+    const name = membersCache[id] || id.slice(0,6);
+    const { hasVideo, hasVoice, handRaised: raised } = presenceFor(id);
+    const stream = id===me.id ? localStream : remoteStreams[id];
+    let inner;
+    if(hasVideo && stream){
+      inner = `<video id="expand-thumb-video-${id}" autoplay playsinline${id===me.id?' muted class="self"':''}></video>`;
+    } else if(hasVoice && !hasVideo){
+      inner = VOICE_ONLY_TILE_ICON;
+    } else {
+      const isLive = liveTotalsData.find(x=>x.user_id===id)?.is_live;
+      inner = avatarInner(id, isLive);
+    }
+    return `<div class="expand-thumb" onclick="expandTile('${id}')" title="${escHtml(name)}">
+      <div class="expand-thumb-media">${inner}${raised ? '<span class="expand-thumb-hand">✋</span>' : ''}</div>
+      <div class="expand-thumb-name">${escHtml(name)}</div>
+    </div>`;
+  }).join('');
+
+  others.forEach(r=>{
+    const id = r.user_id;
+    const stream = id===me.id ? localStream : remoteStreams[id];
+    const vid = document.getElementById('expand-thumb-video-'+id);
+    if(vid && stream) vid.srcObject = stream;
+  });
+}
+
+function closeTileExpand(e){
+  if(e && e.target !== e.currentTarget) return; // click landed on the box itself, not the backdrop
+  document.getElementById('tileExpandOverlay').classList.remove('show');
+  const media = document.getElementById('tileExpandMedia');
+  const v = media.querySelector('video');
+  if(v) v.srcObject = null;
+  media.innerHTML = '';
+  const strip = document.getElementById('expandThumbStrip');
+  if(strip) strip.innerHTML = '';
+  expandFocusUserId = null;
+}
+
+function teardownCamCall(){
+  if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream = null; }
+  if(voiceStream){ voiceStream.getTracks().forEach(t=>t.stop()); voiceStream = null; }
+  Object.keys(camPeers).forEach(closeCamPeer);
+  Object.keys(voiceAudioEls).forEach(detachVoiceAudio); // safety net for any stragglers
+  stopSpeakingDetector(me.id);
+  if(camChannel){ sb.removeChannel(camChannel); camChannel = null; }
+  joinedCam = false; joinedVoice = false; camActiveUsers = new Set();
+}
+
+/* ── CURRENT FOCUS TIME + STUDYING NOW ──────────────────────
+   Two views onto the same live study data:
+   • Focus card = MY OWN session, driven straight from the local
+     `revm2_active_session` state that floating-timer.js already
+     maintains (same localStorage key), so starting/pausing here
+     stays in sync with the floating widget on every page.
+   • Studying Now = everyone else's session, via the
+     group_live_totals() RPC (0011 migration) — live/paused
+     members tick a real stopwatch client-side between refreshes;
+     idle members show today's total instead of nothing. */
+const FT_ACTIVE_KEY = 'revm2_active_session';
+
+function computeElapsed(state){
+  if(!state) return 0;
+  const now = Date.now();
+  const startedMs = new Date(state.started_at).getTime();
+  let paused = state.accumPaused || 0;
+  if(state.paused_at) paused += (now - new Date(state.paused_at).getTime());
+  const live = state.paused_at ? new Date(state.paused_at).getTime() : now;
+  return Math.max(0, Math.floor((live - startedMs - paused) / 1000));
+}
+function fmtHMS(secs){
+  const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=Math.floor(secs%60);
+  return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function myAdminCls(){
+  return currentGroup && currentGroup.my_role==='admin' ? ' admin' : '';
+}
+
+function renderFocusCard(){
+  const state = Store.get(FT_ACTIVE_KEY);
+  const timeEl = document.getElementById('focusTime');
+  const subEl = document.getElementById('focusSub');
+  const avEl = document.getElementById('focusAvatar');
+  const fillEl = document.getElementById('focusProgressFill');
+  const ctrlEl = document.getElementById('focusControls');
+  if(!timeEl) return; // detail view not open
+
+  if(state && state.group_id === currentGroup.id){
+    const secs = computeElapsed(state);
+    timeEl.textContent = fmtHMS(secs);
+    timeEl.className = 'focus-time live';
+    avEl.className = 'focus-avatar' + (state.paused_at ? ' paused-state' : '') + myAdminCls();
+    avEl.innerHTML = avatarInner(me.id);
+    subEl.textContent = state.paused_at ? `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><rect x="7" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg> Paused · ${escHtml(state.subject||'—')}` : `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--danger);margin-right:0.3rem;vertical-align:1px;"></span>Live · ${escHtml(state.subject||'studying')}`;
+    fillEl.style.width = Math.min(100, (secs/3600)*100) + '%';
+    ctrlEl.innerHTML = state.paused_at
+      ? `<button class="btn btn-gold btn-sm" onclick="focusResume()">Resume</button><button class="icon-btn danger" onclick="focusStop()">Stop</button>`
+      : `<button class="icon-btn" onclick="focusPause()">Pause</button><button class="icon-btn danger" onclick="focusStop()">Stop</button>`;
+  } else if(state){
+    timeEl.textContent = '—';
+    timeEl.className = 'focus-time';
+    avEl.className = 'focus-avatar idle' + myAdminCls();
+    avEl.innerHTML = avatarInner(me.id);
+    subEl.textContent = "You're studying in another group right now.";
+    fillEl.style.width = '0%';
+    ctrlEl.innerHTML = '';
+  } else {
+    timeEl.textContent = '0:00:00';
+    timeEl.className = 'focus-time';
+    avEl.className = 'focus-avatar idle' + myAdminCls();
+    avEl.innerHTML = avatarInner(me.id);
+    subEl.textContent = 'Not studying right now';
+    fillEl.style.width = '0%';
+    ctrlEl.innerHTML = `
+      <select id="focusSubjectSel">
+        <option value="Physics">Physics</option><option value="Chemistry">Chemistry</option>
+        <option value="Maths">Maths</option><option value="Other">Other</option>
+      </select>
+      <button class="btn btn-gold btn-sm" onclick="focusStart()">▶ Start Studying</button>`;
+  }
+}
+
+let focusTickHandle = null;
+function startFocusTick(){ stopFocusTick(); focusTickHandle = setInterval(renderFocusCard, 1000); }
+function stopFocusTick(){ if(focusTickHandle) clearInterval(focusTickHandle); focusTickHandle = null; }
+
+function syncFloatingWidget(){ if(window.initFloatingTimer) window.initFloatingTimer(); }
+
+async function focusStart(){
+  const sel = document.getElementById('focusSubjectSel');
+  const subject = sel ? sel.value : null;
+  const { data, error } = await sb.rpc('rpc_start_study_session', { p_group_id: currentGroup.id, p_subject: subject });
+  if(error){ alert(error.message || 'Could not start session.'); return; }
+  Store.set(FT_ACTIVE_KEY, { id:data.id, group_id:data.group_id, subject:data.subject, started_at:data.started_at, paused_at:null, accumPaused:0 });
+  renderFocusCard(); syncFloatingWidget(); loadLiveGrid();
+}
+async function focusPause(){
+  const state = Store.get(FT_ACTIVE_KEY); if(!state) return;
+  const { data, error } = await sb.rpc('rpc_pause_study_session', { p_session_id: state.id });
+  if(error){ alert(error.message); return; }
+  state.paused_at = data.paused_at; Store.set(FT_ACTIVE_KEY, state);
+  renderFocusCard(); syncFloatingWidget(); loadLiveGrid();
+}
+async function focusResume(){
+  const state = Store.get(FT_ACTIVE_KEY); if(!state || !state.paused_at) return;
+  const { data, error } = await sb.rpc('rpc_resume_study_session', { p_session_id: state.id });
+  if(error){ alert(error.message); return; }
+  state.paused_at = null; state.accumPaused = data.accumulated_paused_seconds; Store.set(FT_ACTIVE_KEY, state);
+  renderFocusCard(); syncFloatingWidget(); loadLiveGrid();
+}
+async function focusStop(){
+  const state = Store.get(FT_ACTIVE_KEY); if(!state) return;
+  const { error } = await sb.rpc('rpc_stop_study_session', { p_session_id: state.id });
+  if(error) console.error(error);
+  Store.del(FT_ACTIVE_KEY);
+  renderFocusCard(); syncFloatingWidget(); loadLiveGrid();
+}
+
+let membersCache = {};   // user_id -> display name, filled by loadMembers()
+let rolesCache = {};     // user_id -> 'admin' | 'member', filled by loadMembers()
+let avatarCache = {};    // user_id -> avatar_url (purchased in M² Store) or null, filled by loadMembers()
+let usernameCache = {};  // user_id -> username or null, filled by loadMembers()
+let friendStatusCache = {}; // user_id -> {status, friendshipId}, filled by loadMembers()
+let liveTotalsData = []; // last group_live_totals() result
+
+/* ── FRIEND REQUEST BUTTON (member list) ─────────────────────
+   Same friendships RPCs used on partners.html. Kept self-contained
+   here so groups.html works even before partners.html exists. */
+function friendBtnHtml(userId){
+  const info = friendStatusCache[userId];
+  const status = info ? info.status : 'none';
+  if(status==='friends') return `<span class="icon-btn" style="cursor:default;color:var(--gold);border-color:var(--gold-border);">✓ Partner</span>`;
+  if(status==='pending_outgoing') return `<button class="icon-btn" disabled>Requested</button>`;
+  if(status==='pending_incoming') return `<button class="icon-btn" onclick="location.href='partners.html'">Respond →</button>`;
+  if(!usernameCache[userId]) return ''; // hasn't set a username yet — nothing to request against
+  return `<button class="icon-btn" onclick="sendFriendRequestFromGroup('${userId}', this)">+ Add friend</button>`;
+}
+
+async function sendFriendRequestFromGroup(userId, btn){
+  const username = usernameCache[userId];
+  if(!username) return;
+  if(btn){ btn.disabled=true; btn.textContent='Sending…'; }
+  const { error } = await sb.rpc('send_friend_request', { p_username: username });
+  if(error){ alert(error.message || 'Could not send request.'); if(btn){ btn.disabled=false; btn.textContent='+ Add friend'; } return; }
+  friendStatusCache[userId] = { status:'pending_outgoing', friendshipId:null };
+  if(btn){ btn.outerHTML = `<button class="icon-btn" disabled>Requested</button>`; }
+}
+
+// Default look for anyone who hasn't bought a custom avatar in the M² Store —
+// a simple line-art "studying" icon, tinted by whatever glow state (live/paused/admin) applies.
+const DEFAULT_AVATAR_ICON = `<svg class="default-avatar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="2.6"/><path d="M6.5 14.2c0-2 2.3-3.4 5.5-3.4s5.5 1.4 5.5 3.4"/><path d="M3 19.5h18"/><path d="M6.5 19.5v-2.3M17.5 19.5v-2.3"/></svg>`;
+// Voice waveform glyph — reused both full-size (voice-only tile) and small (badge on a camera tile)
+const VOICE_WAVE_SVG = `<svg class="voice-wave-icon" viewBox="0 0 24 24" fill="none"><rect x="1.6" y="9" width="2.6" height="6" rx="1.3" fill="currentColor"/><rect x="6.7" y="6" width="2.6" height="12" rx="1.3" fill="currentColor"/><rect x="11.8" y="3" width="2.6" height="18" rx="1.3" fill="currentColor"/><rect x="16.9" y="6" width="2.6" height="12" rx="1.3" fill="currentColor"/><rect x="22" y="9" width="2.6" height="6" rx="1.3" fill="currentColor"/></svg>`;
+const VOICE_ONLY_TILE_ICON = `<svg class="default-avatar-icon voice-wave-icon" viewBox="0 0 24 24" fill="none"><rect x="1.6" y="9" width="2.6" height="6" rx="1.3" fill="currentColor"/><rect x="6.7" y="6" width="2.6" height="12" rx="1.3" fill="currentColor"/><rect x="11.8" y="3" width="2.6" height="18" rx="1.3" fill="currentColor"/><rect x="16.9" y="6" width="2.6" height="12" rx="1.3" fill="currentColor"/><rect x="22" y="9" width="2.6" height="6" rx="1.3" fill="currentColor"/></svg>`;
+
+// Live-grid device icons: a phone while a member's timer is actively running (they're
+// "on device" studying), a desk clock when they're paused or simply not studying right now.
+const DEVICE_ICON_PHONE = `<svg class="default-avatar-icon device-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.2"/><path d="M9.5 6.3h5"/><path d="M11 18.2h2"/></svg>`;
+const DEVICE_ICON_DESK_CLOCK = `<svg class="default-avatar-icon device-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9.3" r="5.3"/><path d="M12 6.3v3l2.1 1.2"/><path d="M3.5 20h17"/><path d="M6.5 20v-2.5M17.5 20v-2.5"/></svg>`;
+
+// Renders a member's avatar: their purchased M² Store avatar image if they have one, otherwise
+// a state-aware device icon — phone if their timer is live right now, desk clock if not.
+function avatarInner(userId, isLive){
+  const url = avatarCache[userId];
+  if(url) return `<img class="avatar-img" src="${escHtml(url)}" alt="">`;
+  if(isLive===undefined) return DEFAULT_AVATAR_ICON; // member list / focus card: keep the generic person glyph
+  return isLive ? DEVICE_ICON_PHONE : DEVICE_ICON_DESK_CLOCK; // live grid: state-aware device glyph
+}
+
+async function loadLiveGrid(){
+  const { data, error } = await sb.rpc('group_live_totals', { p_group_id: currentGroup.id });
+  if(error){ console.error(error); return; }
+  liveTotalsData = data || [];
+  renderLiveGridDOM();
+}
+
+function computeElapsedFromRow(r){
+  return computeElapsed({ started_at:r.started_at, paused_at:r.paused_at, accumPaused:r.accumulated_paused_seconds||0 });
+}
+
+// Entry point — decides circle roster vs Zoom-style video grid, and calls
+// whichever one applies. Mode switches automatically: as soon as anyone
+// joins the call (video or voice) camActiveUsers stops being empty and we
+// flip to the video grid; the moment the call is empty again we flip back.
+function renderLiveGridDOM(){
+  const grid = document.getElementById('liveGrid');
+  const vgWrap = document.getElementById('videoGridWrap');
+  const sub = document.getElementById('liveGridSub');
+  if(!grid) return;
+  if(!liveTotalsData.length){ grid.innerHTML=''; vgWrap.classList.remove('active'); grid.classList.remove('vg-hidden'); sub.textContent='No members yet.'; return; }
+
+  const withInfo = liveTotalsData.map(r=>({ ...r, elapsed: (r.is_live||r.is_paused) ? computeElapsedFromRow(r) : 0 }));
+  const liveCount = withInfo.filter(r=>r.is_live).length;
+  sub.textContent = `${liveCount} member${liveCount===1?'':'s'} studying right now`;
+
+  const rank = r => r.is_live ? 0 : r.is_paused ? 1 : 2;
+  withInfo.sort((a,b)=>{
+    const ra=rank(a), rb=rank(b);
+    if(ra!==rb) return ra-rb;
+    if(ra<2) return b.elapsed - a.elapsed;
+    return (b.today_seconds||0) - (a.today_seconds||0);
+  });
+
+  const canInvite = currentGroup.my_role==='admin' && currentGroup.visibility==='private';
+  const inCall = camActiveUsers.size > 0;
+
+  if(inCall){
+    if(!vgWrap.classList.contains('active')) grid.innerHTML = ''; // dropping circle mode — clear so its cam-video-* ids don't collide with the grid's
+    grid.classList.add('vg-hidden');
+    vgWrap.classList.add('active');
+    renderVideoGridDOM(withInfo, canInvite);
+  } else {
+    if(vgWrap.classList.contains('active')){ document.getElementById('vgGrid').innerHTML=''; document.getElementById('vgSpotlight').innerHTML=''; delete document.getElementById('vgSpotlight').dataset.uid; }
+    vgWrap.classList.remove('active');
+    grid.classList.remove('vg-hidden');
+    renderCircleGridDOM(grid, withInfo, canInvite);
+  }
+}
+
+// ── Circle roster (default idle look — nobody's on camera/voice) ──────
+function renderCircleGridDOM(grid, withInfo, canInvite){
+  grid.innerHTML = withInfo.map(r=>{
+  rm2Stagger(grid.children);
+    const name = membersCache[r.user_id] || r.user_id.slice(0,6);
+    const isAdmin = rolesCache[r.user_id]==='admin';
+    const adminCls = isAdmin ? ' admin' : '';
+    const avClass = (r.is_live ? 'live-tile-avatar live' : r.is_paused ? 'live-tile-avatar paused' : 'live-tile-avatar') + adminCls;
+    const dotClass = r.is_live ? 'live-tile-dot on' : r.is_paused ? 'live-tile-dot pause' : 'live-tile-dot';
+    const timeTxt = (r.is_live||r.is_paused) ? fmtHMS(r.elapsed) : (r.today_seconds>0 ? fmtTime(r.today_seconds) : '—');
+    const timeClass = (r.is_live ? 'live-tile-time live' : 'live-tile-time') + adminCls;
+    const { hasVideo, hasVoice, handRaised: handRaisedFlag } = presenceFor(r.user_id);
+    const title = (r.is_live ? `Studying${r.subject?': '+r.subject:''}` : r.is_paused ? 'Paused' : `Today: ${fmtTime(r.today_seconds||0)}`)
+      + (isAdmin ? ' · Admin' : '')
+      + (hasVideo ? ' · Camera on' : '')
+      + (hasVoice && !hasVideo ? ' · Voice only' : '')
+      + (hasVoice && hasVideo  ? ' · Mic on' : '')
+      + (handRaisedFlag ? ' · Hand raised' : '');
+    // Voice-only participants (mic on, camera off) never show their account photo in the
+    // tile — just the generic "studying" glyph. The speaking ring (below) is what animates
+    // to show they're talking; there's no per-account image swapped in for this state.
+    const voiceOnly = hasVoice && !hasVideo;
+    // Camera off + voice on: the waveform glyph IS the tile (replaces the avatar/placeholder).
+    // Camera on + voice on: keep the video feed, just add a small waveform badge in the corner.
+    const voiceBadge = (hasVideo && hasVoice) ? `<span class="live-tile-voice-badge">${VOICE_WAVE_SVG}</span>` : '';
+    const tileContent = hasVideo
+      ? `<video class="cam-video${r.user_id===me.id?' self':''}" id="cam-video-${r.user_id}" autoplay playsinline ${r.user_id===me.id?'muted':''}></video>${voiceBadge}`
+      : voiceOnly
+        ? VOICE_ONLY_TILE_ICON
+        : avatarInner(r.user_id, r.is_live);
+    // Status icons shown under name: camera icon, mic icon, or both
+    const camIcon  = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;opacity:0.8;"><rect x="2.5" y="6.5" width="12" height="11" rx="2"/><path d="M17.5 10.2 21 8v8l-3.5-2.2z"/></svg>';
+    const micIcon  = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;opacity:0.8;"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5v3.5M9 21h6"/></svg>';
+    const mediaIcons = (hasVideo ? camIcon : '') + (hasVoice ? micIcon : '');
+    const nameClass = 'live-tile-name' + (r.is_live ? ' live' : '') + adminCls;
+    // Tile is tappable/clickable on every device — opens the larger expand view
+    // (touch tap on mobile, click on desktop); sizing itself adapts via CSS media query.
+    return `<div class="live-tile" title="${escHtml(title)}">
+      <div class="${avClass}" id="lt-av-${r.user_id}" onclick="expandTile('${r.user_id}')">${tileContent}<span class="${dotClass}"></span>${handRaisedFlag ? '<span class="live-tile-hand">✋</span>' : ''}</div>
+      <div class="${nameClass}">${escHtml(name)}${isAdmin?' <span style="color:var(--cyan);">★</span>':''}${mediaIcons ? ' '+mediaIcons : ''}</div>
+      <div class="${timeClass}" id="lt-time-${r.user_id}">${timeTxt}</div>
+    </div>`;
+  }).join('') + (canInvite ? `<div class="live-tile"><div class="live-tile-add" onclick="scrollToInvite()">+</div><div class="live-tile-name">Invite</div></div>` : '');
+  reattachAllCamStreams();
+}
+
+// ── Zoom-style video grid (active once anyone joins the call) ─────────
+// Layout: one big "spotlight" tile (whoever's currently speaking, else
+// whoever's pinned, else whoever has their camera on) + a paginated grid
+// of square tiles below for everyone else. Pinned members always appear
+// on the current page; hidden members (a local-only preference) are
+// dropped entirely from your own view.
+const vgPinIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 3h6l1 4-2 2v4l4 3H4l4-3V9L6 7l1-4z"/></svg>';
+const vgHideIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><path d="M2 2l20 20"/></svg>';
+const vgVoiceIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/></svg>';
+
+function vgMediaFor(r){
+  const { hasVideo, hasVoice, handRaised } = presenceFor(r.user_id);
+  return { hasVideo, hasVoice, handRaised, voiceOnly: hasVoice && !hasVideo };
+}
+
+function vgTileTimeTxt(r){
+  return (r.is_live||r.is_paused) ? fmtHMS(r.elapsed) : (r.today_seconds>0 ? fmtTime(r.today_seconds) : '—');
+}
+
+function vgTileMediaHtml(r, media){
+  if(media.hasVideo){
+    return `<video class="cam-video${r.user_id===me.id?' self':''}" id="cam-video-${r.user_id}" autoplay playsinline ${r.user_id===me.id?'muted':''}></video>`;
+  }
+  if(media.voiceOnly) return VOICE_ONLY_TILE_ICON;
+  return avatarInner(r.user_id, r.is_live);
+}
+
+function renderVideoGridDOM(withInfo, canInvite){
+  const spotlightEl = document.getElementById('vgSpotlight');
+  const gridEl = document.getElementById('vgGrid');
+  const pagerEl = document.getElementById('vgPager');
+  const hiddenNoteEl = document.getElementById('vgHiddenNote');
+  if(!spotlightEl || !gridEl) return;
+
+  const visible = withInfo.filter(r => !vgHiddenIds.has(r.user_id));
+
+  // Pick the spotlight: whoever's currently talking, else a pinned member
+  // who's in the call, else whoever has their camera on, else nobody.
+  let spotlightRow =
+    visible.find(r => speakingUsers.has(r.user_id)) ||
+    visible.find(r => vgPinnedIds.has(r.user_id) && camActiveUsers.has(r.user_id)) ||
+    visible.find(r => vgMediaFor(r).hasVideo) ||
+    null;
+
+  // Spotlight tile
+  if(spotlightRow){
+    const media = vgMediaFor(spotlightRow);
+    const name = membersCache[spotlightRow.user_id] || spotlightRow.user_id.slice(0,6);
+    const isSpeaking = speakingUsers.has(spotlightRow.user_id);
+    spotlightEl.className = 'vg-spotlight' + (isSpeaking ? ' speaking' : '');
+    spotlightEl.dataset.uid = spotlightRow.user_id;
+    spotlightEl.innerHTML = vgTileMediaHtml(spotlightRow, media) +
+      `<div class="vg-spotlight-nametag">${escHtml(name)}${media.handRaised?' ✋':''}<span class="vg-spotlight-timer">${vgTileTimeTxt(spotlightRow)}</span></div>`;
+    spotlightEl.onclick = () => expandTile(spotlightRow.user_id);
+  } else {
+    spotlightEl.className = 'vg-spotlight';
+    delete spotlightEl.dataset.uid;
+    spotlightEl.innerHTML = `<div class="vg-spotlight-empty">Waiting for someone to turn on their camera or speak…</div>`;
+    spotlightEl.onclick = null;
+  }
+
+  // Remaining tiles: everyone except whoever's spotlighted
+  const rest = visible.filter(r => !spotlightRow || r.user_id !== spotlightRow.user_id);
+  const pinnedRest   = rest.filter(r => vgPinnedIds.has(r.user_id));
+  const rotatingRest = rest.filter(r => !vgPinnedIds.has(r.user_id));
+
+  const totalPages = Math.max(1, Math.ceil(rotatingRest.length / VG_PAGE_SIZE));
+  if(vgPage >= totalPages) vgPage = totalPages - 1;
+  if(vgPage < 0) vgPage = 0;
+  const pageSlice = rotatingRest.slice(vgPage*VG_PAGE_SIZE, vgPage*VG_PAGE_SIZE + VG_PAGE_SIZE);
+  const pageRows = [...pinnedRest, ...pageSlice];
+
+  gridEl.innerHTML = pageRows.map(r=>{
+    const media = vgMediaFor(r);
+    const name = membersCache[r.user_id] || r.user_id.slice(0,6);
+    const isAdmin = rolesCache[r.user_id]==='admin';
+    const isPinned = vgPinnedIds.has(r.user_id);
+    const isSpeaking = speakingUsers.has(r.user_id);
+    const voiceBadge = (media.hasVideo && media.hasVoice) ? `<span class="vg-tile-voicebadge">${vgVoiceIcon}</span>` : '';
+    return `<div class="vg-tile${isPinned?' pinned':''}${isSpeaking?' speaking':''}" id="vg-tile-${r.user_id}" onclick="expandTile('${r.user_id}')" title="${escHtml(name)}">
+      ${vgTileMediaHtml(r, media)}${voiceBadge}
+      <button class="vg-tile-pinbtn${isPinned?' on':''}" onclick="vgTogglePin('${r.user_id}', event)" title="${isPinned?'Unpin':'Pin — always show this tile'}">${vgPinIcon}</button>
+      <button class="vg-tile-hidebtn" onclick="vgToggleHide('${r.user_id}', event)" title="Hide from my view">${vgHideIcon}</button>
+      <div class="vg-tile-nametag"><span class="vg-tile-name">${escHtml(name)}${isAdmin?' ★':''}${media.handRaised?' ✋':''}</span><span class="vg-tile-time" id="vg-time-${r.user_id}">${vgTileTimeTxt(r)}</span></div>
+    </div>`;
+  }).join('') + (canInvite ? `<div class="vg-tile" onclick="scrollToInvite()" style="display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:var(--muted);">+</div>` : '');
+
+  // Pager — only shown once there are more rotating tiles than fit on one page
+  if(rotatingRest.length > VG_PAGE_SIZE){
+    pagerEl.style.display = 'flex';
+    document.getElementById('vgPagerLabel').textContent = `${vgPage+1}/${totalPages}`;
+    document.getElementById('vgPrevBtn').disabled = vgPage===0;
+    document.getElementById('vgNextBtn').disabled = vgPage>=totalPages-1;
+  } else {
+    pagerEl.style.display = 'none';
+  }
+
+  // "N hidden — show all" link
+  if(vgHiddenIds.size){
+    hiddenNoteEl.style.display = 'block';
+    hiddenNoteEl.textContent = `${vgHiddenIds.size} member${vgHiddenIds.size===1?'':'s'} hidden from your view — show all`;
+  } else {
+    hiddenNoteEl.style.display = 'none';
+  }
+
+  reattachAllCamStreams();
+}
+
+function scrollToInvite(){
+  const el = document.getElementById('inviteBox');
+  if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+let liveGridTickHandle = null;
+function tickLiveGrid(){
+  liveTotalsData.forEach(r=>{
+    if(r.is_live || r.is_paused){
+      const txt = fmtHMS(computeElapsedFromRow(r));
+      const circleEl = document.getElementById('lt-time-'+r.user_id);
+      if(circleEl) circleEl.textContent = txt;
+      const vgEl = document.getElementById('vg-time-'+r.user_id);
+      if(vgEl) vgEl.textContent = txt;
+      const spotlightTimer = document.querySelector('#vgSpotlight .vg-spotlight-timer');
+      if(spotlightTimer && document.getElementById('vgSpotlight')?.dataset.uid === r.user_id) spotlightTimer.textContent = txt;
+    }
+  });
+}
+function startLiveGridTick(){ stopLiveGridTick(); liveGridTickHandle = setInterval(tickLiveGrid, 1000); }
+function stopLiveGridTick(){ if(liveGridTickHandle) clearInterval(liveGridTickHandle); liveGridTickHandle = null; }
+
+/* ── GROUP CHAT ────────────────────────────────────────────────
+   One realtime thread per group. Loads the last 50 messages on
+   open, then a postgres_changes subscription pushes new ones in
+   live (same mechanism as dm_messages in chat.html, just scoped
+   to group_id instead of friendship_id). RLS (0039 migration)
+   already restricts read/write to current group members, so this
+   client code doesn't need to re-check membership itself. */
+let groupChatChannel = null;
+const gcRenderedIds = new Set();
+let gcLastDay = null; // yyyy-mm-dd of the last rendered message, for day dividers
+
+async function loadGroupChat(groupId){
+  gcRenderedIds.clear();
+  gcLastDay = null;
+  const scroll = document.getElementById('gcScroll');
+  scroll.innerHTML = `<div class="gc-empty" id="gcEmpty">Loading…</div>`;
+  const { data, error } = await sb.from('group_messages')
+    .select('*').eq('group_id', groupId)
+    .order('created_at', { ascending: false }).limit(50);
+  if(error){ scroll.innerHTML = `<div class="gc-empty">Couldn't load chat.</div>`; console.error(error); return; }
+  scroll.innerHTML = '';
+  const rows = (data||[]).slice().reverse();
+  if(!rows.length){ scroll.innerHTML = `<div class="gc-empty" id="gcEmpty">No messages yet — say hi 👋</div>`; return; }
+  rows.forEach(renderGroupChatMessage);
+  gcScrollToBottom();
+}
+
+function subscribeGroupChat(groupId){
+  if(groupChatChannel) sb.removeChannel(groupChatChannel);
+  groupChatChannel = sb.channel(`group-chat-${groupId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` },
+      ({ new: row }) => { renderGroupChatMessage(row); gcScrollToBottom(); })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` },
+      ({ new: row }) => { gcPatchDeleted(row); })
+    .subscribe();
+}
+
+function gcDayLabel(iso){
+  const d = new Date(iso);
+  const today = new Date();
+  const sameDay = d.toDateString() === today.toDateString();
+  if(sameDay) return 'Today';
+  const y = new Date(today); y.setDate(y.getDate()-1);
+  if(d.toDateString() === y.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+}
+
+function renderGroupChatMessage(row){
+  if(gcRenderedIds.has(row.id)) return;
+  gcRenderedIds.add(row.id);
+  const scroll = document.getElementById('gcScroll');
+  const emptyEl = document.getElementById('gcEmpty');
+  if(emptyEl) emptyEl.remove();
+
+  const dayKey = new Date(row.created_at).toDateString();
+  if(dayKey !== gcLastDay){
+    gcLastDay = dayKey;
+    const div = document.createElement('div');
+    div.className = 'gc-day-divider';
+    div.textContent = gcDayLabel(row.created_at);
+    scroll.appendChild(div);
+  }
+
+  const mine = row.sender_id === me.id;
+  const name = membersCache[row.sender_id] || row.sender_id.slice(0,6);
+  const isAdmin = rolesCache[row.sender_id]==='admin';
+  const time = new Date(row.created_at).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+  const av = avatarCache[row.sender_id];
+  const avatarInnerHtml = av ? `<img src="${escHtml(av)}" alt="">` : escHtml(name.slice(0,1).toUpperCase());
+  const isDeleted = !!row.deleted_at;
+  const bodyHtml = isDeleted ? 'Message deleted' : escHtml(row.body||'');
+  const canDelete = !isDeleted && (mine || currentGroup?.my_role==='admin');
+
+  const div = document.createElement('div');
+  div.className = 'gc-row ' + (mine ? 'mine' : 'theirs');
+  div.id = 'gc-row-' + row.id;
+  div.innerHTML = `
+    ${mine ? '' : `<div class="gc-avatar">${avatarInnerHtml}</div>`}
+    <div class="gc-col">
+      ${mine ? '' : `<div class="gc-name">${escHtml(name)}${isAdmin?' <span class="admin-star">★</span>':''}</div>`}
+      <div class="gc-bubble${isDeleted?' deleted':''}">${bodyHtml}${canDelete ? `<span class="gc-del-btn" onclick="deleteGroupChatMessage('${row.id}')" title="Delete">&times;</span>` : ''}</div>
+      <div class="gc-time">${time}</div>
+    </div>`;
+  scroll.appendChild(div);
+}
+
+function gcPatchDeleted(row){
+  const el = document.getElementById('gc-row-'+row.id);
+  if(!el) return;
+  const bubble = el.querySelector('.gc-bubble');
+  if(bubble && row.deleted_at){
+    bubble.classList.add('deleted');
+    bubble.innerHTML = 'Message deleted';
+  }
+}
+
+function gcScrollToBottom(){
+  const scroll = document.getElementById('gcScroll');
+  if(scroll) scroll.scrollTop = scroll.scrollHeight;
+}
+
+function gcAutoGrow(el){
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 110) + 'px';
+  document.getElementById('gcSendBtn').disabled = el.value.trim().length === 0;
+}
+
+function gcHandleKeydown(e){
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    sendGroupChatMessage();
+  }
+}
+
+async function sendGroupChatMessage(){
+  const input = document.getElementById('gcInput');
+  const body = input.value.trim();
+  if(!body || !currentGroup) return;
+  const btn = document.getElementById('gcSendBtn');
+  btn.disabled = true;
+  const { error } = await sb.from('group_messages').insert({ group_id: currentGroup.id, sender_id: me.id, body });
+  if(error){ console.error(error); alert(error.message || 'Could not send message.'); btn.disabled = false; return; }
+  input.value = '';
+  input.style.height = 'auto';
+  // No optimistic render here — the realtime INSERT subscription (subscribeGroupChat)
+  // delivers our own message back to us same as everyone else's, and gcRenderedIds
+  // dedupes if it somehow arrives twice.
+}
+
+async function deleteGroupChatMessage(messageId){
+  if(!confirm('Delete this message?')) return;
+  const isMine = document.getElementById('gc-row-'+messageId)?.classList.contains('mine');
+  const { error } = isMine
+    ? await sb.from('group_messages').update({ deleted_at: new Date().toISOString(), body: '' }).eq('id', messageId)
+    : await sb.rpc('group_chat_admin_delete', { p_message_id: messageId });
+  if(error){ alert(error.message || 'Could not delete message.'); return; }
+  gcPatchDeleted({ id: messageId, deleted_at: new Date().toISOString() });
+}
+
+function teardownGroupChat(){
+  if(groupChatChannel){ sb.removeChannel(groupChatChannel); groupChatChannel = null; }
+  gcRenderedIds.clear();
+  gcLastDay = null;
+  const scroll = document.getElementById('gcScroll');
+  if(scroll) scroll.innerHTML = `<div class="gc-empty" id="gcEmpty">No messages yet — say hi 👋</div>`;
+  const input = document.getElementById('gcInput');
+  if(input){ input.value=''; input.style.height='auto'; }
+  const btn = document.getElementById('gcSendBtn');
+  if(btn) btn.disabled = true;
+}
+
+init();
+</script>
+</body>
+</html>
