@@ -1,6 +1,6 @@
-# RevM² — Study Smarter
+# RevM² — THE  LIVE STUDY NETWORK
 
-RevM² is a full-stack study platform built for JEE/NEET aspirants: spaced-repetition tracking, live study groups with video, a coin economy, partner matching, and a dual JEE/NEET rank & college predictor — all running on free-tier infrastructure.
+RevM² is a full-stack Live Study Network  built for Exam aspirants- Ebbinghaus  spaced-repetition tracking, live study groups with video, a coin economy,  swipale partner matching and a creator economy with revhead program  all running on free-tier infrastructure.
 
 Built solo, vanilla HTML/CSS/JS, no framework, no build step.
 
@@ -84,4 +84,25 @@ Everything runs on free tiers by design — no dedicated media server, no paid d
 
 Actively Developing to optimize it for mobile usage.
 
-All rights reserved — see [`LICENSE`](./LICENSE). Code is public for portfolio/reference purposes; reuse, redistribution, or deployment requires written permission.
+ Copyright (c) 2026 RevM² LLP  All rights reserved.
+
+This repository and its contents (source code, assets, documentation, and
+database schema/migrations) are made publicly viewable for portfolio,
+reference, and demonstration purposes only.
+
+No permission is granted to any person except Team  of RevM² LLP  to copy, modify, merge, publish,
+distribute, sublicense, deploy, or sell copies of this software, in whole
+or in part, without prior written permission from the copyright holder.
+
+Viewing and forking for personal, non-distributed, educational reference
+is permitted. Any other use — including running a derivative product,
+redistributing the code, or incorporating it into another project —
+requires explicit written permission.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
