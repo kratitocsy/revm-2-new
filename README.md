@@ -23,7 +23,7 @@ Built solo, vanilla HTML/CSS/JS, no framework, no build step.
 - Challenge/bounty system between members (with fraud and wagering-law safeguards on purchased vs. earned coins)
 
 **Study Partners**
-- Tinder-style matching, opt-in and gender-filtered, mutual unlock required
+- Tinder-style matching, opt-in and gender-filtered, mutual unlock required with Superlike and Intro or ice breaker 
 - 1:1 DM chat and video calls once matched
 
 **Predictor**
