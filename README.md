@@ -1,6 +1,6 @@
 # RevM² — THE  LIVE STUDY NETWORK
 
-RevM² is a full-stack Live Study Network  built for Exam aspirants- Ebbinghaus  spaced-repetition tracking, live study groups with video, a coin economy,  swipale partner matching and a creator economy with revhead program  all running on free-tier infrastructure.
+RevM² is a full-stack Live Study Network  built for Exam aspirants- Ebbinghaus  spaced-repetition tracking, live study groups  with live grid with video and audio rooms , a coin economy,  Bounty study challenges , swipale partner matching and a creator economy with revhead program  all running on free-tier infrastructure.
 
 Built solo, vanilla HTML/CSS/JS, no framework, no build step.
 
