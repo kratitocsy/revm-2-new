@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RevM² — Chat</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#c8a96e">
+<style>
+.app-main{height:100vh;overflow:hidden;}
+.chat-wrap{flex:1;display:flex;flex-direction:column;min-height:0;}
+
+/* ── HEADER ── */
+.chat-header{display:flex;align-items:center;gap:0.8rem;padding:0.85rem 1.25rem;background:rgba(0,0,0,0.6);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);flex-shrink:0;}
+.chat-back{background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;padding:0.2rem;}
+.chat-back:hover{color:var(--gold);}
+.chat-avatar{width:40px;height:40px;border-radius:50%;background:var(--s2);border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;color:var(--muted);}
+.chat-avatar img{width:100%;height:100%;object-fit:cover;}
+.chat-avatar .default-avatar-icon{width:60%;height:60%;}
+.chat-avatar.online{border-color:var(--success);}
+.chat-hname{font-size:0.86rem;font-weight:700;color:var(--white);}
+.chat-hsub{font-size:0.68rem;color:var(--muted);}
+.chat-hsub.online{color:var(--success);}
+.chat-hactions{margin-left:auto;display:flex;gap:0.5rem;}
+.chat-call-btn{width:40px;height:40px;border-radius:50%;background:linear-gradient(160deg,rgba(200,169,110,0.14),rgba(200,169,110,0.04));border:1px solid var(--gold-border);color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.18s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04),0 2px 6px rgba(0,0,0,0.35);}
+.chat-call-btn svg{width:17px;height:17px;}
+.chat-call-btn:hover{background:linear-gradient(160deg,var(--gold),#a5824f);color:#0a0a0a;border-color:var(--gold);box-shadow:0 4px 16px rgba(200,169,110,0.35);transform:translateY(-1px);}
+.chat-call-btn:active{transform:translateY(0);}
+
+/* ── MESSAGES ── */
+.chat-scroll{flex:1;overflow-y:auto;padding:1.25rem;display:flex;flex-direction:column;gap:0.3rem;position:relative;z-index:5;}
+.chat-empty{margin:auto;text-align:center;color:var(--dim);font-size:0.8rem;}
+.msg-row{display:flex;margin-bottom:0.15rem;}
+.msg-row.mine{justify-content:flex-end;}
+.msg-bubble{max-width:70%;padding:0.55rem 0.8rem;font-size:0.82rem;line-height:1.45;position:relative;border-radius:14px;word-wrap:break-word;}
+.msg-row.mine .msg-bubble{background:linear-gradient(135deg,var(--gold) 0%,#a5824f 100%);color:#0a0a0a;border-bottom-right-radius:4px;}
+.msg-row.theirs .msg-bubble{background:var(--s2);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:4px;}
+.msg-time{font-size:0.6rem;opacity:0.65;margin-top:0.25rem;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:0.2rem;}
+.msg-row.theirs .msg-time{color:var(--muted);}
+.msg-read{opacity:0.9;}
+.chat-daydiv{align-self:center;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);background:var(--s1);border:1px solid var(--border);padding:0.25rem 0.7rem;border-radius:99px;margin:0.6rem 0;}
+
+/* Inline call-log entries (Telegram-style) */
+.msg-row.calllog{justify-content:center;margin:0.4rem 0;}
+.calllog-bubble{display:flex;align-items:center;gap:0.55rem;padding:0.5rem 0.9rem;background:var(--s1);border:1px solid var(--border2);border-radius:99px;font-size:0.76rem;color:var(--text);}
+.calllog-icon{font-size:0.95rem;display:inline-flex;align-items:center;}
+.calllog-icon.missed,.calllog-icon.declined{color:var(--danger);}
+.calllog-icon.completed{color:var(--success);}
+.calllog-status.missed,.calllog-status.declined{color:var(--danger);}
+.calllog-status.completed{color:var(--muted);}
+
+/* ── COMPOSER ── */
+.chat-composer{flex-shrink:0;display:flex;align-items:center;gap:0.6rem;padding:0.85rem 1.25rem;background:rgba(0,0,0,0.7);backdrop-filter:blur(14px);border-top:1px solid var(--border);}
+.chat-input{flex:1;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.65rem 1rem;font-family:var(--font);font-size:0.85rem;outline:none;border-radius:20px;resize:none;max-height:120px;}
+.chat-input:focus{border-color:var(--gold);}
+.chat-send{width:40px;height:40px;border-radius:50%;background:linear-gradient(160deg,var(--gold),#a5824f);border:none;color:#0a0a0a;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.18s ease;box-shadow:0 3px 10px rgba(200,169,110,0.28);}
+.chat-send svg{width:17px;height:17px;margin-left:-1px;}
+.chat-send:hover:not(:disabled){box-shadow:0 4px 16px rgba(200,169,110,0.45);transform:translateY(-1px);}
+.chat-send:disabled{opacity:0.3;cursor:default;box-shadow:none;}
+
+/* ── CALL OVERLAY ── */
+.call-overlay{display:none;position:fixed;inset:0;z-index:300;background:rgba(4,5,8,0.97);backdrop-filter:blur(10px);flex-direction:column;align-items:center;justify-content:center;}
+.call-overlay.show{display:flex;}
+.call-peer-avatar{width:120px;height:120px;border-radius:50%;background:var(--s2);border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 0 40px rgba(200,169,110,0.35);animation:callPulse 1.8s ease-in-out infinite;}
+.call-peer-avatar img{width:100%;height:100%;object-fit:cover;}
+.call-peer-avatar .default-avatar-icon{width:55%;height:55%;color:var(--gold);}
+@keyframes callPulse{0%,100%{box-shadow:0 0 30px rgba(200,169,110,0.3);}50%{box-shadow:0 0 55px rgba(200,169,110,0.55);}}
+.call-status-name{margin-top:1.3rem;font-size:1.15rem;font-weight:700;color:var(--white);}
+.call-status-sub{margin-top:0.4rem;font-size:0.8rem;color:var(--muted);letter-spacing:0.03em;}
+.call-video-stage{display:none;position:relative;width:100%;height:100%;}
+.call-video-stage.show{display:block;}
+.call-video-remote{width:100%;height:100%;object-fit:cover;background:#000;}
+.call-video-local{position:absolute;bottom:110px;right:24px;width:120px;height:160px;border-radius:12px;object-fit:cover;background:#000;border:2px solid var(--gold-border);box-shadow:0 4px 24px rgba(0,0,0,0.5);transform:scaleX(-1);}
+.call-controls{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:center;align-items:flex-end;gap:1.4rem;padding:1.8rem 1rem;background:linear-gradient(transparent,rgba(0,0,0,0.72));z-index:5;}
+.call-controls.static{position:static;background:none;margin-top:2.4rem;padding:0;gap:1.2rem;}
+/* labelled wrapper */
+.call-btn-wrap{display:flex;flex-direction:column;align-items:center;gap:0.45rem;cursor:pointer;}
+.call-btn-label{font-size:0.72rem;color:rgba(255,255,255,0.82);letter-spacing:0.01em;font-family:var(--font);user-select:none;white-space:nowrap;}
+/* circle button */
+.call-btn{width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.18s ease;position:relative;background:rgba(255,255,255,0.18);backdrop-filter:blur(14px) saturate(1.6);-webkit-backdrop-filter:blur(14px) saturate(1.6);box-shadow:0 2px 16px rgba(0,0,0,0.28),inset 0 1px 1px rgba(255,255,255,0.28);color:#fff;}
+.call-btn svg{width:24px;height:24px;}
+/* accept = green */
+.call-btn.accept{background:radial-gradient(circle at 35% 30%,#5be89a,#1fae63);box-shadow:0 4px 20px rgba(45,212,143,0.45),inset 0 1px 1px rgba(255,255,255,0.3);color:#04150a;}
+/* decline / end = red pill from image */
+.call-btn.decline,.call-btn.end{background:radial-gradient(circle at 35% 30%,#fb7373,#e03e3e);box-shadow:0 4px 22px rgba(248,80,80,0.5),inset 0 1px 1px rgba(255,255,255,0.22);color:#fff;}
+.call-btn.decline svg,.call-btn.end svg{transform:rotate(135deg);}
+/* off state — icon crossed out, tinted */
+.call-btn.off{background:rgba(255,255,255,0.1);box-shadow:0 2px 10px rgba(0,0,0,0.3),inset 0 1px 1px rgba(255,255,255,0.1);}
+.call-btn:hover{transform:translateY(-2px) scale(1.06);filter:brightness(1.08);}
+.call-btn:active{transform:translateY(0) scale(0.96);}
+</style>
+</head>
+<body>
+<canvas id="starfield"></canvas>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <a class="sidebar-logo" href="index.html"><div class="rm2-logo" data-size="small"></div></a>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Study</div>
+      <div class="nav-item" onclick="location.href='tracker.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 11h6M9 15h6"/></svg></span>Tracker</div>
+      <div class="nav-item" onclick="location.href='groups.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7.5" r="3.5"/><path d="M17.5 11a3.5 3.5 0 1 0 0-7"/><path d="M22 21v-1.5a4 4 0 0 0-3-3.87"/></svg></span>Study Groups</div>
+      <div class="nav-item active" onclick="location.href='partners.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="7" cy="5" r="2.3"/><path d="M4 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><circle cx="17" cy="5" r="2.3"/><path d="M14 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><path d="M10 14.5h4"/></svg></span>Study Partners</div>
+      <div class="nav-item" onclick="location.href='store.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg></span>M² Store</div>
+    </nav>
+  </aside>
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
+  <div class="app-main">
+    <div class="chat-wrap">
+      <div class="chat-header" id="chatHeader" style="display:none;">
+        <button class="hamburger-btn" onclick="openMobileSidebar()" aria-label="Open menu" style="margin-right:0.2rem;">☰</button>
+        <button class="chat-back" onclick="location.href='partners.html'" title="Back">←</button>
+        <div class="chat-avatar" id="chatAvatar"></div>
+        <div>
+          <div class="chat-hname" id="chatHName"></div>
+          <div class="chat-hsub" id="chatHSub">@—</div>
+        </div>
+        <div class="chat-hactions">
+          <button class="chat-call-btn" id="voiceCallBtn" onclick="startCall('voice')" title="Voice call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1v3.4c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1L6.6 10.8z"/></svg></button>
+          <button class="chat-call-btn" id="videoCallBtn" onclick="startCall('video')" title="Video call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.6"/><path d="M15.5 10.2 21 7.3v9.4l-5.5-2.9z"/></svg></button>
+        </div>
+      </div>
+
+      <div class="chat-scroll" id="chatScroll">
+        <div class="chat-empty" id="chatEmptyMsg">Loading…</div>
+      </div>
+
+      <div class="chat-composer" id="chatComposer" style="display:none;">
+        <textarea class="chat-input" id="msgInput" placeholder="Message" rows="1" oninput="autoGrow(this)" onkeydown="handleComposerKey(event)"></textarea>
+        <button class="chat-send" id="sendBtn" onclick="sendMessage()" disabled><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.6 21 12 3.4 3.4l.15 6.9L15 12 3.55 13.7z"/></svg></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CALL OVERLAY -->
+<div class="call-overlay" id="callOverlay">
+  <!-- Ringing / connecting state -->
+  <div id="callRingingUI">
+    <div class="call-peer-avatar" id="callPeerAvatar"></div>
+    <div class="call-status-name" id="callStatusName"></div>
+    <div class="call-status-sub" id="callStatusSub">Calling…</div>
+    <div class="call-controls static" id="callRingingControls"></div>
+  </div>
+
+  <!-- Connected state -->
+  <div class="call-video-stage" id="callVideoStage">
+    <video id="remoteVideo" class="call-video-remote" autoplay playsinline></video>
+    <video id="localVideo" class="call-video-local" autoplay playsinline muted style="display:none;"></video>
+    <div class="call-controls">
+      <div class="call-btn-wrap">
+        <button class="call-btn mute" id="muteBtn" onclick="toggleMute()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/><path d="M8.3 21h7.4"/></svg></button>
+        <span class="call-btn-label" id="muteBtnLabel">Mute</span>
+      </div>
+      <div class="call-btn-wrap" id="camBtnWrap">
+        <button class="call-btn cam" id="camBtn" onclick="toggleCallCam()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.6"/><path d="M15.5 10.2 21 7.3v9.4l-5.5-2.9z"/></svg></button>
+        <span class="call-btn-label">Camera</span>
+      </div>
+      <div class="call-btn-wrap">
+        <button class="call-btn end" onclick="endCall()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1v3.4c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1L6.6 10.8z"/></svg></button>
+        <span class="call-btn-label">End</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script src="floating-timer.js"></script>
+<script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const ICON_PHONE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1v3.4c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1L6.6 10.8z"/></svg>`;
+const ICON_VIDEO = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.6"/><path d="M15.5 10.2 21 7.3v9.4l-5.5-2.9z"/></svg>`;
+const ICON_MIC = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/><path d="M8.3 21h7.4"/></svg>`;
+const ICON_MIC_OFF = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/><path d="M8.3 21h7.4"/><line x1="3" y1="3" x2="21" y2="21"/></svg>`;
+const ICON_CLOSE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>`;
+const ICON_CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg>`;
+const ICON_SEND = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.6 21 12 3.4 3.4l.15 6.9L15 12 3.55 13.7z"/></svg>`;
+
+const sb = window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL, REVM2_CONFIG.SUPABASE_ANON);
+let me = null;
+const params = new URLSearchParams(location.search);
+const FID = params.get('fid');
+const AUTOSTART_CALL = params.get('call'); // 'voice' | 'video' | null
+
+const DEFAULT_AVATAR_ICON = `<svg class="default-avatar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="2.6"/><path d="M6.5 14.2c0-2 2.3-3.4 5.5-3.4s5.5 1.4 5.5 3.4"/><path d="M3 19.5h18"/><path d="M6.5 19.5v-2.3M17.5 19.5v-2.3"/></svg>`;
+function avatarHtml(url){ return url ? `<img src="${escHtml(url)}" alt="">` : DEFAULT_AVATAR_ICON; }
+
+let peer = null; // {id, username, display_name, avatar_url}
+
+/* ── INIT ─────────────────────────────────────────────────── */
+async function init(){
+  RevM2Loader.show('Opening chat…');
+  const session = await requireAuth();
+  if(!session) return;
+  me = session.user;
+
+  if(!FID){ showFatal('No conversation selected.'); RevM2Loader.hide(); return; }
+
+  const ok = await resolvePeer();
+  if(!ok){ showFatal("Couldn't load this conversation — you may no longer be study partners."); RevM2Loader.hide(); return; }
+
+  renderHeader();
+  document.getElementById('chatHeader').style.display = 'flex';
+  document.getElementById('chatComposer').style.display = 'flex';
+
+  await loadHistory();
+  subscribeMessages();
+  initPresence();
+  initCallChannel();
+
+  RevM2Loader.hide();
+
+  if(AUTOSTART_CALL === 'voice' || AUTOSTART_CALL === 'video') startCall(AUTOSTART_CALL);
+}
+
+function showFatal(text){
+  document.getElementById('chatEmptyMsg').textContent = text;
+}
+
+/* Resolve the friend behind ?fid= using the existing list_friends() RPC.
+   We don't assume its exact column name for the peer's user id — try the
+   common ones so this keeps working regardless of your schema. */
+async function resolvePeer(){
+  const { data, error } = await sb.rpc('list_friends');
+  if(error || !data) return false;
+  const row = data.find(f => f.friendship_id === FID);
+  if(!row) return false;
+  const peerId = row.id || row.user_id || row.friend_id || row.peer_id;
+  if(!peerId){ console.error('list_friends() did not expose the friend user id — chat cannot resolve a recipient.'); return false; }
+  peer = {
+    id: peerId,
+    username: row.username || '',
+    display_name: row.display_name || row.track || '',
+    avatar_url: row.avatar_url || null
+  };
+  return true;
+}
+
+function renderHeader(){
+  document.getElementById('chatAvatar').innerHTML = avatarHtml(peer.avatar_url);
+  document.getElementById('chatHName').textContent = peer.display_name || ('@'+peer.username);
+  document.getElementById('chatHSub').textContent = '@'+peer.username;
+}
+
+/* ── MESSAGE HISTORY ──────────────────────────────────────── */
+let renderedIds = new Set();
+
+async function loadHistory(){
+  const { data, error } = await sb.from('dm_messages').select('*').eq('friendship_id', FID).order('created_at', { ascending: true });
+  if(error){ showFatal('Could not load messages.'); return; }
+  const scroll = document.getElementById('chatScroll');
+  scroll.innerHTML = '';
+  if(!data || !data.length){
+    scroll.innerHTML = `<div class="chat-empty">No messages yet — say hi to @${escHtml(peer.username)}.</div>`;
+  } else {
+    data.forEach(renderMessage);
+  }
+  scroll.scrollTop = scroll.scrollHeight;
+  markIncomingRead();
+}
+
+function subscribeMessages(){
+  sb.channel(`dm-messages-${FID}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dm_messages', filter: `friendship_id=eq.${FID}` }, ({ new: row }) => {
+      const scroll = document.getElementById('chatScroll');
+      const wasEmpty = scroll.querySelector('.chat-empty');
+      if(wasEmpty) scroll.innerHTML = '';
+      renderMessage(row);
+      scroll.scrollTop = scroll.scrollHeight;
+      if(row.recipient_id === me.id) markIncomingRead();
+    })
+    .subscribe();
+}
+
+function renderMessage(row){
+  if(renderedIds.has(row.id)) return;
+  renderedIds.add(row.id);
+  const scroll = document.getElementById('chatScroll');
+  const mine = row.sender_id === me.id;
+  const time = new Date(row.created_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+
+  if(row.kind === 'call_log'){
+    const icon = row.call_type === 'video'
+      ? '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6.5" width="12" height="11" rx="2"/><path d="M17.5 10.2 21 8v8l-3.5-2.2z"/></svg>'
+      : '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.2 1.1L6.6 10.8z"/></svg>';
+    const dir = mine ? '↗' : '↙';
+    let statusText, statusCls;
+    if(row.call_status === 'completed'){ statusText = fmtCallDuration(row.call_duration_seconds||0); statusCls='completed'; }
+    else if(row.call_status === 'declined'){ statusText = 'Declined'; statusCls='declined'; }
+    else if(row.call_status === 'cancelled'){ statusText = 'Cancelled'; statusCls='declined'; }
+    else { statusText = 'Missed'; statusCls='missed'; }
+    const label = mine ? 'Outgoing Call' : 'Incoming Call';
+    const div = document.createElement('div');
+    div.className = 'msg-row calllog';
+    div.innerHTML = `<div class="calllog-bubble">
+      <span class="calllog-icon ${statusCls}">${icon}</span>
+      <span>${label} ${dir}</span>
+      <span class="calllog-status ${statusCls}">${statusText}</span>
+      <span style="color:var(--dim);">${time}</span>
+    </div>`;
+    scroll.appendChild(div);
+    return;
+  }
+
+  const div = document.createElement('div');
+  div.className = 'msg-row ' + (mine ? 'mine' : 'theirs');
+  const readTick = mine ? `<span class="msg-read">${row.read_at ? '✓✓' : '✓'}</span>` : '';
+  div.innerHTML = `<div class="msg-bubble">${escHtml(row.body||'')}<div class="msg-time">${time} ${readTick}</div></div>`;
+  scroll.appendChild(div);
+}
+
+function fmtCallDuration(secs){
+  const m = Math.floor(secs/60), s = secs%60;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+async function markIncomingRead(){
+  await sb.from('dm_messages').update({ read_at: new Date().toISOString() }).eq('friendship_id', FID).eq('recipient_id', me.id).is('read_at', null);
+}
+
+/* ── COMPOSER ─────────────────────────────────────────────── */
+function autoGrow(el){
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  document.getElementById('sendBtn').disabled = el.value.trim().length === 0;
+}
+function handleComposerKey(e){
+  if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+}
+async function sendMessage(){
+  const input = document.getElementById('msgInput');
+  const body = input.value.trim();
+  if(!body) return;
+  input.value=''; autoGrow(input);
+  const { error } = await sb.from('dm_messages').insert({ friendship_id: FID, sender_id: me.id, recipient_id: peer.id, kind: 'text', body });
+  if(error) console.error(error);
+}
+
+/* ── PRESENCE (online indicator) ─────────────────────────── */
+function initPresence(){
+  const ch = sb.channel(`dm-presence-${FID}`, { config: { presence: { key: me.id } } })
+    .on('presence', { event: 'sync' }, () => {
+      const online = Object.keys(ch.presenceState()).includes(peer.id);
+      document.getElementById('chatAvatar').classList.toggle('online', online);
+      const sub = document.getElementById('chatHSub');
+      sub.textContent = online ? 'online' : '@'+peer.username;
+      sub.classList.toggle('online', online);
+    })
+    .subscribe(async (status) => { if(status === 'SUBSCRIBED') await ch.track({ online: true }); });
+}
+
+/* ── CALL (WebRTC mesh, 1:1) ──────────────────────────────
+   Same pattern as groups.html's group call, scoped to two
+   people on a dedicated per-friendship channel. Signaling rides
+   Supabase Realtime broadcast; media flows peer-to-peer. */
+/* ── ICE servers: STUN always + short-lived TURN fallback ────
+   TURN only kicks in when a direct/STUN peer-to-peer path fails
+   (symmetric NAT, some mobile carriers/corporate networks) — most
+   calls never touch it, but without it those calls just never connect.
+
+   Uses Metered.ca's free tier: their public "app domain" + API key
+   is designed to be called straight from client JS (rate-limited,
+   short-lived credentials — this is not a secret to protect like an
+   account password). Sign up free at https://www.metered.ca/tools/openrelay/
+   then fill in METERED_APP_DOMAIN + METERED_API_KEY below.
+   Until those are filled in, calls silently fall back to STUN-only
+   (same behavior as before — nothing breaks if you skip this). */
+const METERED_APP_DOMAIN = 'revm2.metered.live';
+const METERED_API_KEY = '750826d81cf1efa37341c785599505a59e5d';
+
+const STUN_ONLY = [{ urls: 'stun:stun.l.google.com:19302' }];
+let _iceServersCache = null, _iceServersFetchedAt = 0;
+const ICE_CACHE_MS = 6 * 60 * 60 * 1000; // Metered creds are valid ~24h; refresh well before that
+
+async function getIceServers(){
+  if(!METERED_APP_DOMAIN || !METERED_API_KEY) return STUN_ONLY;
+  const fresh = _iceServersCache && (Date.now() - _iceServersFetchedAt) < ICE_CACHE_MS;
+  if(fresh) return _iceServersCache;
+  try{
+    const res = await fetch(`https://${METERED_APP_DOMAIN}/api/v1/turn/credentials?apiKey=${METERED_API_KEY}`);
+    if(!res.ok) throw new Error('turn credential fetch failed');
+    const servers = await res.json(); // array of {urls, username, credential}
+    if(!Array.isArray(servers) || !servers.length) throw new Error('empty turn credential response');
+    _iceServersCache = [...STUN_ONLY, ...servers];
+    _iceServersFetchedAt = Date.now();
+    return _iceServersCache;
+  }catch(e){
+    console.warn('TURN credentials unavailable, falling back to STUN-only:', e);
+    return STUN_ONLY;
+  }
+}
+let callChannel = null, pc = null, localStream = null;
+let callState = 'idle'; // idle | outgoing | incoming | connected
+let callType = 'voice'; // voice | video
+let micOn = true, camOn = true;
+let callStartedAt = null, ringTimeout = null;
+let iWasCaller = false; // only the caller writes the call-log row, so both sides don't double-log
+
+function initCallChannel(){
+  callChannel = sb.channel(`dm-call-${FID}`, { config: { presence: { key: me.id } } })
+    .on('broadcast', { event: 'call' }, ({ payload }) => handleCallSignal(payload))
+    .subscribe();
+}
+
+function sendCallSignal(data){
+  callChannel.send({ type: 'broadcast', event: 'call', payload: { from: me.id, to: peer.id, ...data } });
+}
+
+async function startCall(type){
+  if(callState !== 'idle') return;
+  callType = type;
+  callState = 'outgoing';
+  iWasCaller = true;
+  showRingingOverlay('Calling…', []);
+  sendCallSignal({ kind: 'ring', callType: type });
+  ringTimeout = setTimeout(()=>{ if(callState==='outgoing'){ sendCallSignal({kind:'cancel'}); logCallOutcome('missed', 0); teardownCall(); } }, 30000);
+}
+
+async function handleCallSignal(payload){
+  if(!payload || payload.to !== me.id) return;
+  if(payload.kind === 'ring'){
+    if(callState !== 'idle') { sendCallSignalTo(payload.from, {kind:'decline'}); return; } // busy
+    callType = payload.callType;
+    callState = 'incoming';
+    iWasCaller = false;
+    showRingingOverlay(`Incoming ${callType==='video'?'video':'voice'} call…`, [
+      `<div class="call-btn-wrap"><button class="call-btn decline" onclick="declineCall()">${ICON_CLOSE}</button><span class="call-btn-label">Decline</span></div>`,
+      `<div class="call-btn-wrap"><button class="call-btn accept" onclick="acceptCall()">${ICON_PHONE}</button><span class="call-btn-label">Accept</span></div>`
+    ]);
+  } else if(payload.kind === 'accept'){
+    clearTimeout(ringTimeout);
+    await beginMedia(true);
+  } else if(payload.kind === 'decline'){
+    logCallOutcome('declined', 0);
+    teardownCall();
+  } else if(payload.kind === 'cancel'){
+    teardownCall(); // the caller already logged 'cancelled' when they pressed cancel
+  } else if(payload.kind === 'end'){
+    logCallOutcome('completed', elapsedSeconds()); // no-op unless I'm the caller — covers "other side hung up first"
+    teardownCall();
+  } else if(payload.kind === 'offer'){
+    if(!pc) await beginMedia(false);
+    await pc.setRemoteDescription(payload.sdp);
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    sendCallSignal({ kind:'answer', sdp: pc.localDescription });
+  } else if(payload.kind === 'answer'){
+    await pc.setRemoteDescription(payload.sdp);
+  } else if(payload.kind === 'ice'){
+    try{ await pc.addIceCandidate(payload.candidate); }catch(e){}
+  }
+}
+function sendCallSignalTo(to, data){ callChannel.send({ type:'broadcast', event:'call', payload:{ from: me.id, to, ...data } }); }
+
+async function acceptCall(){
+  sendCallSignal({ kind: 'accept' });
+  await beginMedia(true);
+}
+function declineCall(){
+  sendCallSignal({ kind: 'decline' }); // caller logs 'declined' when this arrives
+  teardownCall();
+}
+function cancelOutgoingCall(){
+  clearTimeout(ringTimeout);
+  sendCallSignal({ kind: 'cancel' });
+  logCallOutcome('cancelled', 0);
+  teardownCall();
+}
+function endCall(){
+  sendCallSignal({ kind: 'end' });
+  logCallOutcome('completed', elapsedSeconds());
+  teardownCall();
+}
+
+async function beginMedia(iInitiate){
+  try{
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: callType === 'video' });
+  } catch(e){
+    alert('Could not access camera/mic. Check your browser permissions and try again.');
+    sendCallSignal({ kind: 'decline' });
+    teardownCall();
+    return;
+  }
+  callState = 'connected';
+  callStartedAt = Date.now();
+  showConnectedUI();
+
+  pc = new RTCPeerConnection({
+    iceServers: await getIceServers(),
+    iceTransportPolicy: 'all'   // 'all' = use relay ONLY if direct/STUN fails (never 'relay' which forces TURN for everyone)
+  });
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+  pc.onicecandidate = e => { if(e.candidate) sendCallSignal({ kind:'ice', candidate: e.candidate }); };
+  pc.ontrack = e => { document.getElementById('remoteVideo').srcObject = e.streams[0]; };
+  pc.onconnectionstatechange = () => {
+    if(pc.connectionState === 'connected') logRelayUsage(pc, 'dm_1to1', FID, callType);
+    if(['failed','disconnected','closed'].includes(pc.connectionState) && callState==='connected'){ endCall(); }
+  };
+  if(iInitiate){
+    pc.onnegotiationneeded = async () => {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      sendCallSignal({ kind: 'offer', sdp: pc.localDescription });
+    };
+  }
+}
+
+function showRingingOverlay(subText, buttonsHtml){
+  document.getElementById('callOverlay').classList.add('show');
+  document.getElementById('callRingingUI').style.display = 'block';
+  document.getElementById('callVideoStage').classList.remove('show');
+  document.getElementById('callPeerAvatar').innerHTML = avatarHtml(peer.avatar_url);
+  document.getElementById('callStatusName').textContent = peer.display_name || ('@'+peer.username);
+  document.getElementById('callStatusSub').textContent = subText;
+  const controls = document.getElementById('callRingingControls');
+  if(buttonsHtml.length){
+    controls.innerHTML = buttonsHtml.join('');
+  } else {
+    controls.innerHTML = `<div class="call-btn-wrap"><button class="call-btn decline" onclick="cancelOutgoingCall()">${ICON_CLOSE}</button><span class="call-btn-label">Cancel</span></div>`;
+  }
+}
+
+function showConnectedUI(){
+  document.getElementById('callRingingUI').style.display = 'none';
+  document.getElementById('callVideoStage').classList.add('show');
+  const local = document.getElementById('localVideo');
+  local.srcObject = localStream;
+  local.style.display = callType === 'video' ? 'block' : 'none';
+  document.getElementById('remoteVideo').style.display = callType === 'video' ? 'block' : 'none';
+  micOn = true; camOn = true;
+  updateCallBtns();
+}
+
+function toggleMute(){
+  if(!localStream) return;
+  micOn = !micOn;
+  localStream.getAudioTracks().forEach(t => t.enabled = micOn);
+  updateCallBtns();
+}
+function toggleCallCam(){
+  if(!localStream || callType !== 'video') return;
+  camOn = !camOn;
+  localStream.getVideoTracks().forEach(t => t.enabled = camOn);
+  updateCallBtns();
+}
+function updateCallBtns(){
+  const mb = document.getElementById('muteBtn');
+  const cb = document.getElementById('camBtn');
+  const cbWrap = document.getElementById('camBtnWrap');
+  const muteLabel = document.getElementById('muteBtnLabel');
+  if(mb){
+    mb.classList.toggle('off', !micOn);
+    mb.innerHTML = micOn ? ICON_MIC : ICON_MIC_OFF;
+    if(muteLabel) muteLabel.textContent = micOn ? 'Mute' : 'Unmute';
+  }
+  if(cbWrap) cbWrap.style.display = callType === 'video' ? 'flex' : 'none';
+  if(cb) cb.classList.toggle('off', !camOn);
+}
+
+function elapsedSeconds(){ return callStartedAt ? Math.round((Date.now()-callStartedAt)/1000) : 0; }
+
+/* ── TURN relay detection ─────────────────────────────────────
+   Reads getStats() once the connection is established to find the
+   winning ICE candidate pair. Only logs a row if the connection
+   actually used a TURN relay — so the rtc_relay_log table fills
+   only with meaningful signal, not noise.
+   Called automatically on connectionState === 'connected'. */
+async function logRelayUsage(peerConn, context, contextId, callTypeStr){
+  try {
+    const stats = await peerConn.getStats();
+    let localType = null, remoteType = null;
+    // Walk stats to find the succeeded candidate-pair and its candidate types
+    stats.forEach(report => {
+      if(report.type === 'candidate-pair' && report.state === 'succeeded' && report.nominated){
+        const local  = stats.get(report.localCandidateId);
+        const remote = stats.get(report.remoteCandidateId);
+        if(local)  localType  = local.candidateType;   // 'host' | 'srflx' | 'relay'
+        if(remote) remoteType = remote.candidateType;
+      }
+    });
+    if(!localType) return; // stats not available yet — skip silently
+    const usedRelay = localType === 'relay' || remoteType === 'relay';
+    // Only write to Supabase — no console noise in production
+    await sb.from('rtc_relay_log').insert({
+      user_id:          me.id,
+      call_context:     context,
+      context_id:       contextId,
+      used_relay:       usedRelay,
+      local_candidate:  localType,
+      remote_candidate: remoteType,
+      call_type:        callTypeStr,
+      duration_seconds: null  // filled in by logCallOutcome separately
+    });
+  } catch(e) {
+    // Never let relay logging break the actual call
+    console.warn('relay stat log failed (non-fatal):', e);
+  }
+}
+
+async function logCallOutcome(status, duration){
+  // Only the caller writes the canonical log row for a call, so the two
+  // sides never produce duplicate "Outgoing/Incoming Call" entries.
+  if(!iWasCaller) return;
+  await sb.from('dm_messages').insert({
+    friendship_id: FID, sender_id: me.id, recipient_id: peer.id,
+    kind: 'call_log', call_type: callType, call_status: status, call_duration_seconds: duration
+  });
+}
+
+function teardownCall(){
+  clearTimeout(ringTimeout);
+  if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream=null; }
+  if(pc){ pc.close(); pc=null; }
+  callState = 'idle';
+  iWasCaller = false;
+  document.getElementById('callOverlay').classList.remove('show');
+}
+
+window.addEventListener('beforeunload', () => { if(callState !== 'idle') sendCallSignal({ kind: 'end' }); });
+
+init();
+</script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>

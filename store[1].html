@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RevM² — M² Store</title>
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+<style>
+:root{ --coin:#f59e0b; --coin-dim:rgba(245,158,11,0.12); }
+.sw{max-width:1000px;margin:0 auto;padding:1.5rem;}
+
+/* WALLET HERO */
+.wallet-hero{background:linear-gradient(135deg,var(--s1) 0%,rgba(200,169,110,0.08) 100%);border:1px solid var(--gold);border-radius:8px;padding:1.4rem 1.6rem;display:flex;align-items:center;gap:1.5rem;margin-bottom:1.8rem;flex-wrap:wrap;}
+.coin-icon{font-size:2.4rem;color:var(--coin);}
+.wallet-bal{font-size:2rem;font-weight:900;color:var(--gold);letter-spacing:-0.02em;}
+.wallet-sub{font-size:0.72rem;color:var(--muted);}
+.rank-pill{display:flex;align-items:center;gap:0.5rem;background:var(--s2);border:1px solid var(--border);padding:0.55rem 1rem;border-radius:6px;margin-left:auto;}
+.rank-name{font-size:0.88rem;font-weight:700;color:var(--white);}
+.rank-sub{font-size:0.65rem;color:var(--muted);}
+.rank-bar-wrap{width:140px;height:6px;background:var(--s2);border-radius:99px;overflow:hidden;margin-top:0.25rem;}
+.rank-bar{height:100%;border-radius:99px;background:var(--gold);}
+
+/* SECTION TABS */
+.store-tabs{display:flex;gap:0.4rem;margin-bottom:1.25rem;}
+.store-tab{padding:0.5rem 1rem;font-size:0.74rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;border:1px solid var(--border2);background:var(--s1);color:var(--muted);cursor:pointer;font-family:var(--font);}
+.store-tab.active{background:var(--coin-dim);border-color:var(--coin);color:var(--coin);}
+
+/* COIN PACKAGES */
+.pkg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.8rem;}
+.pkg-card{background:var(--s1);border:1px solid var(--border);padding:1rem;text-align:center;position:relative;cursor:pointer;transition:border-color 0.2s;}
+.pkg-card:hover{border-color:var(--coin);}
+.pkg-card.popular{border-color:var(--coin);box-shadow:0 0 0 1px var(--coin);}
+.popular-tag{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--coin);color:#000;font-size:0.6rem;font-weight:800;padding:0.15rem 0.6rem;border-radius:99px;white-space:nowrap;}
+.pkg-coins{font-size:1.5rem;font-weight:900;color:var(--coin);}
+.pkg-bonus{font-size:0.65rem;color:var(--success);font-weight:700;margin:0.1rem 0;}
+.pkg-price{font-size:0.82rem;color:var(--text);margin:0.4rem 0;}
+.pkg-name{font-size:0.68rem;color:var(--muted);}
+
+/* SHOP ITEMS */
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.8rem;}
+.shop-card{background:var(--s1);border:1px solid var(--border);padding:1rem;}
+.shop-type{font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem;}
+.shop-name{font-size:0.85rem;font-weight:700;color:var(--white);margin-bottom:0.3rem;}
+.shop-desc{font-size:0.7rem;color:var(--muted);margin-bottom:0.65rem;line-height:1.4;}
+.shop-cost{display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;font-weight:700;color:var(--coin);}
+
+/* RANK TABLE */
+.rank-table{width:100%;border-collapse:collapse;}
+.rank-table th{font-size:0.65rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid var(--border);}
+.rank-table td{padding:0.6rem 0.75rem;border-bottom:1px solid var(--border);font-size:0.8rem;}
+.rank-table tr.my-rank td{background:rgba(200,169,110,0.08);}
+.r-badge{display:inline-flex;align-items:center;gap:0.4rem;font-weight:700;}
+
+/* INVENTORY */
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.8rem;}
+.inv-card{background:var(--s1);border:1px solid var(--border);padding:0.9rem;}
+.inv-name{font-size:0.82rem;font-weight:700;color:var(--white);}
+.inv-exp{font-size:0.68rem;color:var(--muted);}
+.inv-active{font-size:0.65rem;color:var(--success);}
+
+.empty-state{text-align:center;padding:2rem;color:var(--muted);font-size:0.78rem;}
+</style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <a class="sidebar-logo" href="index.html"><div class="rm2-logo" data-size="small"></div></a>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Study</div>
+      <div class="nav-item" onclick="location.href='tracker.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 11h6M9 15h6"/></svg></span>Tracker</div>
+      <div class="nav-item" onclick="location.href='groups.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7.5" r="3.5"/><path d="M17.5 11a3.5 3.5 0 1 0 0-7"/><path d="M22 21v-1.5a4 4 0 0 0-3-3.87"/></svg></span>Study Groups</div>
+      <div class="nav-item" onclick="location.href='partners.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="7" cy="5" r="2.3"/><path d="M4 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><circle cx="17" cy="5" r="2.3"/><path d="M14 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><path d="M10 14.5h4"/></svg></span>Study Partners</div>
+      <div class="nav-item active"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg></span>M² Store</div>
+    </nav>
+  </aside>
+
+  <!-- MOBILE NAV BACKDROP -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
+  <div class="app-main">
+    <div class="topbar">
+      <button class="hamburger-btn" onclick="openMobileSidebar()" aria-label="Open menu">☰</button>
+      <div><div class="topbar-title">M² Store</div><div class="topbar-sub">Earn coins by studying. Spend them on perks.</div></div>
+    </div>
+
+    <div class="sw">
+      <!-- WALLET HERO -->
+      <div class="wallet-hero">
+        <div class="coin-icon"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="6.5"/><path d="M9.3 14.3V9.7l2.7 2.6 2.7-2.6v4.6"/></svg></div>
+        <div>
+          <div class="wallet-bal rm2-skeleton" id="walletBal">—</div>
+          <div class="wallet-sub">M² Coins available</div>
+          <div class="wallet-sub" id="walletEarned" style="margin-top:0.15rem;"></div>
+        </div>
+        <div class="rank-pill">
+          <div>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <span id="rankEmoji" style="font-size:1.3rem;"></span>
+              <div>
+                <div class="rank-name" id="rankName">—</div>
+                <div class="rank-sub" id="rankNext"></div>
+              </div>
+            </div>
+            <div class="rank-bar-wrap"><div class="rank-bar" id="rankBar" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="store-tabs">
+        <button class="store-tab active" onclick="setStoreTab('buy',this)">Buy Coins</button>
+        <button class="store-tab" onclick="setStoreTab('shop',this)">Spend Coins</button>
+        <button class="store-tab" onclick="setStoreTab('ranks',this)">Ranks</button>
+        <button class="store-tab" onclick="setStoreTab('inventory',this)">My Items</button>
+        <button class="store-tab" onclick="setStoreTab('history',this)">Coin History</button>
+      </div>
+
+      <!-- BUY COINS -->
+      <div id="tab-buy">
+        <p style="font-size:0.74rem;color:var(--muted);margin-bottom:1rem;">Real money → M² Coins. More coins, more perks.</p>
+        <div class="pkg-grid" id="pkgGrid"></div>
+        <p style="font-size:0.65rem;color:var(--dim);margin-top:1rem;">Payments processed securely via Razorpay (UPI, cards, net banking). GST inclusive.</p>
+      </div>
+
+      <!-- SHOP ITEMS (spend coins) -->
+      <div id="tab-shop" style="display:none;">
+        <div class="shop-grid" id="shopGrid"></div>
+      </div>
+
+      <!-- RANKS -->
+      <div id="tab-ranks" style="display:none;">
+        <p style="font-size:0.74rem;color:var(--muted);margin-bottom:1rem;">Ranks are based on <b>total coins ever earned</b> — they never drop. Study more, earn more, climb forever.</p>
+        <table class="rank-table" id="rankTable"></table>
+      </div>
+
+      <!-- INVENTORY -->
+      <div id="tab-inventory" style="display:none;">
+        <div class="inv-grid" id="invGrid"></div>
+      </div>
+
+      <!-- HISTORY -->
+      <div id="tab-history" style="display:none;">
+        <div id="txnList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BUY CONFIRM MODAL -->
+<div class="modal-overlay" id="buyModal">
+  <div class="modal" style="max-width:380px;">
+    <h3>Confirm Purchase</h3>
+    <div id="buyDetails" style="margin:0.75rem 0;font-size:0.82rem;color:var(--text);"></div>
+    <p style="font-size:0.72rem;color:var(--muted);">Payment via Razorpay — you'll be redirected to complete the transaction.</p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeBuyModal()">Cancel</button>
+      <button class="btn btn-gold btn-sm" onclick="proceedPayment()">Pay Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- REDEEM CONFIRM MODAL -->
+<div class="modal-overlay" id="redeemModal">
+  <div class="modal" style="max-width:380px;">
+    <h3>Redeem Item</h3>
+    <div id="redeemDetails" style="margin:0.75rem 0;font-size:0.82rem;color:var(--text);"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeRedeemModal()">Cancel</button>
+      <button class="btn btn-gold btn-sm" onclick="confirmRedeem()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+  <script src="floating-timer.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const sb = window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL, REVM2_CONFIG.SUPABASE_ANON);
+let me = null, wallet = null, allRanks = [], pendingItem = null, pendingPkg = null;
+
+async function init(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session){ location.href='login.html'; return; }
+  me = session.user;
+  await Promise.all([loadWallet(), loadRanks()]);
+  renderWallet();
+  await loadPackages();
+  await loadShop();
+}
+
+async function loadWallet(){
+  const { data } = await sb.from('user_wallets').select('*').eq('user_id',me.id).single();
+  wallet = data || { coins:0, total_earned:0 };
+}
+
+async function loadRanks(){
+  const { data } = await sb.from('rank_tiers').select('*').order('rank_order');
+  allRanks = data || [];
+}
+
+function currentRank(){
+  const earned = wallet?.total_earned ?? 0;
+  let cur = allRanks[0], next = null;
+  for(let i=0;i<allRanks.length;i++){
+    if(earned >= allRanks[i].min_coins){ cur = allRanks[i]; next = allRanks[i+1]||null; }
+  }
+  return {cur, next};
+}
+
+function renderWallet(){
+  document.getElementById('walletBal').classList.remove('rm2-skeleton');
+  rm2AnimateNumber(document.getElementById('walletBal'), wallet?.coins ?? 0);
+  document.getElementById('walletEarned').textContent = `Total earned: ${(wallet?.total_earned ?? 0).toLocaleString()} M²`;
+  const {cur, next} = currentRank();
+  document.getElementById('rankEmoji').textContent = cur?.badge_emoji || '';
+  document.getElementById('rankName').textContent = cur?.name || '—';
+  document.getElementById('rankNext').textContent = next ? `Next: ${next.name} at ${next.min_coins.toLocaleString()}` : 'Max rank!';
+  if(next){
+    const pct = Math.min(100, Math.round(((wallet.total_earned - cur.min_coins)/(next.min_coins - cur.min_coins))*100));
+    document.getElementById('rankBar').style.width = pct+'%';
+    document.getElementById('rankBar').style.background = cur.badge_color;
+  } else {
+    document.getElementById('rankBar').style.width = '100%';
+  }
+}
+
+async function loadPackages(){
+  const { data } = await sb.from('coin_packages').select('*').order('price_inr');
+  document.getElementById('pkgGrid').innerHTML = (data||[]).map(p=>`
+  rm2Stagger(document.getElementById('pkgGrid').children);
+    <div class="pkg-card ${p.popular?'popular':''}" onclick="openBuy(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+      ${p.popular?'<div class="popular-tag"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M12 2c1 3-3 4.5-3 8a3 3 0 0 0 6 0c1.5 1 2 2.8 2 4.3A6.3 6.3 0 0 1 5.5 14C5.5 8 12 6 12 2Z"/></svg> Most Popular</div>':''}
+      <div class="pkg-coins"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:0.15rem"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg>${(p.coins*(1+p.bonus_pct/100)).toLocaleString()}</div>
+      ${p.bonus_pct?`<div class="pkg-bonus">+${p.bonus_pct}% bonus!</div>`:''}
+      <div class="pkg-name">${p.name}</div>
+      <div class="pkg-price">₹${p.price_inr}</div>
+      <button class="btn btn-gold btn-sm" style="width:100%;margin-top:0.4rem;">Buy</button>
+    </div>`).join('');
+}
+
+async function loadShop(){
+  const { data } = await sb.from('shop_items').select('*');
+  document.getElementById('shopGrid').innerHTML = (data||[]).map(item=>`
+  rm2Stagger(document.getElementById('shopGrid').children);
+    <div class="shop-card">
+      <div class="shop-type">${item.item_type.replace(/_/g,' ')}</div>
+      <div class="shop-name">${item.name}</div>
+      <div class="shop-desc">${item.description||''}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="shop-cost"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:0.15rem"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg>${item.coin_cost.toLocaleString()}</div>
+        <button class="btn btn-gold btn-sm" onclick="openRedeem(${JSON.stringify(item).replace(/"/g,'&quot;')})">Get</button>
+      </div>
+    </div>`).join('');
+}
+
+function setStoreTab(id, el){
+  document.querySelectorAll('.store-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['buy','shop','ranks','inventory','history'].forEach(t=>document.getElementById('tab-'+t).style.display='none');
+  document.getElementById('tab-'+id).style.display='block';
+  if(id==='ranks') renderRankTable();
+  if(id==='inventory') loadInventory();
+  if(id==='history') loadTxnHistory();
+}
+
+function renderRankTable(){
+  const earned = wallet?.total_earned ?? 0;
+  const {cur} = currentRank();
+  document.getElementById('rankTable').innerHTML =
+    `<tr><th>Rank</th><th>Tier</th><th>Coins needed</th></tr>` +
+    allRanks.map(r=>`<tr class="${r.id===cur?.id?'my-rank':''}">
+      <td><span class="r-badge" style="color:${r.badge_color}">${r.badge_emoji} ${r.name}</span></td>
+      <td style="font-size:0.7rem;color:var(--muted);">#${r.rank_order}</td>
+      <td>${r.min_coins.toLocaleString()}</td>
+    </tr>`).join('');
+}
+
+async function loadInventory(){
+  const { data } = await sb.from('user_inventory').select('*, shop_items(name,item_type)').eq('user_id',me.id).eq('active',true);
+  const grid = document.getElementById('invGrid');
+  if(!data?.length){ grid.innerHTML=`<div class="empty-state">No items yet. Head to Spend Coins to grab perks.</div>`; return; }
+  grid.innerHTML = data.map(inv=>`<div class="inv-card">
+  rm2Stagger(grid.children);
+    <div class="inv-name">${inv.shop_items?.name||'Item'}</div>
+    <div class="inv-active">✓ Active</div>
+    <div class="inv-exp">${inv.expires_at ? 'Expires: '+new Date(inv.expires_at).toLocaleDateString('en-IN') : 'Permanent'}</div>
+  </div>`).join('');
+}
+
+async function loadTxnHistory(){
+  const { data } = await sb.from('coin_transactions').select('*').eq('user_id',me.id).order('created_at',{ascending:false}).limit(50);
+  const el = document.getElementById('txnList');
+  if(!data?.length){ el.innerHTML=`<div class="empty-state">No transactions yet — earn coins by studying!</div>`; return; }
+  el.innerHTML = `<table class="rank-table"><tr><th>Date</th><th>Reason</th><th>Amount</th></tr>`+
+    data.map(t=>`<tr>
+      <td style="color:var(--muted)">${new Date(t.created_at).toLocaleDateString('en-IN')}</td>
+      <td>${t.reason.replace(/_/g,' ')}</td>
+      <td style="color:${t.amount>=0?'var(--success)':'var(--danger)'};">${t.amount>=0?'+':''}${t.amount} <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:0.15rem"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg></td>
+    </tr>`).join('')+`</table>`;
+}
+
+function openBuy(pkg){ pendingPkg=pkg; document.getElementById('buyDetails').innerHTML=`<b>${pkg.name}</b>: <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:0.15rem"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg>${(pkg.coins*(1+pkg.bonus_pct/100)).toLocaleString()} coins for <b>₹${pkg.price_inr}</b>${pkg.bonus_pct?` (includes ${pkg.bonus_pct}% bonus)`:''}. Processed via Razorpay.`; document.getElementById('buyModal').classList.add('show'); }
+function closeBuyModal(){ document.getElementById('buyModal').classList.remove('show'); }
+function proceedPayment(){ closeBuyModal(); alert('Razorpay integration: call your backend /create-razorpay-order → open Razorpay checkout → on success call /verify-payment → increment_wallet RPC.\nSee SETUP.md for full implementation guide.'); }
+
+function openRedeem(item){ pendingItem=item; document.getElementById('redeemDetails').innerHTML=`<b>${item.name}</b> — <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:0.15rem"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg>${item.coin_cost.toLocaleString()} coins${item.duration_days?` for ${item.duration_days} days`:' permanently'}.`; document.getElementById('redeemModal').classList.add('show'); }
+function closeRedeemModal(){ document.getElementById('redeemModal').classList.remove('show'); }
+async function confirmRedeem(){
+  if(!pendingItem) return;
+  const { data: ok } = await sb.rpc('spend_coins',{ uid:me.id, amount:pendingItem.coin_cost });
+  if(!ok){ alert('Not enough coins!'); closeRedeemModal(); return; }
+  const expiresAt = pendingItem.duration_days ? new Date(Date.now()+pendingItem.duration_days*86400000).toISOString() : null;
+  await sb.from('user_inventory').insert({ user_id:me.id, item_id:pendingItem.id, expires_at:expiresAt });
+  await sb.from('coin_transactions').insert({ user_id:me.id, amount:-pendingItem.coin_cost, reason:`redeem_${pendingItem.item_type}`, ref_id:pendingItem.id });
+  // apply immediately to profile if it's a badge/ad-free
+  if(pendingItem.item_type==='verified_badge') await sb.from('user_profiles').update({ verified_until:expiresAt||'2099-01-01' }).eq('id',me.id);
+  if(pendingItem.item_type==='ad_free') await sb.from('user_profiles').update({ ad_free_until:expiresAt||'2099-01-01' }).eq('id',me.id);
+  closeRedeemModal();
+  await loadWallet(); renderWallet(); loadInventory();
+  alert('Redeemed! Your item is now active.');
+}
+
+init();
+</script>
+</body>
+</html>

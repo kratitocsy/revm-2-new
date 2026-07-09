@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RevM² — Setup</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#c8a96e">
+<style>
+.ob-topbar{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:1.1rem 2.5rem;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.6);backdrop-filter:blur(14px);}
+.ob-step-ind{font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;}
+.ob-step-ind span{color:var(--gold);}
+.ob-main{position:relative;z-index:5;flex:1;display:flex;justify-content:center;padding:2.5rem 1.5rem 7rem;overflow-y:auto;}
+.ob-card{width:100%;max-width:600px;}
+.ob-step{display:none;animation:fadeUp 0.4s ease;}
+.ob-step.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+.step-label{font-size:0.6rem;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);margin-bottom:0.6rem;}
+.step-title{font-size:clamp(1.5rem,4vw,2rem);font-weight:900;letter-spacing:-0.03em;color:var(--white);text-transform:uppercase;margin-bottom:0.4rem;line-height:1.1;}
+.step-desc{font-size:0.82rem;color:var(--muted);margin-bottom:1.75rem;line-height:1.65;}
+.sub-section{margin-bottom:1.25rem;}
+.sub-section-label{font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:0.6rem;}
+.chips-wrap{display:flex;flex-wrap:wrap;gap:0.4rem;}
+.custom-row{display:flex;gap:0.5rem;margin-top:0.85rem;}
+.custom-row input{flex:1;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.55rem 0.85rem;font-family:var(--font);font-size:0.82rem;outline:none;transition:border-color 0.2s;}
+.custom-row input:focus{border-color:var(--gold);}
+.custom-row input::placeholder{color:var(--dim);}
+.track-pill{display:none;margin-top:1.25rem;padding:0.75rem 1.1rem;background:var(--gold-dim);border:1px solid var(--gold-border);align-items:center;gap:0.75rem;}
+.track-pill.show{display:flex;}
+.track-pill-label{font-size:0.58rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);}
+.track-pill-name{font-size:0.88rem;font-weight:600;color:var(--white);}
+.exam-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.65rem;}
+.exam-card{border:1px solid var(--border2);background:var(--s2);padding:1.1rem 0.85rem;text-align:center;cursor:pointer;transition:all 0.15s;}
+.exam-card:hover{border-color:var(--gold-border);}
+.exam-card.selected{background:var(--gold-dim);border-color:var(--gold);}
+.exam-card-abbr{font-size:0.92rem;font-weight:900;color:var(--gold);margin-bottom:0.25rem;}
+.exam-card-name{font-size:0.68rem;color:var(--muted);line-height:1.3;}
+.date-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:0.75rem;}
+@media(max-width:380px){.date-row{grid-template-columns:1fr;}}
+.date-row input[type="date"]{width:100%;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.6rem 0.85rem;font-family:var(--font);font-size:0.85rem;outline:none;transition:border-color 0.2s;color-scheme:dark;}
+.date-row input:focus{border-color:var(--gold);}
+.days-preview{padding:0.65rem 1.1rem;background:var(--s2);border:1px solid var(--border);font-size:0.78rem;color:var(--muted);}
+.days-preview span{color:var(--gold);font-weight:600;}
+.ob-bottom{position:fixed;bottom:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:1.1rem 2.5rem;background:rgba(0,0,0,0.88);backdrop-filter:blur(14px);border-top:1px solid var(--border);}
+.modal-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.82);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--s1);border:1px solid var(--border2);padding:2rem;width:90%;max-width:380px;text-align:center;}
+.modal h3{font-size:0.95rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.6rem;}
+.modal p{font-size:0.82rem;color:var(--muted);margin-bottom:1.5rem;}
+.modal-btns{display:flex;gap:0.6rem;}
+.modal-btns .btn{flex:1;justify-content:center;}
+</style>
+</head>
+<body style="display:flex;flex-direction:column;min-height:100vh;">
+<canvas id="starfield"></canvas>
+<div class="progress-bar"><div class="progress-fill" id="pFill" style="width:25%"></div></div>
+
+<div class="ob-topbar">
+  <a href="index.html"><div class="rm2-logo" data-size="nav"></div></a>
+  <div class="ob-step-ind">Step <span id="stepNum">1</span> of 4</div>
+</div>
+
+<div class="ob-main">
+  <div class="ob-card">
+
+    <!-- STEP 1: Username -->
+    <div class="ob-step active" id="step1">
+      <div class="step-label">Step 01 — Your handle</div>
+      <h2 class="step-title">Pick a username.</h2>
+      <p class="step-desc">This is how other aspirants find and add you — for study partners and live cam study sessions. Letters, numbers, underscore only. Choose carefully — you can change it later from settings.</p>
+      <div class="field">
+        <label>Username</label>
+        <div style="position:relative;">
+          <span style="position:absolute;left:0.85rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:0.82rem;">@</span>
+          <input type="text" id="usernameIn" placeholder="e.g. aryan_iitd" maxlength="20"
+            style="width:100%;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.6rem 0.85rem 0.6rem 1.7rem;font-family:var(--font);font-size:0.85rem;outline:none;"
+            oninput="onUsernameInput()">
+        </div>
+        <div id="usernameStatus" style="font-size:0.72rem;margin-top:0.5rem;min-height:1.1em;color:var(--muted);"></div>
+      </div>
+
+      <div class="field" style="margin-top:1.1rem;">
+        <label>Your name</label>
+        <input type="text" id="nameIn" placeholder="e.g. Aryan Sharma" maxlength="40"
+          style="width:100%;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.6rem 0.85rem;font-family:var(--font);font-size:0.85rem;outline:none;"
+          oninput="onNameInput()">
+        <div style="font-size:0.72rem;margin-top:0.5rem;color:var(--muted);">Shown to your study partners in chat and cam calls. Doesn't need to be unique.</div>
+      </div>
+
+      <div class="field" style="margin-top:1.1rem;display:flex;align-items:center;gap:1rem;">
+        <div id="avatarPreview" style="width:64px;height:64px;border-radius:50%;background:var(--s2);border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;color:var(--muted);"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M4.5 20c0-4 3.5-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg></div>
+        <div>
+          <label>Profile photo <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+          <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.4rem;">
+            <input type="file" id="avatarFile" accept="image/*" style="display:none;" onchange="onAvatarChosen(event)">
+            <button type="button" class="btn btn-sm" onclick="document.getElementById('avatarFile').click()">Choose photo</button>
+            <span id="avatarStatus" style="font-size:0.72rem;color:var(--muted);"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: Subjects -->
+    <div class="ob-step" id="step2">
+      <div class="step-label">Step 02 — Subjects</div>
+      <h2 class="step-title">What are you studying?</h2>
+      <p class="step-desc">Pick your subjects. We auto-detect your exam track.</p>
+
+      <div class="sub-section">
+        <div class="sub-section-label">Science</div>
+        <div class="chips-wrap">
+          <div class="chip" data-sub="Physics" onclick="toggleSub(this)">Physics</div>
+          <div class="chip" data-sub="Chemistry" onclick="toggleSub(this)">Chemistry</div>
+          <div class="chip" data-sub="Mathematics" onclick="toggleSub(this)">Mathematics</div>
+          <div class="chip" data-sub="Biology" onclick="toggleSub(this)">Biology</div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-label">CAT / MBA</div>
+        <div class="chips-wrap">
+          <div class="chip" data-sub="Quantitative Aptitude" onclick="toggleSub(this)">Quant Aptitude</div>
+          <div class="chip" data-sub="Logical Reasoning" onclick="toggleSub(this)">Logical Reasoning</div>
+          <div class="chip" data-sub="Verbal Ability" onclick="toggleSub(this)">Verbal Ability</div>
+          <div class="chip" data-sub="Data Interpretation" onclick="toggleSub(this)">Data Interpretation</div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-label">UPSC / Government</div>
+        <div class="chips-wrap">
+          <div class="chip" data-sub="GS Paper 1" onclick="toggleSub(this)">GS Paper 1</div>
+          <div class="chip" data-sub="GS Paper 2" onclick="toggleSub(this)">GS Paper 2</div>
+          <div class="chip" data-sub="GS Paper 3" onclick="toggleSub(this)">GS Paper 3</div>
+          <div class="chip" data-sub="GS Paper 4" onclick="toggleSub(this)">GS Paper 4</div>
+          <div class="chip" data-sub="CSAT" onclick="toggleSub(this)">CSAT</div>
+          <div class="chip" data-sub="Essay" onclick="toggleSub(this)">Essay</div>
+          <div class="chip" data-sub="Optional Subject" onclick="toggleSub(this)">Optional Subject</div>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-label">Add custom subject</div>
+        <div class="custom-row">
+          <input type="text" id="customIn" placeholder="e.g. Economics, History, GATE CS..." onkeydown="if(event.key==='Enter')addCustom()">
+          <button class="btn btn-ghost btn-sm" onclick="addCustom()">+ Add</button>
+        </div>
+        <div class="chips-wrap" id="customChips" style="margin-top:0.65rem;"></div>
+      </div>
+      <div class="track-pill" id="trackPill">
+        <div><div class="track-pill-label">Detected track</div><div class="track-pill-name" id="trackName">—</div></div>
+      </div>
+    </div>
+
+    <!-- STEP 3: Exam -->
+    <div class="ob-step" id="step3">
+      <div class="step-label">Step 03 — Your exam</div>
+      <h2 class="step-title">Which exam are you targeting?</h2>
+      <p class="step-desc">Helps us tailor your experience and understand our community.</p>
+      <div class="exam-grid">
+        <div class="exam-card" data-exam="JEE" onclick="selExam(this)"><div class="exam-card-abbr">JEE</div><div class="exam-card-name">JEE</div></div>
+        <div class="exam-card" data-exam="JEE" onclick="selExam(this)"><div class="exam-card-abbr">ADV</div><div class="exam-card-name">JEE</div></div>
+        <div class="exam-card" data-exam="NEET" onclick="selExam(this)"><div class="exam-card-abbr">NEET</div><div class="exam-card-name">NEET</div></div>
+        <div class="exam-card" data-exam="IAT" onclick="selExam(this)"><div class="exam-card-abbr">IAT</div><div class="exam-card-name">IISER Aptitude</div></div>
+        <div class="exam-card" data-exam="NEST" onclick="selExam(this)"><div class="exam-card-abbr">NEST</div><div class="exam-card-name">NEST</div></div>
+        <div class="exam-card" data-exam="BITSAT" onclick="selExam(this)"><div class="exam-card-abbr">BITS</div><div class="exam-card-name">BITSAT</div></div>
+        <div class="exam-card" data-exam="CAT" onclick="selExam(this)"><div class="exam-card-abbr">CAT</div><div class="exam-card-name">CAT</div></div>
+        <div class="exam-card" data-exam="UPSC CSE" onclick="selExam(this)"><div class="exam-card-abbr">UPSC</div><div class="exam-card-name">UPSC CSE</div></div>
+        <div class="exam-card" data-exam="SSC" onclick="selExam(this)"><div class="exam-card-abbr">SSC</div><div class="exam-card-name">SSC CGL/CHSL</div></div>
+        <div class="exam-card" data-exam="GATE" onclick="selExam(this)"><div class="exam-card-abbr">GATE</div><div class="exam-card-name">GATE</div></div>
+        <div class="exam-card" data-exam="MHT-CET" onclick="selExam(this)"><div class="exam-card-abbr">CET</div><div class="exam-card-name">MHT-CET</div></div>
+        <div class="exam-card" data-exam="WBJEE" onclick="selExam(this)"><div class="exam-card-abbr">WB</div><div class="exam-card-name">WBJEE</div></div>
+        <div class="exam-card" data-exam="Other" onclick="selExam(this)"><div class="exam-card-abbr">—</div><div class="exam-card-name">Other</div></div>
+      </div>
+    </div>
+
+    <!-- STEP 4: Dates -->
+    <div class="ob-step" id="step4">
+      <div class="step-label">Step 04 — Timeline</div>
+      <h2 class="step-title">Set your study window.</h2>
+      <p class="step-desc">RevM² builds your entire revision calendar between these dates.</p>
+      <div class="date-row">
+        <div class="field"><label>Start date</label><input type="date" id="startDate" onchange="updatePreview()"></div>
+        <div class="field"><label>Exam date</label><input type="date" id="endDate" onchange="updatePreview()"></div>
+      </div>
+      <div class="days-preview" id="daysPreview">Select both dates to see your tracker length.</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="ob-bottom">
+  <button class="btn btn-ghost btn-sm" id="backBtn" onclick="goBack()" style="visibility:hidden">← Back</button>
+  <button class="btn btn-gold" id="contBtn" onclick="goNext()" disabled>Continue →</button>
+</div>
+
+<!-- PCMB Modal -->
+<div class="modal-overlay" id="pcmbModal">
+  <div class="modal">
+    <h3>PCMB Detected</h3>
+    <p>You selected Physics, Chemistry, Maths and Biology. Which exam are you targeting?</p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost btn-sm" onclick="resolvePCMB('IAT')">IAT</button>
+      <button class="btn btn-ghost btn-sm" onclick="resolvePCMB('NEST')">NEST</button>
+      <button class="btn btn-ghost btn-sm" onclick="resolvePCMB('Custom')">Other</button>
+    </div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+  <script src="floating-timer.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const sb=window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL,REVM2_CONFIG.SUPABASE_ANON);
+requireAuth();
+const TOTAL_STEPS=4;
+let step=1, subs=[], exam=null, track='Custom Track';
+let username='', usernameValid=false, usernameCheckTimer=null, usernameCheckToken=0;
+let displayName='', avatarUrl=null, avatarUploading=false;
+
+/* ── STEP 1: Name + photo ─────────────────────────────────── */
+function onNameInput(){
+  displayName = document.getElementById('nameIn').value.trim();
+  validate();
+}
+
+async function onAvatarChosen(e){
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  if(file.size > 5*1024*1024){ document.getElementById('avatarStatus').textContent='Max 5MB.'; document.getElementById('avatarStatus').style.color='var(--danger)'; return; }
+
+  // Instant local preview while it uploads
+  const reader = new FileReader();
+  reader.onload = ()=>{ document.getElementById('avatarPreview').innerHTML = `<img src="${reader.result}" style="width:100%;height:100%;object-fit:cover;">`; };
+  reader.readAsDataURL(file);
+
+  const status = document.getElementById('avatarStatus');
+  status.textContent = 'Uploading…'; status.style.color='var(--muted)';
+  avatarUploading = true; validate();
+
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session){ status.textContent='Sign-in expired — refresh and try again.'; status.style.color='var(--danger)'; avatarUploading=false; validate(); return; }
+
+  const ext = (file.name.split('.').pop()||'jpg').toLowerCase();
+  const path = `${session.user.id}/profile.${ext}`;
+  const {error} = await sb.storage.from('avatars').upload(path, file, {upsert:true, cacheControl:'3600'});
+  avatarUploading = false;
+  if(error){ status.textContent='Upload failed — try again.'; status.style.color='var(--danger)'; validate(); return; }
+
+  const {data:pub} = sb.storage.from('avatars').getPublicUrl(path);
+  avatarUrl = pub.publicUrl + '?v=' + Date.now(); // cache-bust so a re-upload shows immediately
+  status.textContent='Photo added.'; status.style.color='var(--success)';
+  validate();
+}
+
+document.getElementById('startDate').value=TODAY_STR;
+
+/* ── STEP 1: Username ────────────────────────────────────── */
+function onUsernameInput(){
+  const raw=document.getElementById('usernameIn').value;
+  const clean=raw.toLowerCase().replace(/[^a-z0-9_]/g,'');
+  if(clean!==raw) document.getElementById('usernameIn').value=clean;
+  username=clean;
+  usernameValid=false;
+  const status=document.getElementById('usernameStatus');
+  clearTimeout(usernameCheckTimer);
+  if(username.length===0){ status.textContent=''; status.style.color='var(--muted)'; validate(); return; }
+  if(username.length<3){ status.textContent='At least 3 characters.'; status.style.color='var(--muted)'; validate(); return; }
+  status.textContent='Checking availability…'; status.style.color='var(--muted)';
+  const myToken=++usernameCheckToken;
+  usernameCheckTimer=setTimeout(async()=>{
+    const {data,error}=await sb.rpc('check_username_available',{p_username:username});
+    if(myToken!==usernameCheckToken) return; // a newer keystroke already superseded this check
+    if(error){ status.textContent='Could not check availability — try again.'; status.style.color='var(--danger)'; usernameValid=false; }
+    else if(data){ status.textContent=`@${username} is available.`; status.style.color='var(--success)'; usernameValid=true; }
+    else { status.textContent='Already taken — try another.'; status.style.color='var(--danger)'; usernameValid=false; }
+    validate();
+  }, 450);
+}
+
+function toggleSub(el){
+  const s=el.dataset.sub;
+  if(el.classList.contains('selected')){el.classList.remove('selected');subs=subs.filter(x=>x!==s);}
+  else{el.classList.add('selected');subs.push(s);}
+  detectTrack(); validate();
+}
+
+function addCustom(){
+  const inp=document.getElementById('customIn');
+  const val=inp.value.trim();
+  if(!val||subs.includes(val)){inp.value='';return;}
+  subs.push(val);
+  const c=document.createElement('div');
+  c.className='chip selected';c.dataset.sub=val;
+  c.textContent=val+' ✕';
+  c.onclick=()=>{subs=subs.filter(x=>x!==val);c.remove();detectTrack();validate();};
+  document.getElementById('customChips').appendChild(c);
+  inp.value=''; detectTrack(); validate();
+}
+
+function detectTrack(){
+  const s=subs.map(x=>x.toLowerCase());
+  const P=s.includes('physics'),C=s.includes('chemistry'),M=s.includes('mathematics'),B=s.includes('biology');
+  const Q=s.includes('quantitative aptitude'),GS=s.some(x=>x.startsWith('gs paper'));
+  if(P&&C&&M&&B){track='PCMB Track';document.getElementById('pcmbModal').classList.add('show');}
+  else if(P&&C&&M)track='JEE Track';
+  else if(P&&C&&B)track='NEET Track';
+  else if(Q)track='CAT Track';
+  else if(GS)track='UPSC Track';
+  else track='Custom Track';
+  const pill=document.getElementById('trackPill');
+  subs.length>0?(pill.classList.add('show'),document.getElementById('trackName').textContent=track):pill.classList.remove('show');
+}
+
+function resolvePCMB(e){
+  document.getElementById('pcmbModal').classList.remove('show');
+  track=e+' Track'; exam=e; document.getElementById('trackName').textContent=track;
+}
+
+function selExam(el){
+  document.querySelectorAll('.exam-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected'); exam=el.dataset.exam; validate();
+}
+
+function updatePreview(){
+  const s=document.getElementById('startDate').value;
+  const e=document.getElementById('endDate').value;
+  if(!s||!e)return;
+  const diff=Math.round((new Date(e)-new Date(s))/86400000);
+  const prev=document.getElementById('daysPreview');
+  diff<=0?prev.innerHTML='<span style="color:var(--danger)">End date must be after start date.</span>':
+    prev.innerHTML=`Your tracker: <span>${diff} days</span> — ${fmtDateFull(s)} → ${fmtDateFull(e)}`;
+  validate();
+}
+
+function validate(){
+  const btn=document.getElementById('contBtn');
+  if(step===1)btn.disabled=!usernameValid || displayName.length<2 || avatarUploading;
+  if(step===2)btn.disabled=subs.length===0;
+  if(step===3)btn.disabled=!exam;
+  if(step===4){const s=document.getElementById('startDate').value,e=document.getElementById('endDate').value;btn.disabled=!s||!e||new Date(e)<=new Date(s);}
+}
+
+async function goNext(){
+  if(step===4){finish();return;}
+  if(step===1){
+    // Reserve the username now so nobody else can grab it while this user finishes onboarding.
+    const btn=document.getElementById('contBtn');
+    btn.disabled=true; btn.textContent='Saving…';
+    const {error}=await sb.rpc('set_my_username',{p_username:username});
+    btn.textContent='Continue →';
+    if(error){
+      document.getElementById('usernameStatus').textContent=error.message||'That username was just taken — try another.';
+      document.getElementById('usernameStatus').style.color='var(--danger)';
+      usernameValid=false; validate();
+      return;
+    }
+  }
+  document.getElementById('step'+step).classList.remove('active');
+  step++;
+  document.getElementById('step'+step).classList.add('active');
+  document.getElementById('stepNum').textContent=step;
+  document.getElementById('pFill').style.width=(step/TOTAL_STEPS*100)+'%';
+  document.getElementById('backBtn').style.visibility='visible';
+  document.getElementById('contBtn').textContent=step===TOTAL_STEPS?'Build my tracker →':'Continue →';
+  validate();
+}
+
+function goBack(){
+  if(step===1)return;
+  document.getElementById('step'+step).classList.remove('active');
+  step--;
+  document.getElementById('step'+step).classList.add('active');
+  document.getElementById('stepNum').textContent=step;
+  document.getElementById('pFill').style.width=(step/TOTAL_STEPS*100)+'%';
+  if(step===1)document.getElementById('backBtn').style.visibility='hidden';
+  document.getElementById('contBtn').textContent='Continue →';
+  validate();
+}
+
+async function finish(){
+  const btn=document.getElementById('contBtn');
+  btn.textContent='Building...';btn.disabled=true;
+  const cfg={subjects:subs,exam,track,start_date:document.getElementById('startDate').value,end_date:document.getElementById('endDate').value,onboarded:true,explainer_seen:true};
+  const {data:{session}}=await sb.auth.getSession();
+  if(session) await sb.from('user_profiles').upsert({id:session.user.id,display_name:displayName||null,avatar_url:avatarUrl||null,...cfg},{onConflict:'id'});
+  logEvent('onboarding_completed');
+  Store.set('revm2_config',cfg);
+  window.location.href='tracker.html';
+}
+
+initStarfield(); validate();
+</script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>

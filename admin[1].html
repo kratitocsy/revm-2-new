@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RevM² — Admin</title>
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+<meta name="theme-color" content="#c8a96e">
+<style>
+.adm-wrap{position:relative;z-index:10;max-width:1080px;margin:0 auto;padding:2.5rem 1.5rem 4rem;}
+.adm-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;}
+.adm-title{font-size:1.3rem;font-weight:900;color:var(--white);text-transform:uppercase;letter-spacing:-0.02em;}
+.adm-back{font-size:0.7rem;color:var(--muted);text-decoration:none;letter-spacing:0.06em;text-transform:uppercase;}
+.adm-back:hover{color:var(--gold);}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.9rem;margin-bottom:1.5rem;}
+.stat-card{background:var(--s1);border:1px solid var(--border);padding:1rem 1.1rem;}
+.stat-card .label{font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;}
+.stat-card .val{font-size:1.6rem;font-weight:900;color:var(--white);}
+.adm-card{background:var(--s1);border:1px solid var(--border);padding:1.25rem;margin-bottom:1.25rem;}
+.adm-card h3{font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.9rem;font-weight:700;}
+.feat-row{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.55rem;font-size:0.78rem;}
+.feat-name{width:110px;flex-shrink:0;color:var(--text);text-transform:capitalize;}
+.feat-bar-track{flex:1;height:8px;background:var(--s2);border-radius:4px;overflow:hidden;}
+.feat-bar-fill{height:100%;background:var(--gold);}
+.feat-count{width:38px;text-align:right;color:var(--muted);font-size:0.7rem;}
+table.adm-table{width:100%;border-collapse:collapse;font-size:0.75rem;}
+.adm-table th{text-align:left;font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);padding:0.5rem 0.6rem;border-bottom:1px solid var(--border);font-weight:600;}
+.adm-table td{padding:0.55rem 0.6rem;border-bottom:1px solid var(--border);color:var(--text);}
+.adm-table tr:hover td{background:rgba(255,255,255,0.02);}
+.pill{font-size:0.6rem;padding:0.15rem 0.5rem;border-radius:99px;letter-spacing:0.04em;text-transform:uppercase;}
+.pill.on{background:rgba(74,222,128,0.12);color:var(--success);}
+.pill.off{background:rgba(102,102,102,0.15);color:var(--muted);}
+.adm-loading,.adm-denied{text-align:center;padding:4rem 1rem;color:var(--muted);font-size:0.8rem;}
+.adm-logo{margin-bottom:1.25rem;}
+.win-tabs{display:flex;gap:0.4rem;margin-bottom:0.9rem;}
+.win-tab{background:var(--s2);border:1px solid var(--border);color:var(--muted);font-size:0.68rem;letter-spacing:0.05em;text-transform:uppercase;padding:0.35rem 0.75rem;cursor:pointer;border-radius:99px;}
+.win-tab.active{background:var(--gold);color:#151107;border-color:var(--gold);font-weight:700;}
+.quota-bar-track{width:100%;height:10px;background:var(--s2);border-radius:5px;overflow:hidden;margin:0.6rem 0;}
+.quota-bar-fill{height:100%;background:var(--gold);transition:width 0.3s;}
+.quota-bar-fill.warn{background:#e0a030;}
+.quota-bar-fill.danger{background:var(--danger);}
+.quota-meta{display:flex;justify-content:space-between;font-size:0.7rem;color:var(--muted);}
+.usage-sort-row{display:flex;align-items:center;justify-content:space-between;gap:0.6rem;margin-bottom:0.75rem;flex-wrap:wrap;}
+.usage-select{background:var(--s2);border:1px solid var(--border);color:var(--text);font-size:0.72rem;padding:0.35rem 0.6rem;border-radius:4px;}
+.link-btn{background:none;border:none;color:var(--gold);font-size:0.72rem;cursor:pointer;text-decoration:underline;padding:0;}
+.mod-toggle{background:var(--s2);border:1px solid var(--border);color:var(--text);font-size:0.65rem;padding:0.25rem 0.6rem;border-radius:99px;cursor:pointer;letter-spacing:0.04em;text-transform:uppercase;}
+.mod-toggle.on{background:rgba(74,222,128,0.14);color:var(--success);border-color:transparent;}
+.user-detail-panel{margin-top:0.6rem;padding:0.75rem;background:var(--s2);border-radius:4px;font-size:0.72rem;display:none;}
+.user-detail-panel.open{display:block;}
+.sla-pill{font-size:0.6rem;padding:0.15rem 0.5rem;border-radius:99px;letter-spacing:0.04em;text-transform:uppercase;}
+.sla-pill.ok{background:rgba(74,222,128,0.12);color:var(--success);}
+.sla-pill.overdue{background:rgba(239,68,68,0.14);color:var(--danger);}
+.approve-btn{background:rgba(74,222,128,0.14);color:var(--success);border:none;font-size:0.65rem;padding:0.3rem 0.65rem;border-radius:4px;cursor:pointer;margin-right:0.4rem;letter-spacing:0.03em;text-transform:uppercase;}
+.reject-btn{background:rgba(239,68,68,0.14);color:var(--danger);border:none;font-size:0.65rem;padding:0.3rem 0.65rem;border-radius:4px;cursor:pointer;letter-spacing:0.03em;text-transform:uppercase;}
+@media (max-width:640px){
+  .adm-wrap{padding:1.5rem 0.9rem 3rem;}
+  .adm-title{font-size:1.05rem;}
+  table.adm-table{display:block;width:100%;overflow-x:auto;white-space:nowrap;}
+}
+</style>
+</head>
+<body>
+<canvas id="starfield"></canvas>
+<div class="orb"></div>
+
+<div class="adm-wrap" id="admWrap">
+  <div class="adm-logo rm2-logo" data-size="nav"></div>
+</div>
+
+<script src="shared.js"></script>
+  <script src="floating-timer.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+RevM2Loader.show('Checking access…');
+const sb = window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL, REVM2_CONFIG.SUPABASE_ANON);
+
+let isOwner = false;
+let allProfiles = [];
+let usageWindowDays = 30;
+let usageFeatureFilter = '';
+let leastActiveFirst = false;
+
+async function init(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){ window.location.href='login.html'; return; }
+
+  const { data: me } = await sb.from('user_profiles').select('is_admin,is_moderator').eq('id', session.user.id).single();
+  const { data: ownerCheck } = await sb.rpc('is_owner');
+  isOwner = !!ownerCheck;
+  const canSeeAdmin = me?.is_admin || me?.is_moderator || isOwner;
+
+  if(!canSeeAdmin){
+    document.getElementById('admWrap').innerHTML = `<div class="rm2-logo" data-size="nav" style="margin:0 auto 1.5rem;"></div><div class="adm-denied"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg> This page is admin-only.<br><br><a class="adm-back" href="tracker.html">← Back to tracker</a></div>`;
+    RevM2Logo.init();
+    RevM2Loader.hide();
+    return;
+  }
+
+  // RLS (is_admin() / is_admin_or_moderator()) lets this account read every row, not just its own.
+  const [{ data: profiles }, { data: events }] = await Promise.all([
+    sb.from('user_profiles').select('id,full_name,email,total_study_seconds,total_reviews_done,telegram_linked,last_active_at,created_at,is_moderator'),
+    sb.from('user_events').select('event_type,feature')
+  ]);
+
+  allProfiles = profiles || [];
+  render(allProfiles, events||[]);
+  await loadUsagePanel(usageWindowDays);
+  if(isOwner) renderModeratorCard();
+  await loadRevheadQueue();
+  await loadPayoutQueue();
+  RevM2Logo.init();
+  RevM2Loader.hide();
+}
+
+function render(profiles, events){
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const weekAgo = new Date(now.getTime() - 7*86400000);
+
+  const totalUsers = profiles.length;
+  const activeToday = profiles.filter(p => p.last_active_at && p.last_active_at.split('T')[0]===todayStr).length;
+  const activeWeek = profiles.filter(p => p.last_active_at && new Date(p.last_active_at) >= weekAgo).length;
+  const totalSeconds = profiles.reduce((s,p)=>s+(p.total_study_seconds||0),0);
+  const totalReviews = profiles.reduce((s,p)=>s+(p.total_reviews_done||0),0);
+  const telegramPct = totalUsers ? Math.round(profiles.filter(p=>p.telegram_linked).length/totalUsers*100) : 0;
+
+  const featCounts = {};
+  events.filter(e=>e.event_type==='feature_used' && e.feature).forEach(e=>{
+    featCounts[e.feature] = (featCounts[e.feature]||0)+1;
+  });
+  const maxFeat = Math.max(1, ...Object.values(featCounts));
+  const featRows = Object.entries(featCounts).sort((a,b)=>b[1]-a[1]).map(([name,count])=>`
+    <div class="feat-row">
+      <div class="feat-name">${escHtml(name)}</div>
+      <div class="feat-bar-track"><div class="feat-bar-fill" style="width:${count/maxFeat*100}%"></div></div>
+      <div class="feat-count">${count}</div>
+    </div>`).join('') || `<div style="font-size:0.78rem;color:var(--muted)">No feature events logged yet.</div>`;
+
+  const userRows = profiles
+    .sort((a,b)=>(b.total_study_seconds||0)-(a.total_study_seconds||0))
+    .map(p=>`
+      <tr>
+        <td>${escHtml(p.full_name||'—')}<br><span style="color:var(--muted);font-size:0.68rem">${escHtml(p.email||'')}</span></td>
+        <td>${fmtTime(p.total_study_seconds||0)}</td>
+        <td>${p.total_reviews_done||0}</td>
+        <td><span class="pill ${p.telegram_linked?'on':'off'}">${p.telegram_linked?'Connected':'No'}</span></td>
+        <td>${p.last_active_at ? fmtDateShort(p.last_active_at.split('T')[0]) : '—'}</td>
+      </tr>`).join('');
+
+  document.getElementById('admWrap').innerHTML = `
+    <div class="adm-top">
+      <div style="display:flex;align-items:center;gap:0.9rem;">
+        <div class="rm2-logo" data-size="nav"></div>
+        <div class="adm-title">Admin — RevM²</div>
+      </div>
+      <a class="adm-back" href="tracker.html">← Back to tracker</a>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card"><div class="label">Total Users</div><div class="val">${totalUsers}</div></div>
+      <div class="stat-card"><div class="label">Active Today</div><div class="val">${activeToday}</div></div>
+      <div class="stat-card"><div class="label">Active This Week</div><div class="val">${activeWeek}</div></div>
+      <div class="stat-card"><div class="label">Total Study Time</div><div class="val">${fmtTime(totalSeconds)}</div></div>
+      <div class="stat-card"><div class="label">Reviews Done</div><div class="val">${totalReviews}</div></div>
+      <div class="stat-card"><div class="label">Telegram Linked</div><div class="val">${telegramPct}%</div></div>
+    </div>
+
+    <div class="adm-card">
+      <h3>Feature usage</h3>
+      ${featRows}
+    </div>
+
+    <div class="adm-card">
+      <h3>Per-user breakdown</h3>
+      <div style="overflow-x:auto;">
+        <table class="adm-table">
+          <thead><tr><th>User</th><th>Study time</th><th>Reviews</th><th>Telegram</th><th>Last active</th></tr></thead>
+          <tbody>${userRows || '<tr><td colspan="5" style="color:var(--muted)">No users yet.</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="win-tabs" id="usageWinTabs">
+      <button class="win-tab" data-days="7">Week</button>
+      <button class="win-tab" data-days="15">15 Days</button>
+      <button class="win-tab" data-days="30">Month</button>
+    </div>
+
+    <div class="adm-card">
+      <h3>Agora usage this month</h3>
+      <div id="agoraQuotaBox">Loading…</div>
+    </div>
+
+    <div class="adm-card">
+      <h3>Feature usage (time tracked)</h3>
+      <div id="featureUsageBox">Loading…</div>
+    </div>
+
+    <div class="adm-card">
+      <div class="usage-sort-row">
+        <h3 style="margin:0;">User activity</h3>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+          <select class="usage-select" id="featureFilterSelect"><option value="">All features</option></select>
+          <button class="link-btn" id="toggleSortBtn">Show least active first</button>
+        </div>
+      </div>
+      <div id="userUsageBox">Loading…</div>
+    </div>
+
+    <div id="revheadQueueMount"></div>
+    <div id="payoutQueueMount"></div>
+    <div id="moderatorCardMount"></div>
+  `;
+
+  document.querySelectorAll('.win-tab').forEach(btn=>{
+    btn.classList.toggle('active', Number(btn.dataset.days)===usageWindowDays);
+    btn.onclick = ()=>{ usageWindowDays = Number(btn.dataset.days); loadUsagePanel(usageWindowDays); };
+  });
+  const filterSel = document.getElementById('featureFilterSelect');
+  filterSel.onchange = ()=>{ usageFeatureFilter = filterSel.value; loadUsagePanel(usageWindowDays); };
+  document.getElementById('toggleSortBtn').onclick = ()=>{
+    leastActiveFirst = !leastActiveFirst;
+    document.getElementById('toggleSortBtn').textContent = leastActiveFirst ? 'Show most active first' : 'Show least active first';
+    loadUsagePanel(usageWindowDays);
+  };
+}
+
+function fmtMins(seconds){
+  const m = Math.round((seconds||0)/60);
+  if(m < 60) return `${m}m`;
+  return `${Math.floor(m/60)}h ${m%60}m`;
+}
+
+async function loadUsagePanel(days){
+  usageWindowDays = days;
+  document.querySelectorAll('.win-tab').forEach(b=>b.classList.toggle('active', Number(b.dataset.days)===days));
+
+  const [{ data: featSummary, error: featErr }, { data: agora, error: agoraErr }, { data: userSummary, error: userErr }] =
+    await Promise.all([
+      sb.rpc('admin_feature_usage_summary', { p_days: days }),
+      sb.rpc('admin_agora_usage_status'),
+      sb.rpc('admin_user_usage_summary', { p_days: days, p_feature_key: usageFeatureFilter || null })
+    ]);
+
+  // Populate the feature filter dropdown once, from the feature summary itself.
+  const sel = document.getElementById('featureFilterSelect');
+  if(sel && sel.options.length <= 1 && featSummary){
+    featSummary.forEach(f=>{
+      const opt = document.createElement('option');
+      opt.value = f.feature_key; opt.textContent = f.display_name;
+      sel.appendChild(opt);
+    });
+    sel.value = usageFeatureFilter;
+  }
+
+  const agoraBox = document.getElementById('agoraQuotaBox');
+  if(agoraErr || !agora || !agora[0]){
+    agoraBox.innerHTML = `<div style="color:var(--muted);font-size:0.75rem;">${agoraErr ? escHtml(agoraErr.message) : 'No usage recorded yet this month.'}</div>`;
+  } else {
+    const a = agora[0];
+    const pct = Math.min(100, a.percent_used);
+    const barCls = pct >= 90 ? 'danger' : pct >= 70 ? 'warn' : '';
+    agoraBox.innerHTML = `
+      <div class="quota-bar-track"><div class="quota-bar-fill ${barCls}" style="width:${pct}%"></div></div>
+      <div class="quota-meta">
+        <span>${fmtMins(a.seconds_used)} / ${fmtMins(a.limit_seconds)} (${a.percent_used}%)</span>
+        <span class="pill ${a.active_provider==='agora' ? 'on' : 'off'}">${a.active_provider==='agora' ? 'On Agora' : 'Flipped to Tencent'}</span>
+      </div>`;
+  }
+
+  const featBox = document.getElementById('featureUsageBox');
+  if(featErr){
+    featBox.innerHTML = `<div style="color:var(--muted);font-size:0.75rem;">${escHtml(featErr.message)}</div>`;
+  } else if(!featSummary || !featSummary.length){
+    featBox.innerHTML = `<div style="color:var(--muted);font-size:0.78rem;">No feature usage logged yet in this window.</div>`;
+  } else {
+    const max = Math.max(1, ...featSummary.map(f=>Number(f.total_seconds)));
+    featBox.innerHTML = featSummary.map(f=>`
+      <div class="feat-row">
+        <div class="feat-name">${escHtml(f.display_name)}</div>
+        <div class="feat-bar-track"><div class="feat-bar-fill" style="width:${Number(f.total_seconds)/max*100}%"></div></div>
+        <div class="feat-count">${fmtMins(f.total_seconds)}</div>
+      </div>
+      <div style="font-size:0.65rem;color:var(--muted);margin:-0.35rem 0 0.6rem 0;">${f.unique_users} user${f.unique_users==1?'':'s'}${f.total_sessions ? ` · ${f.total_sessions} sessions` : ''}</div>
+    `).join('');
+  }
+
+  const userBox = document.getElementById('userUsageBox');
+  if(userErr){
+    userBox.innerHTML = `<div style="color:var(--muted);font-size:0.75rem;">${escHtml(userErr.message)}</div>`;
+  } else if(!userSummary || !userSummary.length){
+    userBox.innerHTML = `<div style="color:var(--muted);font-size:0.78rem;">No activity logged yet in this window.</div>`;
+  } else {
+    const rows = leastActiveFirst ? [...userSummary].reverse() : userSummary;
+    userBox.innerHTML = `
+      <table class="adm-table">
+        <thead><tr><th>User</th><th>Total time</th><th>Features used</th><th></th></tr></thead>
+        <tbody>${rows.map(u=>`
+          <tr>
+            <td>${escHtml(u.full_name||'—')}<br><span style="color:var(--muted);font-size:0.68rem">${escHtml(u.email||'')}</span></td>
+            <td>${fmtMins(u.total_seconds)}</td>
+            <td>${u.features_used}</td>
+            <td><button class="link-btn" onclick="toggleUserDetail('${u.user_id}')">Breakdown</button></td>
+          </tr>
+          <tr><td colspan="4" style="padding:0;border:none;"><div class="user-detail-panel" id="detail-${u.user_id}"></div></td></tr>
+        `).join('')}</tbody>
+      </table>`;
+  }
+}
+
+async function toggleUserDetail(userId){
+  const panel = document.getElementById('detail-'+userId);
+  if(!panel) return;
+  if(panel.classList.contains('open')){ panel.classList.remove('open'); return; }
+  panel.classList.add('open');
+  panel.innerHTML = 'Loading…';
+  const { data, error } = await sb.rpc('admin_usage_by_user_detail', { p_user_id: userId, p_days: usageWindowDays });
+  if(error){ panel.innerHTML = escHtml(error.message); return; }
+  if(!data || !data.length){ panel.innerHTML = 'No usage in this window.'; return; }
+  panel.innerHTML = data.map(d=>`<div style="display:flex;justify-content:space-between;padding:0.2rem 0;"><span>${escHtml(d.display_name)}</span><span style="color:var(--muted)">${fmtMins(d.seconds_used)}</span></div>`).join('');
+}
+
+function renderModeratorCard(){
+  const mount = document.getElementById('moderatorCardMount');
+  if(!mount) return;
+  const rows = allProfiles
+    .slice()
+    .sort((a,b)=>(b.is_moderator?1:0)-(a.is_moderator?1:0))
+    .map(p=>`
+      <tr>
+        <td>${escHtml(p.full_name||'—')}<br><span style="color:var(--muted);font-size:0.68rem">${escHtml(p.email||'')}</span></td>
+        <td><button class="mod-toggle ${p.is_moderator?'on':''}" onclick="toggleModerator('${p.id}', ${!p.is_moderator})">${p.is_moderator ? 'Moderator' : 'Make moderator'}</button></td>
+      </tr>`).join('');
+  mount.innerHTML = `
+    <div class="adm-card">
+      <h3>Moderators <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">— only your account can grant this</span></h3>
+      <div style="overflow-x:auto;">
+        <table class="adm-table">
+          <thead><tr><th>User</th><th>Role</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+async function toggleModerator(userId, makeMod){
+  const { error } = await sb.rpc('admin_set_moderator', { p_user_id: userId, p_is_moderator: makeMod });
+  if(error){ alert('Could not update moderator status: ' + error.message); return; }
+  const p = allProfiles.find(p=>p.id===userId);
+  if(p) p.is_moderator = makeMod;
+  renderModeratorCard();
+}
+
+async function loadRevheadQueue(){
+  const mount = document.getElementById('revheadQueueMount');
+  if(!mount) return;
+  const { data, error } = await sb.rpc('admin_pending_revhead_applications');
+  if(error){
+    mount.innerHTML = `<div class="adm-card"><h3>RevHead applications</h3><div style="color:var(--muted);font-size:0.75rem;">${escHtml(error.message)}</div></div>`;
+    return;
+  }
+  if(!data || !data.length){
+    mount.innerHTML = `<div class="adm-card"><h3>RevHead applications</h3><div style="color:var(--muted);font-size:0.78rem;">No pending applications.</div></div>`;
+    return;
+  }
+  mount.innerHTML = `
+    <div class="adm-card">
+      <h3>RevHead applications <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">— oldest first, target 24h turnaround</span></h3>
+      <div style="overflow-x:auto;">
+        <table class="adm-table">
+          <thead><tr><th>User</th><th>Applied</th><th>Referral</th><th></th></tr></thead>
+          <tbody>${data.map(a=>`
+            <tr>
+              <td>${escHtml(a.full_name||'—')}<br><span style="color:var(--muted);font-size:0.68rem">${escHtml(a.email||'')}</span></td>
+              <td>${a.hours_pending}h ago <span class="sla-pill ${a.overdue?'overdue':'ok'}">${a.overdue?'Overdue':'On time'}</span></td>
+              <td>${a.referred_by_code ? escHtml(a.referred_by_code) : '<span style="color:var(--muted)">—</span>'}</td>
+              <td>
+                <button class="approve-btn" onclick="reviewRevhead('${a.user_id}', true)">Approve</button>
+                <button class="reject-btn" onclick="reviewRevhead('${a.user_id}', false)">Reject</button>
+              </td>
+            </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+async function reviewRevhead(userId, approve){
+  const { data, error } = await sb.rpc('admin_verify_revhead', { p_user_id: userId, p_approve: approve });
+  if(error){ alert('Could not process: ' + error.message); return; }
+  if(approve) alert(`Approved. Their RevHead code is ${data}.`);
+  loadRevheadQueue();
+}
+
+async function loadPayoutQueue(){
+  const mount = document.getElementById('payoutQueueMount');
+  if(!mount) return;
+  const { data, error } = await sb.rpc('admin_list_payout_requests', { p_status: 'pending' });
+  if(error){
+    mount.innerHTML = `<div class="adm-card"><h3>Payout requests</h3><div style="color:var(--muted);font-size:0.75rem;">${escHtml(error.message)}</div></div>`;
+    return;
+  }
+  if(!data || !data.length){
+    mount.innerHTML = `<div class="adm-card"><h3>Payout requests</h3><div style="color:var(--muted);font-size:0.78rem;">No pending payout requests.</div></div>`;
+    return;
+  }
+  mount.innerHTML = `
+    <div class="adm-card">
+      <h3>Payout requests <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">— oldest first, target 24–48h turnaround${isOwner ? '' : ' — marking paid is owner-only'}</span></h3>
+      <div style="overflow-x:auto;">
+        <table class="adm-table">
+          <thead><tr><th>User</th><th>Amount</th><th>UPI ID</th><th>Requested</th><th></th></tr></thead>
+          <tbody>${data.map(r=>`
+            <tr>
+              <td>${escHtml(r.full_name||'—')}<br><span style="color:var(--muted);font-size:0.68rem">${escHtml(r.email||'')}</span></td>
+              <td>₹${Number(r.amount).toLocaleString('en-IN')}</td>
+              <td>${escHtml(r.upi_id_snapshot)}</td>
+              <td>${r.hours_pending}h ago <span class="sla-pill ${r.overdue?'overdue':'ok'}">${r.overdue?'Overdue':'On time'}</span></td>
+              <td>
+                ${isOwner ? `<button class="approve-btn" onclick="markPayoutPaid('${r.request_id}')">Mark Paid</button>` : ''}
+                <button class="reject-btn" onclick="rejectPayoutRequest('${r.request_id}')">Reject</button>
+              </td>
+            </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+async function markPayoutPaid(requestId){
+  const ref = prompt('UPI transaction reference / note for this payout:');
+  if(ref === null) return;
+  const { error } = await sb.rpc('admin_mark_payout_paid', { p_request_id: requestId, p_payment_reference: ref });
+  if(error){ alert('Could not mark paid: ' + error.message); return; }
+  loadPayoutQueue();
+}
+
+async function rejectPayoutRequest(requestId){
+  const reason = prompt('Reason for rejecting (optional):') || null;
+  const { error } = await sb.rpc('admin_reject_payout', { p_request_id: requestId, p_reason: reason });
+  if(error){ alert('Could not reject: ' + error.message); return; }
+  loadPayoutQueue();
+}
+
+init();
+initStarfield();
+</script>
+</body>
+</html>
