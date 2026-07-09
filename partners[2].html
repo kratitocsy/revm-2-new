@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RevM² — Study Partners</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#c8a96e">
+<style>
+.pw{max-width:820px;margin:0 auto;padding:1.5rem;}
+.pw-search{display:flex;gap:0.5rem;margin-bottom:1.5rem;}
+.pw-search input{flex:1;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.65rem 0.9rem;font-family:var(--font);font-size:0.85rem;outline:none;}
+.pw-search input:focus{border-color:var(--gold);}
+.pw-section{margin-bottom:2rem;}
+.pw-section-title{font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.7rem;display:flex;align-items:center;gap:0.5rem;}
+.pw-badge{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border);border-radius:99px;font-size:0.6rem;padding:0.05rem 0.5rem;}
+.p-row{display:flex;align-items:center;gap:0.75rem;padding:0.65rem 0.85rem;border-bottom:1px solid var(--border);background:var(--s1);}
+.p-row:first-child{border-top:1px solid var(--border);}
+.p-avatar{width:40px;height:40px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;color:var(--muted);flex-shrink:0;overflow:hidden;border:2px solid var(--border2);}
+.p-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.p-avatar .default-avatar-icon{width:60%;height:60%;color:inherit;}
+.p-name{font-size:0.82rem;font-weight:600;color:var(--text);}
+.p-meta{font-size:0.68rem;color:var(--muted);}
+.p-actions{margin-left:auto;display:flex;gap:0.4rem;flex-shrink:0;}
+.btn-tiny{font-size:0.68rem;padding:0.35rem 0.7rem;border:1px solid var(--border2);background:none;color:var(--muted);cursor:pointer;font-family:var(--font);white-space:nowrap;}
+.btn-tiny:hover{border-color:var(--gold);color:var(--gold);}
+.btn-tiny.gold{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+.btn-tiny.gold:hover{background:var(--gold);color:#000;}
+.btn-tiny.danger:hover{border-color:var(--danger);color:var(--danger);}
+.btn-tiny.btn-icon{display:inline-flex;align-items:center;gap:0.35rem;}
+.btn-tiny.btn-icon svg{flex-shrink:0;}
+.pw-empty{font-size:0.76rem;color:var(--dim);padding:0.85rem;background:var(--s1);border:1px solid var(--border);text-align:center;}
+.pw-hint{font-size:0.72rem;color:var(--muted);margin-bottom:1.25rem;line-height:1.5;}
+.status-pill{font-size:0.65rem;color:var(--muted);padding:0.3rem 0.6rem;}
+
+/* ── FIND A PARTNER TAB ──────────────────────────────────── */
+.pw-tabs{display:flex;gap:0.4rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);}
+.pw-tab{padding:0.6rem 1rem;font-size:0.76rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
+.pw-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.pm-locked{background:var(--s1);border:1px solid var(--border);padding:1.5rem;text-align:center;}
+.pm-locked h3{font-size:0.95rem;color:var(--white);margin-bottom:0.6rem;}
+.pm-locked ul{text-align:left;max-width:420px;margin:0.8rem auto 0;font-size:0.76rem;color:var(--muted);line-height:1.8;}
+.pm-form .field{margin-bottom:1.1rem;}
+.pm-radio-row{display:flex;gap:0.5rem;flex-wrap:wrap;}
+.pm-radio{flex:1;min-width:140px;border:1px solid var(--border2);background:var(--s2);padding:0.7rem 0.85rem;text-align:center;cursor:pointer;font-size:0.76rem;color:var(--muted);transition:all 0.15s;}
+.pm-radio.selected{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);font-weight:600;}
+.pm-q{margin-bottom:1.3rem;}
+.pm-q-label{font-size:0.78rem;color:var(--text);margin-bottom:0.5rem;font-weight:600;}
+.pm-safety{font-size:0.68rem;color:var(--dim);line-height:1.6;background:var(--s1);border:1px solid var(--border);padding:0.75rem 0.9rem;margin-bottom:1.3rem;}
+.pm-card{background:var(--s1);border:1px solid var(--border2);padding:1.4rem;max-width:480px;margin:0 auto;}
+.pm-card-top{display:flex;align-items:center;gap:0.9rem;margin-bottom:1rem;}
+.pm-card-avatar{width:64px;height:64px;border-radius:50%;background:var(--s2);border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;color:var(--muted);}
+.pm-card-avatar img{width:100%;height:100%;object-fit:cover;}
+.pm-card-avatar .default-avatar-icon{width:60%;height:60%;}
+.pm-card-name{font-size:1rem;font-weight:700;color:var(--white);}
+.pm-card-meta{font-size:0.72rem;color:var(--muted);margin-top:0.2rem;}
+.pm-score{display:inline-block;margin-top:0.4rem;font-size:0.66rem;color:var(--gold);background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:99px;padding:0.15rem 0.6rem;}
+.pm-online-dot{width:8px;height:8px;border-radius:50%;background:var(--dim);display:inline-block;margin-right:0.3rem;}
+.pm-online-dot.on{background:var(--success);box-shadow:0 0 6px rgba(74,222,128,0.6);}
+.pm-live{position:relative;background:#000;border-radius:10px;overflow:hidden;aspect-ratio:4/3;margin-bottom:1rem;display:none;}
+.pm-live.show{display:block;}
+.pm-live video{width:100%;height:100%;object-fit:cover;}
+.pm-live .pm-remote{position:absolute;inset:0;}
+.pm-live .pm-local{position:absolute;bottom:10px;right:10px;width:72px;height:96px;border-radius:8px;border:2px solid var(--gold-border);transform:scaleX(-1);object-fit:cover;}
+.pm-live-controls{position:absolute;bottom:8px;left:8px;display:flex;gap:0.4rem;}
+.pm-live-btn{width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);color:var(--text);backdrop-filter:blur(6px);}
+.pm-live-btn svg{width:16px;height:16px;}
+.pm-live-btn.off{background:linear-gradient(160deg,var(--gold-dim),rgba(200,169,110,0.06));color:var(--gold);}
+.pm-actions{display:flex;gap:0.6rem;margin-top:1.1rem;}
+.pm-actions .btn{flex:1;}
+.pm-mutual{background:var(--gold-dim);border:1px solid var(--gold-border);color:var(--gold);padding:0.7rem;text-align:center;font-size:0.78rem;font-weight:600;margin-top:0.9rem;}
+.pm-stack{position:relative;max-width:480px;margin:0 auto;}
+.pm-stack::before,.pm-stack::after{content:'';position:absolute;left:10px;right:10px;top:0;bottom:0;background:var(--s1);border:1px solid var(--border);border-radius:16px;}
+.pm-stack::before{transform:scale(0.97) translateY(8px);opacity:0.5;z-index:0;}
+.pm-stack::after{transform:scale(0.94) translateY(16px);opacity:0.25;z-index:-1;}
+.pm-card{position:relative;z-index:2;border-radius:16px;user-select:none;touch-action:pan-y;transition:transform 0.28s cubic-bezier(.2,.8,.3,1),opacity 0.28s;will-change:transform;cursor:grab;}
+.pm-card.pm-dragging{transition:none;cursor:grabbing;}
+.pm-card.pm-fly-left{transform:translate(-160%,-8%) rotate(-28deg) !important;opacity:0;}
+.pm-card.pm-fly-right{transform:translate(160%,-8%) rotate(28deg) !important;opacity:0;}
+.pm-stamp{position:absolute;top:20px;padding:0.3rem 0.85rem;border:3px solid;border-radius:8px;font-size:1.05rem;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;pointer-events:none;opacity:0;z-index:5;}
+.pm-stamp-like{left:16px;color:var(--gold);border-color:var(--gold);transform:rotate(-16deg);background:rgba(200,169,110,0.1);}
+.pm-stamp-nope{right:16px;color:var(--danger);border-color:var(--danger);transform:rotate(16deg);background:rgba(220,80,80,0.1);}
+.pm-swipe-hint{text-align:center;font-size:0.66rem;color:var(--dim);margin-top:0.65rem;display:none;}
+.pm-stats-row{display:flex;gap:0.4rem;margin-top:0.7rem;flex-wrap:wrap;}
+.pm-bio{margin-top:0.7rem;padding:0.65rem 0.8rem;border-radius:10px;background:var(--panel-2,rgba(255,255,255,0.04));border:1px solid var(--border,rgba(255,255,255,0.08));font-size:0.78rem;line-height:1.4;color:var(--text,inherit);white-space:pre-wrap;word-break:break-word;}
+.pm-answers{display:flex;flex-direction:column;gap:0.5rem;margin-top:0.7rem;}
+.pm-answer-chip{padding:0.5rem 0.7rem;border-radius:10px;background:var(--panel-2,rgba(255,255,255,0.03));border:1px solid var(--border,rgba(255,255,255,0.07));}
+.pm-answer-q{font-size:0.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:0.15rem;}
+.pm-answer-a{font-size:0.8rem;color:var(--text,inherit);}
+.pm-icebreaker-row{margin-top:0.8rem;}
+.pm-icebreaker-row textarea{width:100%;resize:vertical;font:inherit;padding:0.6rem 0.7rem;border-radius:10px;background:var(--panel-2,#1a1a1a);border:1px solid var(--border,#333);color:inherit;}
+.pm-icebreaker-count{text-align:right;font-size:0.66rem;color:var(--muted);margin-top:0.2rem;}
+.pm-icebreaker-received{margin-top:0.6rem;padding:0.55rem 0.7rem;border-radius:10px;background:var(--gold-dim,rgba(212,175,55,0.08));border:1px solid var(--gold-border,rgba(212,175,55,0.25));font-size:0.78rem;line-height:1.4;font-style:italic;}
+.pm-super-status{margin-top:0.6rem;font-size:0.7rem;color:var(--muted);text-align:center;}
+.btn-super{flex:1;background:linear-gradient(135deg,#1fb6c9,#0e8fa3);color:#fff;border:none;box-shadow:0 0 16px rgba(31,182,201,0.45);}
+.btn-super:disabled{opacity:0.5;box-shadow:none;}
+.pm-super-badge{display:inline-block;margin-left:0.4rem;font-size:0.62rem;color:#0e8fa3;background:rgba(31,182,201,0.12);border:1px solid rgba(31,182,201,0.5);box-shadow:0 0 8px rgba(31,182,201,0.35);border-radius:99px;padding:0.1rem 0.5rem;vertical-align:middle;}
+.pm-liked-row{padding:0.9rem;border-radius:14px;background:var(--panel,rgba(255,255,255,0.03));border:1px solid var(--border,rgba(255,255,255,0.08));margin-bottom:0.8rem;}
+.pm-liked-row.super{border-color:rgba(31,182,201,0.4);}
+.pm-liked-top{display:flex;gap:0.7rem;align-items:flex-start;}
+.pm-liked-actions{display:flex;gap:0.6rem;margin-top:0.8rem;}
+.pm-liked-actions .btn{flex:1;}
+
+/* ── MATCH CELEBRATION ────────────────────────────────────────
+   Full-screen "It's a Match!" overlay, string-lights + falling
+   sparks in the site's gold/cyan palette instead of Tinder pink. */
+.pm-match-overlay{position:fixed;inset:0;z-index:9999;background:radial-gradient(circle at 50% 28%,rgba(28,22,10,0.97),rgba(4,5,8,0.98));display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.35s ease;overflow:hidden;}
+.pm-match-overlay.show{opacity:1;}
+.pm-match-lights{position:absolute;top:0;left:0;right:0;height:44px;pointer-events:none;}
+.pm-light{position:absolute;top:16px;width:9px;height:9px;border-radius:50%;box-shadow:0 0 8px 3px currentColor;animation:pmLightTwinkle 1.5s ease-in-out infinite;}
+.pm-light.gold{background:var(--gold,#d4af37);color:var(--gold,#d4af37);}
+.pm-light.cyan{background:#1fb6c9;color:#1fb6c9;}
+@keyframes pmLightTwinkle{0%,100%{opacity:0.3;transform:scale(0.75);}50%{opacity:1;transform:scale(1.2);}}
+.pm-match-confetti{position:absolute;inset:0;pointer-events:none;}
+.pm-confetti-piece{position:absolute;top:-6%;width:8px;height:14px;border-radius:2px;animation-name:pmConfettiFall;animation-timing-function:linear;animation-iteration-count:infinite;}
+.pm-confetti-piece.gold{background:var(--gold,#d4af37);}
+.pm-confetti-piece.cyan{background:#1fb6c9;}
+@keyframes pmConfettiFall{0%{transform:translateY(-10%) rotate(0deg);opacity:0;}10%{opacity:1;}100%{transform:translateY(115vh) rotate(360deg);opacity:0.85;}}
+.pm-match-content{position:relative;z-index:2;text-align:center;max-width:360px;padding:2rem 1.6rem;animation:pmMatchPop 0.5s cubic-bezier(.2,1.4,.4,1);}
+@keyframes pmMatchPop{0%{transform:scale(0.7);opacity:0;}100%{transform:scale(1);opacity:1;}}
+.pm-match-title{font-size:1.6rem;font-weight:700;background:linear-gradient(90deg,var(--gold,#d4af37),#1fb6c9);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:1.3rem;letter-spacing:0.02em;}
+.pm-match-avatars{display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1.1rem;}
+.pm-match-avatar-wrap{width:76px;height:76px;border-radius:50%;overflow:hidden;border:2px solid var(--gold,#d4af37);box-shadow:0 0 18px rgba(212,175,55,0.5);background:var(--s2,#1a1a1a);display:flex;align-items:center;justify-content:center;color:var(--muted);}
+.pm-match-avatar-wrap.them{border-color:#1fb6c9;box-shadow:0 0 18px rgba(31,182,201,0.5);}
+.pm-match-avatar-wrap img{width:100%;height:100%;object-fit:cover;}
+.pm-match-avatar-wrap .default-avatar-icon{width:60%;height:60%;}
+.pm-match-spark{font-size:1.4rem;animation:pmSparkPulse 1s ease-in-out infinite;}
+@keyframes pmSparkPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.3);}}
+.pm-match-sub{font-size:0.9rem;color:var(--muted,#aaa);margin-bottom:1.5rem;}
+.pm-match-actions{display:flex;gap:0.6rem;}
+.pm-match-actions .btn{flex:1;}
+.pm-match-connecting{font-size:0.8rem;color:var(--muted);}
+#pmMatchOverlayBox{margin-top:0.8rem;}
+.pm-stat-chip{font-size:0.66rem;color:var(--muted);background:var(--s2);border:1px solid var(--border2);border-radius:99px;padding:0.25rem 0.6rem;display:inline-flex;align-items:center;gap:0.3rem;}
+.pm-stat-chip svg{width:11px;height:11px;flex-shrink:0;}
+.pm-stat-chip.studious{color:var(--gold);background:var(--gold-dim);border-color:var(--gold-border);}
+.pm-stat-chip.clickable{cursor:pointer;}
+.pm-stat-chip.clickable:hover{border-color:var(--gold);color:var(--gold);}
+@media (hover:none) and (pointer:coarse){ .pm-swipe-hint.mobile-only{display:block;} }
+@media (hover:hover) and (pointer:fine){ .pm-swipe-hint.desktop-only{display:block;} }
+.pm-empty-queue{text-align:center;color:var(--dim);font-size:0.8rem;padding:2rem;}
+.pm-report-link{display:block;text-align:center;margin-top:0.7rem;font-size:0.68rem;color:var(--dim);cursor:pointer;text-decoration:underline;}
+.pm-report-link:hover{color:var(--danger);}
+
+/* ── MATCH % BADGE (OkCupid-style circle) ─────────────────── */
+.pm-card-top{position:relative;padding-right:56px;}
+.pm-liked-top{padding-right:48px;}
+.pm-match-circle{position:absolute;top:0;right:0;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;font-weight:800;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,0.35);}
+.pm-match-circle .n{font-size:0.78rem;line-height:1;}
+.pm-match-circle .pct{font-size:0.5rem;line-height:1;opacity:0.85;font-weight:600;}
+.pm-match-circle.hi{background:radial-gradient(circle at 30% 30%, #6be08a, #2fa851);}
+.pm-match-circle.mid{background:radial-gradient(circle at 30% 30%, #e0c56b, #c8a96e);}
+.pm-match-circle.lo{background:radial-gradient(circle at 30% 30%, #9a9a9a, #6b6b6b);}
+.pm-liked-top{position:relative;}
+.pm-liked-top .pm-match-circle{width:38px;height:38px;}
+.pm-liked-top .pm-match-circle .n{font-size:0.68rem;}
+
+/* ── ANALYTICS (placeholder — full dashboard ships next update) ── */
+.pm-analytics-link{display:inline-flex;align-items:center;justify-content:center;margin-top:0.5rem;font-size:0.68rem;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+.pm-analytics-link:hover{color:var(--gold);}
+.pm-analytics-row{text-align:center;}
+.pm-analytics-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200;padding:1rem;}
+.pm-analytics-modal{background:var(--s1);border:1px solid var(--border2);border-radius:14px;max-width:340px;width:100%;padding:1.4rem;text-align:center;}
+.pm-analytics-modal .icon-wrap{width:52px;height:52px;border-radius:50%;background:var(--gold-dim);border:1px solid var(--gold-border);color:var(--gold);display:flex;align-items:center;justify-content:center;margin:0 auto 0.9rem;}
+.pm-analytics-modal .icon-wrap svg{width:22px;height:22px;}
+.pm-analytics-modal h3{font-size:0.95rem;color:var(--white);margin-bottom:0.5rem;}
+.pm-analytics-modal p{font-size:0.78rem;color:var(--muted);line-height:1.5;margin-bottom:1.1rem;}
+
+/* ── HERO PROFILE CARD (photo-forward, OkCupid-inspired, themed
+   to RevM²'s black/gold palette) ─────────────────────────────── */
+.pm-card{padding:0;overflow:hidden;background:var(--s1);border:1px solid var(--border2);border-radius:16px;}
+.pm-hero{position:relative;width:100%;aspect-ratio:4/5;background:linear-gradient(160deg,var(--s2),var(--s3));overflow:hidden;}
+.pm-hero-photo-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.pm-hero-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--gold);opacity:0.3;}
+.pm-hero-fallback svg{width:34%;height:34%;}
+.pm-hero-gradient{position:absolute;left:0;right:0;bottom:0;padding:2.6rem 1.1rem 2.1rem;background:linear-gradient(to top, rgba(0,0,0,0.94) 8%, rgba(0,0,0,0.6) 50%, transparent 100%);}
+.pm-hero-name-row{display:flex;align-items:baseline;gap:0.5rem;flex-wrap:wrap;}
+.pm-hero-name{font-size:1.2rem;font-weight:700;color:#fff;letter-spacing:-0.01em;}
+.pm-hero-online{display:inline-flex;align-items:center;font-size:0.68rem;color:rgba(255,255,255,0.6);}
+.pm-hero-meta{font-size:0.78rem;color:rgba(255,255,255,0.78);margin-top:0.25rem;}
+.pm-hero-bio{font-size:0.78rem;color:rgba(255,255,255,0.88);margin-top:0.55rem;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.pm-hero-match{position:absolute;top:14px;right:14px;z-index:3;}
+.pm-hero-match .pm-match-circle{position:static;width:52px;height:52px;border:2.5px solid rgba(255,255,255,0.9);}
+.pm-hero-match .pm-match-circle .n{font-size:0.86rem;}
+
+/* Floating circular action buttons, overlapping the seam between
+   the photo and the details panel below it. */
+.pm-hero-actions{position:relative;display:flex;justify-content:center;align-items:flex-start;gap:1.1rem;margin-top:-22px;z-index:4;pointer-events:none;}
+.pm-hero-actions .pm-fab{pointer-events:auto;}
+.pm-fab-col{display:flex;flex-direction:column;align-items:center;gap:0.35rem;pointer-events:none;}
+.pm-fab-col .pm-fab{pointer-events:auto;}
+.pm-fab-label{font-size:0.62rem;color:var(--muted);white-space:nowrap;}
+.pm-fab-label.super{color:#1fb6c9;}
+.pm-fab-label.gold{color:var(--gold);}
+.pm-icons-help-link{text-align:center;margin-top:0.6rem;font-size:0.68rem;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px;display:flex;align-items:center;justify-content:center;gap:0.3rem;}
+.pm-icons-help-link:hover{color:var(--gold);}
+.pm-icons-help-row{display:flex;align-items:flex-start;gap:0.8rem;text-align:left;padding:0.7rem 0;border-bottom:1px solid var(--border);}
+.pm-icons-help-row:last-child{border-bottom:none;}
+.pm-icons-help-row .glyph{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pm-icons-help-row .glyph.skip{background:#241a1a;border:1.5px solid rgba(248,113,113,0.55);color:#f87171;}
+.pm-icons-help-row .glyph.super{background:linear-gradient(135deg,#1fb6c9,#0e8fa3);color:#fff;}
+.pm-icons-help-row .glyph.gold{background:linear-gradient(135deg,#e6cd8a,var(--gold));color:#1a1408;}
+.pm-icons-help-row h4{font-size:0.82rem;color:var(--white);margin-bottom:0.2rem;}
+.pm-icons-help-row p{font-size:0.72rem;color:var(--muted);line-height:1.4;}
+.pm-fab{border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.5);transition:transform 0.15s ease;}
+.pm-fab:hover{transform:translateY(-2px) scale(1.06);}
+.pm-fab:active{transform:scale(0.94);}
+.pm-fab-skip{width:48px;height:48px;background:#241a1a;border:1.5px solid rgba(248,113,113,0.55);color:#f87171;}
+.pm-fab-skip:hover{color:#fff;border-color:var(--danger);background:var(--danger);}
+.pm-fab-super{width:60px;height:60px;background:linear-gradient(135deg,#1fb6c9,#0e8fa3);color:#fff;box-shadow:0 4px 22px rgba(31,182,201,0.55);}
+.pm-fab-super:disabled{opacity:0.4;box-shadow:none;cursor:default;transform:none;}
+.pm-fab-like{width:56px;height:56px;background:linear-gradient(135deg,#e6cd8a,var(--gold));color:#1a1408;box-shadow:0 4px 22px rgba(200,169,110,0.55);}
+.pm-details{padding:0.9rem 1.2rem 1.3rem;}
+.pm-compat-link{text-align:center;font-size:0.72rem;color:var(--gold);cursor:pointer;text-decoration:underline;text-underline-offset:2px;margin:0 0 1rem;display:block;}
+.pm-compat-link:hover{color:#fff;}
+
+/* ── COMPATIBILITY BREAKDOWN MODAL ────────────────────────────── */
+.pm-compat-modal{background:var(--s1);border:1px solid var(--border2);border-radius:16px;max-width:360px;width:100%;padding:1.7rem 1.4rem 1.4rem;text-align:center;}
+.pm-compat-avatars{position:relative;height:66px;margin-bottom:0.7rem;}
+.pm-compat-avatar{width:64px;height:64px;border-radius:50%;overflow:hidden;border:3px solid var(--s1);background:var(--s2);display:flex;align-items:center;justify-content:center;color:var(--muted);position:absolute;top:0;}
+.pm-compat-avatar img{width:100%;height:100%;object-fit:cover;}
+.pm-compat-avatar .default-avatar-icon{width:60%;height:60%;}
+.pm-compat-avatar.you{left:calc(50% - 58px);}
+.pm-compat-avatar.them{left:calc(50% - 6px);z-index:1;}
+.pm-compat-pct-ring{width:78px;height:78px;border-radius:50%;border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:1.35rem;font-weight:800;color:var(--gold);margin:0 auto 1.2rem;background:var(--gold-dim);}
+.pm-compat-stats{display:flex;justify-content:space-around;margin-bottom:1.4rem;}
+.pm-compat-stat{flex:1;}
+.pm-compat-stat .emoji{font-size:1.5rem;line-height:1;}
+.pm-compat-stat .label{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-top:0.35rem;}
+.pm-compat-stat .num{font-size:1.05rem;font-weight:700;color:var(--white);margin-top:0.15rem;}
+.pm-compat-actions{display:flex;justify-content:center;align-items:center;gap:1.1rem;}
+.pm-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:200;padding:1rem;}
+.pm-modal{background:var(--s1);border:1px solid var(--border2);padding:1.3rem;max-width:420px;width:100%;max-height:85vh;overflow-y:auto;}
+.pm-modal h3{font-size:0.9rem;color:var(--white);margin-bottom:0.9rem;}
+.pm-reason-opt{border:1px solid var(--border2);background:var(--s2);padding:0.55rem 0.75rem;font-size:0.75rem;color:var(--muted);cursor:pointer;margin-bottom:0.4rem;}
+.pm-reason-opt.selected{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);font-weight:600;}
+.pm-modal textarea{width:100%;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.6rem 0.75rem;font-family:var(--font);font-size:0.78rem;outline:none;resize:vertical;min-height:70px;margin-top:0.8rem;}
+.pm-modal textarea:focus{border-color:var(--gold);}
+.pm-word-count{font-size:0.65rem;color:var(--dim);text-align:right;margin-top:0.25rem;}
+.pm-word-count.over{color:var(--danger);}
+.pm-modal-actions{display:flex;gap:0.5rem;margin-top:1rem;}
+.pm-modal-actions .btn{flex:1;}
+</style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <a class="sidebar-logo" href="index.html"><div class="rm2-logo" data-size="small"></div></a>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Study</div>
+      <div class="nav-item" onclick="location.href='tracker.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 11h6M9 15h6"/></svg></span>Tracker</div>
+      <div class="nav-item" onclick="location.href='groups.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7.5" r="3.5"/><path d="M17.5 11a3.5 3.5 0 1 0 0-7"/><path d="M22 21v-1.5a4 4 0 0 0-3-3.87"/></svg></span>Study Groups</div>
+      <div class="nav-item active"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="7" cy="5" r="2.3"/><path d="M4 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><circle cx="17" cy="5" r="2.3"/><path d="M14 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><path d="M10 14.5h4"/></svg></span>Study Partners</div>
+      <div class="nav-item" onclick="location.href='store.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg></span>M² Store</div>
+    </nav>
+  </aside>
+
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
+  <div class="app-main">
+    <div class="topbar">
+      <button class="hamburger-btn" onclick="openMobileSidebar()" aria-label="Open menu">☰</button>
+      <div><div class="topbar-title">Study Partners</div><div class="topbar-sub">Find people by username, become study partners</div></div>
+    </div>
+
+    <div class="pw">
+      <div class="pw-tabs">
+        <div class="pw-tab active" id="tabSearchBtn" onclick="switchTab('search')">Search by Username</div>
+        <div class="pw-tab" id="tabFindBtn" onclick="switchTab('find')">Find a Partner</div>
+        <div class="pw-tab" id="tabLikedBtn" onclick="switchTab('liked')">Study Mates Who Liked You <span class="pw-badge" id="likedCount" style="display:none;"></span></div>
+      </div>
+
+      <div id="searchTab">
+      <div class="pw-search">
+        <input id="searchIn" placeholder="Search by username…" oninput="onSearchInput()">
+      </div>
+      <div class="pw-section" id="searchResultsSection" style="display:none;">
+        <div class="pw-section-title">Results</div>
+        <div id="searchResults"></div>
+      </div>
+
+      <div class="pw-section">
+        <div class="pw-section-title">Incoming requests <span class="pw-badge" id="incomingCount" style="display:none;"></span></div>
+        <div id="incomingList"><div class="pw-empty">No incoming requests.</div></div>
+      </div>
+
+      <div class="pw-section">
+        <div class="pw-section-title">Sent requests</div>
+        <div id="outgoingList"><div class="pw-empty">No pending sent requests.</div></div>
+      </div>
+
+      <div class="pw-section">
+        <div class="pw-section-title">Your study partners <span class="pw-badge" id="friendsCount" style="display:none;"></span></div>
+        <p class="pw-hint">Once you're both connected, 1:1 live cam and chat unlock here. (Coming in the next update — for now this list confirms who's connected.)</p>
+        <div id="friendsList"><div class="pw-empty">No study partners yet — search a username above to send a request.</div></div>
+      </div>
+      </div>
+
+      <div id="findTab" style="display:none;">
+        <div id="findTabContent"><div class="pw-empty">Loading…</div></div>
+      </div>
+
+      <div id="likedTab" style="display:none;">
+        <div id="likedTabContent"><div class="pw-empty">Loading…</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script src="floating-timer.js"></script>
+<script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const sb=window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL,REVM2_CONFIG.SUPABASE_ANON);
+let me=null;
+
+const DEFAULT_AVATAR_ICON = `<svg class="default-avatar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="2.6"/><path d="M6.5 14.2c0-2 2.3-3.4 5.5-3.4s5.5 1.4 5.5 3.4"/><path d="M3 19.5h18"/><path d="M6.5 19.5v-2.3M17.5 19.5v-2.3"/></svg>`;
+function avatarHtml(url){ return url ? `<img src="${escHtml(url)}" alt="">` : DEFAULT_AVATAR_ICON; }
+
+let myAvatarUrl = null;
+let pmLikedAvatarMap = {};
+async function init(){
+  RevM2Loader.show('Loading study partners…');
+  const session = await requireAuth();
+  if(!session){ return; }
+  me = session.user;
+  const {data: myProfile} = await sb.from('user_profiles').select('avatar_url').eq('id', me.id).single();
+  myAvatarUrl = myProfile ? myProfile.avatar_url : null;
+  await Promise.all([loadIncoming(), loadOutgoing(), loadFriends()]);
+  pmAutoAcceptMutualPartners();
+  refreshLikedBadge();
+  RevM2Loader.hide();
+}
+
+async function refreshLikedBadge(){
+  try{
+    const {data, error} = await sb.rpc('list_partner_likes_received');
+    const badge = document.getElementById('likedCount');
+    if(error || !data || !data.length){ badge.style.display='none'; return; }
+    badge.style.display='inline-block';
+    badge.textContent = data.length;
+  }catch(e){ /* not eligible yet / feature not unlocked — badge just stays hidden */ }
+}
+
+/* ── SEARCH ───────────────────────────────────────────────── */
+let searchTimer=null, searchToken=0;
+function onSearchInput(){
+  const q=document.getElementById('searchIn').value.trim();
+  clearTimeout(searchTimer);
+  if(q.length<2){ document.getElementById('searchResultsSection').style.display='none'; return; }
+  searchTimer=setTimeout(()=>runSearch(q), 350);
+}
+
+async function runSearch(q){
+  const myToken=++searchToken;
+  const {data,error}=await sb.rpc('search_users_by_username',{p_query:q});
+  if(myToken!==searchToken) return;
+  const section=document.getElementById('searchResultsSection');
+  section.style.display='block';
+  if(error||!data||!data.length){
+    document.getElementById('searchResults').innerHTML='<div class="pw-empty">No matching usernames.</div>';
+    return;
+  }
+  document.getElementById('searchResults').innerHTML = data.map(u=>rowHtml(u)).join('');
+  rm2Stagger(document.getElementById('searchResults').children);
+}
+
+function rowHtml(u){
+  const name = '@'+escHtml(u.username);
+  const meta = escHtml(u.track||'');
+  let action='';
+  if(u.friend_status==='self') action = `<span class="status-pill">That's you</span>`;
+  else if(u.friend_status==='friends') action = `<span class="status-pill">✓ Study partner</span>`;
+  else if(u.friend_status==='pending_outgoing') action = `<span class="status-pill">Requested</span>`;
+  else if(u.friend_status==='pending_incoming') action = `<button class="btn-tiny gold" onclick="quickAccept('${u.id}')">Respond below ↓</button>`;
+  else action = `<button class="btn-tiny gold" onclick="sendRequest('${u.username}', this)">+ Add friend</button>`;
+  return `<div class="p-row">
+    <div class="p-avatar">${avatarHtml(u.avatar_url)}</div>
+    <div><div class="p-name">${name}</div><div class="p-meta">${meta}</div></div>
+    <div class="p-actions">${action}</div>
+  </div>`;
+}
+
+function quickAccept(){
+  document.getElementById('incomingList').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+async function sendRequest(username, btn){
+  if(btn){ btn.disabled=true; btn.textContent='Sending…'; }
+  const {error}=await sb.rpc('send_friend_request',{p_username:username});
+  if(error){ alert(error.message||'Could not send request.'); if(btn){btn.disabled=false; btn.textContent='+ Add friend';} return; }
+  await loadOutgoing();
+  onSearchInput(); // refresh badges in results
+  const q=document.getElementById('searchIn').value.trim();
+  if(q.length>=2) runSearch(q);
+}
+
+/* ── INCOMING / OUTGOING / FRIENDS ───────────────────────── */
+async function loadIncoming(){
+  const {data,error}=await sb.rpc('list_incoming_requests');
+  const el=document.getElementById('incomingList');
+  const badge=document.getElementById('incomingCount');
+  if(error||!data||!data.length){ el.innerHTML='<div class="pw-empty">No incoming requests.</div>'; badge.style.display='none'; return; }
+  badge.style.display='inline-block'; badge.textContent=data.length;
+  el.innerHTML=data.map(r=>`<div class="p-row">
+  rm2Stagger(el.children);
+    <div class="p-avatar">${avatarHtml(r.avatar_url)}</div>
+    <div><div class="p-name">@${escHtml(r.username)}</div><div class="p-meta">${escHtml(r.track||'')} · wants to be study partners</div></div>
+    <div class="p-actions">
+      <button class="btn-tiny gold" onclick="respond('${r.friendship_id}',true,this)">Accept</button>
+      <button class="btn-tiny danger" onclick="respond('${r.friendship_id}',false,this)">Decline</button>
+    </div>
+  </div>`).join('');
+}
+
+async function respond(id, accept, btn){
+  if(btn) btn.closest('.p-actions').querySelectorAll('button').forEach(b=>b.disabled=true);
+  const {error}=await sb.rpc('respond_friend_request',{p_friendship_id:id,p_accept:accept});
+  if(error){ alert(error.message||'Could not respond.'); }
+  await Promise.all([loadIncoming(), loadFriends()]);
+}
+
+async function loadOutgoing(){
+  const {data,error}=await sb.rpc('list_outgoing_requests');
+  const el=document.getElementById('outgoingList');
+  if(error||!data||!data.length){ el.innerHTML='<div class="pw-empty">No pending sent requests.</div>'; return; }
+  el.innerHTML=data.map(r=>`<div class="p-row">
+  rm2Stagger(el.children);
+    <div class="p-avatar">${avatarHtml(r.avatar_url)}</div>
+    <div><div class="p-name">@${escHtml(r.username)}</div><div class="p-meta">${escHtml(r.track||'')} · request pending</div></div>
+    <div class="p-actions"><button class="btn-tiny" onclick="cancelReq('${r.friendship_id}',this)">Cancel</button></div>
+  </div>`).join('');
+}
+
+async function cancelReq(id, btn){
+  if(btn) btn.disabled=true;
+  await sb.rpc('cancel_friend_request',{p_friendship_id:id});
+  await loadOutgoing();
+}
+
+async function loadFriends(){
+  const {data,error}=await sb.rpc('list_friends');
+  const el=document.getElementById('friendsList');
+  const badge=document.getElementById('friendsCount');
+  if(error||!data||!data.length){ el.innerHTML='<div class="pw-empty">No study partners yet — search a username above to send a request.</div>'; badge.style.display='none'; return; }
+  badge.style.display='inline-block'; badge.textContent=data.length;
+  el.innerHTML=data.map(f=>`<div class="p-row">
+  rm2Stagger(el.children);
+    <div class="p-avatar">${avatarHtml(f.avatar_url)}</div>
+    <div><div class="p-name">@${escHtml(f.username)}</div><div class="p-meta">${escHtml(f.track||'')}</div></div>
+    <div class="p-actions">
+      <button class="btn-tiny gold btn-icon" onclick="location.href='chat.html?fid=${f.friendship_id}&call=video'"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6.5" width="12" height="11" rx="2"/><path d="M17.5 10.2 21 8v8l-3.5-2.2z"/></svg>Cam</button>
+      <button class="btn-tiny gold btn-icon" onclick="location.href='chat.html?fid=${f.friendship_id}'"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c0 4.14-3.98 7.5-8.5 7.5-1.06 0-2.07-.18-3-.52L4 20l1.18-3.98A7.3 7.3 0 0 1 3.5 12C3.5 7.86 7.48 4.5 12 4.5S21 7.86 21 12z"/></svg>Chat</button>
+      <button class="btn-tiny danger" onclick="unfriend('${f.friendship_id}',this)">Remove</button>
+    </div>
+  </div>`).join('');
+}
+
+async function unfriend(id, btn){
+  if(!confirm('Remove this study partner?')) return;
+  if(btn) btn.disabled=true;
+  await sb.rpc('remove_friend',{p_friendship_id:id});
+  await loadFriends();
+}
+
+/* ══════════════════════════════════════════════════════════
+   FIND A PARTNER
+   ══════════════════════════════════════════════════════════ */
+function switchTab(tab){
+  document.getElementById('searchTab').style.display = tab==='search' ? '' : 'none';
+  document.getElementById('findTab').style.display = tab==='find' ? '' : 'none';
+  document.getElementById('likedTab').style.display = tab==='liked' ? '' : 'none';
+  document.getElementById('tabSearchBtn').classList.toggle('active', tab==='search');
+  document.getElementById('tabFindBtn').classList.toggle('active', tab==='find');
+  document.getElementById('tabLikedBtn').classList.toggle('active', tab==='liked');
+  if(tab==='find') loadFindTab();
+  if(tab==='liked') loadLikedTab();
+}
+
+const PM_QUESTIONS = [
+  { key:'study_time', label:'When do you usually study?', options:[['morning','Early morning'],['afternoon','Afternoon'],['evening','Evening'],['night','Late night']] },
+  { key:'session_style', label:'How do you like to study with a partner?', options:[['silent_coworking','Silent co-working (camera on, no talking)'],['discuss','Discuss & quiz each other'],['accountability','Just check in on progress']] },
+  { key:'session_length', label:'Preferred session length?', options:[['30','~30 min'],['60','~1 hour'],['120','2+ hours']] },
+  { key:'communication', label:'Preferred way to connect?', options:[['text','Text chat only'],['voice','Voice'],['video','Video']] },
+  { key:'discipline', label:'How strict are you about schedule?', options:[['very','Very — I hate skipping'],['flexible','Flexible, life happens'],['casual','Casual, low pressure']] },
+  { key:'language', label:'Preferred language?', options:[['english','English'],['hindi','Hindi'],['hinglish','Hinglish'],['other','Other']] }
+];
+
+let pmStatus = null;
+let pmAnswers = {};
+let pmSelectedGender = null, pmSelectedPref = 'same_gender';
+const PM_BIO_MAX = 300;
+
+async function loadFindTab(){
+  const el = document.getElementById('findTabContent');
+  el.innerHTML = '<div class="pw-empty">Loading…</div>';
+  const {data, error} = await sb.rpc('get_partner_status');
+  if(error){ el.innerHTML = `<div class="pw-empty">Couldn't load — try again.</div>`; return; }
+  pmStatus = data;
+
+  const examBlocked = (data.blockers||[]).some(b=>b.includes('only available for'));
+  if(examBlocked){
+    el.innerHTML = `<div class="pm-locked"><h3>Not available for your exam track</h3>
+      <p style="font-size:0.76rem;color:var(--muted);">Find a Partner isn't available for your exam track yet.</p></div>`;
+    return;
+  }
+
+  if(!data.setup_complete){
+    renderSetupForm(el);
+    return;
+  }
+
+  if(!data.eligible){
+    el.innerHTML = `<div class="pm-locked"><h3>Not unlocked yet</h3><ul>${(data.blockers||[]).map(b=>`<li>${escHtml(b)}</li>`).join('')}</ul></div>`;
+    return;
+  }
+
+  await startMatching(el);
+  pmMaybeAutoShowIconsHelp();
+}
+
+function pmEditLinkHtml(){
+  return `<div style="text-align:right;margin-bottom:0.5rem;"><span class="pm-report-link" onclick="renderSetupForm(document.getElementById('findTabContent'), true)">Edit your profile & bio</span></div>`;
+}
+
+function renderSetupForm(el, isEdit){
+  pmAnswers = (pmStatus.answers && Object.keys(pmStatus.answers).length) ? {...pmStatus.answers} : {};
+  pmSelectedGender = pmStatus.gender || null;
+  pmSelectedPref = pmStatus.match_pref || 'same_gender';
+  const bioVal = pmStatus.bio || '';
+
+  el.innerHTML = `
+    <div class="pm-safety">Find a Partner matches you with other verified-eligible aspirants based on shared study preferences. Same-gender matching only, or fully random — never opposite-gender selection. Report/block is available in every session.</div>
+    <div class="pm-form">
+      <div class="field"><label>Date of birth (must be 18+)</label><input type="date" id="pmDob" value="${escHtml(pmStatus.dob||'')}"></div>
+      <div class="field"><label>Gender</label>
+        <div class="pm-radio-row" id="pmGenderRow">
+          <div class="pm-radio ${pmSelectedGender==='male'?'selected':''}" data-v="male" onclick="pmPickGender(this)">Male</div>
+          <div class="pm-radio ${pmSelectedGender==='female'?'selected':''}" data-v="female" onclick="pmPickGender(this)">Female</div>
+          <div class="pm-radio ${pmSelectedGender==='other'?'selected':''}" data-v="other" onclick="pmPickGender(this)">Other</div>
+        </div>
+      </div>
+      <div class="field"><label>Who should we match you with?</label>
+        <div class="pm-radio-row" id="pmPrefRow">
+          <div class="pm-radio ${pmSelectedPref==='same_gender'?'selected':''}" data-v="same_gender" onclick="pmPickPref(this)">Same gender only</div>
+          <div class="pm-radio ${pmSelectedPref==='random'?'selected':''}" data-v="random" onclick="pmPickPref(this)">Random (no preference)</div>
+        </div>
+      </div>
+      <div class="field"><label>About you <span style="color:var(--muted);font-weight:400;">(what should a potential study partner know?)</span></label>
+        <textarea id="pmBio" maxlength="${PM_BIO_MAX}" rows="3" placeholder="e.g. Prepping for JEE, mornings are my focus zone, into physics problem-solving. Looking for someone to keep me accountable." oninput="pmUpdateBioCount()" style="width:100%;resize:vertical;font:inherit;padding:0.6rem 0.7rem;border-radius:10px;background:var(--panel-2,#1a1a1a);border:1px solid var(--border,#333);color:inherit;">${escHtml(bioVal)}</textarea>
+        <div id="pmBioCount" style="text-align:right;font-size:0.68rem;color:var(--muted);margin-top:0.2rem;">${bioVal.length}/${PM_BIO_MAX}</div>
+      </div>
+      <div class="field"><label>A bit about how you study</label>
+        ${PM_QUESTIONS.map(q=>`
+          <div class="pm-q">
+            <div class="pm-q-label">${escHtml(q.label)}</div>
+            <div class="pm-radio-row" id="pmQ_${q.key}">
+              ${q.options.map(([v,l])=>`<div class="pm-radio ${pmAnswers[q.key]===v?'selected':''}" data-v="${v}" onclick="pmPickAnswer('${q.key}', this)">${escHtml(l)}</div>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+      <button class="btn btn-gold" id="pmSaveBtn" onclick="savePmProfile()">${isEdit ? 'Save changes' : 'Save & start matching'}</button>
+      ${isEdit ? `<button class="btn btn-ghost btn-sm" style="width:100%;margin-top:0.4rem;" onclick="loadFindTab()">Cancel</button>` : ''}
+    </div>`;
+}
+function pmUpdateBioCount(){
+  const ta = document.getElementById('pmBio');
+  document.getElementById('pmBioCount').textContent = `${ta.value.length}/${PM_BIO_MAX}`;
+}
+function pmPickGender(elm){ document.querySelectorAll('#pmGenderRow .pm-radio').forEach(x=>x.classList.remove('selected')); elm.classList.add('selected'); pmSelectedGender=elm.dataset.v; }
+function pmPickPref(elm){ document.querySelectorAll('#pmPrefRow .pm-radio').forEach(x=>x.classList.remove('selected')); elm.classList.add('selected'); pmSelectedPref=elm.dataset.v; }
+function pmPickAnswer(key, elm){ document.querySelectorAll(`#pmQ_${key} .pm-radio`).forEach(x=>x.classList.remove('selected')); elm.classList.add('selected'); pmAnswers[key]=elm.dataset.v; }
+
+async function savePmProfile(){
+  const dob = document.getElementById('pmDob').value;
+  const bio = document.getElementById('pmBio').value.trim();
+  if(!dob){ alert('Please enter your date of birth.'); return; }
+  if(!pmSelectedGender){ alert('Please select a gender.'); return; }
+  if(!bio){ alert('Please add a short bio so matches know a bit about you.'); return; }
+  if(bio.length > PM_BIO_MAX){ alert(`Bio must be ${PM_BIO_MAX} characters or fewer.`); return; }
+  if(Object.keys(pmAnswers).length < PM_QUESTIONS.length){ alert('Please answer all the study-preference questions.'); return; }
+  const btn = document.getElementById('pmSaveBtn'); btn.disabled=true; btn.textContent='Saving…';
+  const {error} = await sb.rpc('save_partner_profile', {
+    p_dob: dob, p_gender: pmSelectedGender, p_match_pref: pmSelectedPref, p_answers: pmAnswers, p_bio: bio
+  });
+  if(error){ alert(error.message || 'Could not save your profile.'); btn.disabled=false; btn.textContent='Save & start matching'; return; }
+  logEvent('partner_setup_completed', 'partner_match');
+  loadFindTab();
+}
+
+/* ── MATCHING QUEUE ───────────────────────────────────────── */
+let pmQueue = [], pmIdx = 0, pmOnlineIds = new Set(), pmPresenceCh = null;
+
+async function startMatching(el){
+  logEvent('partner_search', 'partner_match');
+  el.innerHTML = `${pmEditLinkHtml()}<div class="pw-empty">Finding compatible partners…</div>`;
+  const {data, error} = await sb.rpc('find_study_partners', {p_limit: 20});
+  if(error){ el.innerHTML = `<div class="pw-empty">${escHtml(error.message||'Could not load matches.')}</div>`; return; }
+  pmQueue = data || []; pmIdx = 0;
+  initPresence();
+  renderCandidate(el);
+}
+
+function initPresence(){
+  if(pmPresenceCh) return;
+  pmPresenceCh = sb.channel('partner-presence', { config:{ presence:{ key: me.id } } });
+  pmPresenceCh.on('presence', {event:'sync'}, ()=>{
+    const state = pmPresenceCh.presenceState();
+    pmOnlineIds = new Set(Object.keys(state));
+    updateOnlineDot();
+  }).subscribe(async status=>{
+    if(status==='SUBSCRIBED') await pmPresenceCh.track({});
+  });
+  // listen for incoming live-meet invites while on this tab
+  sb.channel(`partner-meet-${me.id}`)
+    .on('broadcast', {event:'meet'}, ({payload})=>handleMeetSignal(payload))
+    .subscribe();
+}
+function updateOnlineDot(){
+  const dot = document.getElementById('pmOnlineDot');
+  if(!dot) return;
+  const cand = pmQueue[pmIdx];
+  const on = cand && pmOnlineIds.has(cand.id);
+  dot.classList.toggle('on', !!on);
+  document.getElementById('pmOnlineText').textContent = on ? 'Online now' : 'Offline';
+  document.getElementById('pmMeetBtn').disabled = !on;
+}
+
+function renderCandidate(el){
+  teardownPmCall();
+  if(pmIdx >= pmQueue.length){
+    el.innerHTML = `${pmEditLinkHtml()}<div class="pm-empty-queue">No more matches right now — check back later, or refresh.</div><div style="text-align:center;"><button class="btn btn-ghost btn-sm" onclick="startMatching(document.getElementById('findTabContent'))">Refresh</button></div>`;
+    return;
+  }
+  const c = pmQueue[pmIdx];
+  const on = pmOnlineIds.has(c.id);
+  const hasPhoto = !!c.avatar_url;
+  el.innerHTML = `
+    ${pmEditLinkHtml()}
+    <div class="pm-stack">
+    <div class="pm-card" id="pmActiveCard">
+      <div class="pm-stamp pm-stamp-like" id="pmStampLike">Study Partner</div>
+      <div class="pm-stamp pm-stamp-nope" id="pmStampNope">Skip</div>
+
+      <div class="pm-hero">
+        ${hasPhoto
+          ? `<img class="pm-hero-photo-img" src="${escHtml(c.avatar_url)}" alt="">`
+          : `<div class="pm-hero-fallback">${DEFAULT_AVATAR_ICON}</div>`}
+        <div class="pm-hero-match">${pmMatchBadgeHtml(c.match_score)}</div>
+        <div class="pm-hero-gradient">
+          <div class="pm-hero-name-row">
+            <span class="pm-hero-name">@${escHtml(c.username)}</span>
+            <span class="pm-hero-online"><span class="pm-online-dot" id="pmOnlineDot"></span><span id="pmOnlineText">—</span></span>
+          </div>
+          <div class="pm-hero-meta">${escHtml(c.exam||'')} ${c.track?'· '+escHtml(c.track):''}</div>
+          ${c.bio ? `<div class="pm-hero-bio">${escHtml(c.bio)}</div>` : ''}
+        </div>
+      </div>
+
+      <div class="pm-hero-actions">
+        <div class="pm-fab-col">
+          <button class="pm-fab pm-fab-skip" onclick="pmButtonSkip()" title="Skip">${ICON_X}</button>
+          <span class="pm-fab-label">Skip</span>
+        </div>
+        <div class="pm-fab-col">
+          <button class="pm-fab pm-fab-super" id="pmSuperBtn" onclick="pmButtonSuperLike()" title="Super Like">${ICON_STAR_FAB}</button>
+          <span class="pm-fab-label super">Super Like</span>
+        </div>
+        <div class="pm-fab-col">
+          <button class="pm-fab pm-fab-like" id="pmLikeBtn" onclick="pmButtonLike()" title="Like">${ICON_HEART_FAB}</button>
+          <span class="pm-fab-label gold">Study Partner</span>
+        </div>
+      </div>
+      <div class="pm-icons-help-link" onclick="pmOpenIconsHelp()">${ICON_INFO} What do these mean?</div>
+
+      <div class="pm-details">
+        <div class="pm-icebreaker-row">
+          <textarea id="pmIcebreakerBox" maxlength="200" rows="2" placeholder="Optional: send a quick intro so it's less awkward if you match — e.g. 'Also prepping for JEE physics, want an accountability partner?'" oninput="pmUpdateIcebreakerCount()"></textarea>
+          <div id="pmIcebreakerCount" class="pm-icebreaker-count">0/200</div>
+        </div>
+
+        <span class="pm-compat-link" onclick="pmOpenCompatibilityModal()">See compatibility breakdown →</span>
+
+        <div class="pm-stats-row">${pmStudyStatChip(c.total_study_seconds, c.id, c.username)}</div>
+
+        ${c.bio ? `<div class="pm-bio">${escHtml(c.bio)}</div>` : ''}
+
+        ${pmRenderAnswers(c.answers)}
+
+        <div class="pm-live" id="pmLive">
+          <video class="pm-remote" id="pmRemoteVideo" autoplay playsinline></video>
+          <video class="pm-local" id="pmLocalVideo" autoplay playsinline muted></video>
+          <div class="pm-live-controls">
+            <button class="pm-live-btn off" id="pmMicBtn" onclick="pmToggleMic()" title="Mic">${ICON_MIC_OFF}</button>
+            <button class="pm-live-btn off" id="pmCamBtn" onclick="pmToggleCam()" title="Camera">${ICON_CAM_OFF}</button>
+          </div>
+        </div>
+
+        <button class="btn btn-ghost btn-sm" id="pmMeetBtn" style="width:100%;" ${on?'':'disabled'} onclick="pmRequestMeet()">${ICON_CAM_ON} Meet live (mic/cam off until you turn them on)</button>
+
+        <div class="pm-super-status" id="pmSuperStatusLine">Checking super likes…</div>
+
+        <div class="pm-analytics-row"><span class="pm-analytics-link" onclick="pmOpenAnalytics('${escAttr(c.username)}')">${ICON_CHART}View analytics</span></div>
+        <span class="pm-report-link" onclick="pmOpenReport()">Report or block @${escHtml(c.username)}</span>
+        <div id="pmMutualBox"></div>
+      </div>
+    </div>
+    </div>
+    <div class="pm-swipe-hint mobile-only">← Swipe to skip · Swipe to like →</div>
+    <div class="pm-swipe-hint desktop-only">Drag the card, use the buttons, or press ← / → to skip / like</div>`;
+  updateOnlineDot();
+  pmAttachSwipe(document.getElementById('pmActiveCard'));
+  pmRefreshSuperStatus();
+}
+
+/* ── MATCH % BADGE (OkCupid-style circle, top-right of card) ──
+   Converts the raw match_score (out of PM_QUESTIONS.length) into
+   a percentage, colored green/gold/gray by how strong the match
+   is, exactly like the "90%" / "99%" circles on OkCupid. */
+function pmMatchPercent(score){
+  return Math.round((Math.max(0, score||0) / PM_QUESTIONS.length) * 100);
+}
+function pmMatchBadgeHtml(score){
+  const pct = pmMatchPercent(score);
+  const tier = pct >= 70 ? 'hi' : (pct >= 40 ? 'mid' : 'lo');
+  return `<div class="pm-match-circle ${tier}" title="${pct}% match"><span class="n">${pct}%</span></div>`;
+}
+
+/* ── ANALYTICS (placeholder link — full dashboard ships in a
+   future update; for now it just opens a "coming soon" modal so
+   the affordance is visible without promising data we don't
+   collect/show yet). ──────────────────────────────────────── */
+function pmOpenAnalytics(username){
+  pmCloseAnalytics();
+  const wrap = document.createElement('div');
+  wrap.className = 'pm-analytics-modal-overlay';
+  wrap.id = 'pmAnalyticsOverlay';
+  wrap.onclick = (e)=>{ if(e.target===wrap) pmCloseAnalytics(); };
+  wrap.innerHTML = `
+    <div class="pm-analytics-modal">
+      <div class="icon-wrap">${ICON_CHART}</div>
+      <h3>Partner Analytics</h3>
+      <p>A full analytics view for @${escHtml(username)} — study hours, streaks, session history and more — is coming in a future update.</p>
+      <button class="btn btn-gold btn-sm" style="width:100%;" onclick="pmCloseAnalytics()">Got it</button>
+    </div>`;
+  document.body.appendChild(wrap);
+}
+function pmCloseAnalytics(){
+  const el = document.getElementById('pmAnalyticsOverlay');
+  if(el) el.remove();
+}
+
+/* ── ICON MEANINGS EXPLAINER ───────────────────────────────────
+   Shown automatically the first time someone opens Find a Partner
+   (flagged in localStorage so it doesn't repeat), and reopenable
+   any time via the "What do these mean?" link under the actions. */
+const PM_ICON_HELP_SEEN_KEY = 'revm2_pm_icons_help_seen';
+function pmOpenIconsHelp(){
+  pmCloseIconsHelp();
+  const wrap = document.createElement('div');
+  wrap.className = 'pm-analytics-modal-overlay';
+  wrap.id = 'pmIconsHelpOverlay';
+  wrap.onclick = (e)=>{ if(e.target===wrap) pmCloseIconsHelp(); };
+  wrap.innerHTML = `
+    <div class="pm-analytics-modal" style="text-align:left;max-width:340px;">
+      <h3 style="text-align:center;margin-bottom:0.9rem;">What each action means</h3>
+      <div class="pm-icons-help-row">
+        <div class="glyph skip">${ICON_X}</div>
+        <div><h4>Skip</h4><p>Not a fit — you won't see this profile again for 30 days.</p></div>
+      </div>
+      <div class="pm-icons-help-row">
+        <div class="glyph super">${ICON_STAR_FAB}</div>
+        <div><h4>Super Like</h4><p>Shows you're especially interested — you land at the top of their "liked you" list, ahead of regular likes. Limited per day, more available by watching a quick ad.</p></div>
+      </div>
+      <div class="pm-icons-help-row">
+        <div class="glyph gold">${ICON_HEART_FAB}</div>
+        <div><h4>Study Partner</h4><p>A regular like. If they like you back too, you're matched and can start chatting or studying together.</p></div>
+      </div>
+      <button class="btn btn-gold btn-sm" style="width:100%;margin-top:0.9rem;" onclick="pmCloseIconsHelp()">Got it</button>
+    </div>`;
+  document.body.appendChild(wrap);
+  try{ localStorage.setItem(PM_ICON_HELP_SEEN_KEY, '1'); }catch(e){}
+}
+function pmCloseIconsHelp(){
+  const el = document.getElementById('pmIconsHelpOverlay');
+  if(el) el.remove();
+}
+function pmMaybeAutoShowIconsHelp(){
+  try{
+    if(!localStorage.getItem(PM_ICON_HELP_SEEN_KEY)){
+      pmOpenIconsHelp();
+    }
+  }catch(e){ /* localStorage unavailable — just skip the auto-prompt */ }
+}
+
+/* ── COMPATIBILITY BREAKDOWN MODAL ─────────────────────────────
+   Compares my saved Find-a-Partner answers (from pmStatus, always
+   loaded by get_partner_status) against the candidate currently on
+   top of the queue, purely client-side — no extra round trip. */
+function pmComputeCompatibility(myAnswers, theirAnswers){
+  let agree = 0, disagree = 0, unknown = 0;
+  PM_QUESTIONS.forEach(q=>{
+    const a = myAnswers ? myAnswers[q.key] : null;
+    const b = theirAnswers ? theirAnswers[q.key] : null;
+    if(!a || !b) unknown++;
+    else if(a === b) agree++;
+    else disagree++;
+  });
+  return {agree, disagree, unknown};
+}
+function pmOpenCompatibilityModal(){
+  const c = pmQueue[pmIdx];
+  if(!c) return;
+  pmCloseCompatibilityModal();
+  const myAnswers = (pmStatus && pmStatus.answers) || {};
+  const {agree, disagree, unknown} = pmComputeCompatibility(myAnswers, c.answers || {});
+  const pct = pmMatchPercent(c.match_score);
+  const wrap = document.createElement('div');
+  wrap.className = 'pm-analytics-modal-overlay';
+  wrap.id = 'pmCompatOverlay';
+  wrap.onclick = (e)=>{ if(e.target===wrap) pmCloseCompatibilityModal(); };
+  wrap.innerHTML = `
+    <div class="pm-compat-modal">
+      <div class="pm-compat-avatars">
+        <div class="pm-compat-avatar you">${avatarHtml(myAvatarUrl)}</div>
+        <div class="pm-compat-avatar them">${avatarHtml(c.avatar_url)}</div>
+      </div>
+      <div class="pm-compat-pct-ring">${pct}%</div>
+      <div class="pm-compat-stats">
+        <div class="pm-compat-stat"><div class="emoji">🙂</div><div class="label">Agree</div><div class="num">${agree}</div></div>
+        <div class="pm-compat-stat"><div class="emoji">☹️</div><div class="label">Disagree</div><div class="num">${disagree}</div></div>
+        <div class="pm-compat-stat"><div class="emoji">🔮</div><div class="label">Find out</div><div class="num">${unknown}</div></div>
+      </div>
+      <div class="pm-compat-actions">
+        <button class="pm-fab pm-fab-skip" onclick="pmCloseCompatibilityModal();pmButtonSkip();" title="Skip">${ICON_X}</button>
+        <button class="pm-fab pm-fab-super" onclick="pmCloseCompatibilityModal();pmButtonSuperLike();" title="Super Like">${ICON_STAR_FAB}</button>
+        <button class="pm-fab pm-fab-like" onclick="pmCloseCompatibilityModal();pmButtonLike();" title="Like">${ICON_HEART_FAB}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+}
+function pmCloseCompatibilityModal(){
+  const el = document.getElementById('pmCompatOverlay');
+  if(el) el.remove();
+}
+
+/* ── STUDY STATS CHIP ─────────────────────────────────────────
+   Shown so a swiper can factor in "how studious is this person"
+   before liking/skipping — purely informational on the card; the
+   backend already applies at most a small nudge from this, never
+   a deciding factor over the interest-match score. */
+const ICON_BOOK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`;
+function pmFmtStudyTime(totalSeconds){
+  const s = totalSeconds || 0;
+  const h = Math.floor(s/3600);
+  const m = Math.floor((s%3600)/60);
+  if(h <= 0 && m <= 0) return null;
+  return h > 0 ? `${h}h ${m}m studied` : `${m}m studied`;
+}
+function pmStudyStatChip(totalSeconds, candidateId, username){
+  const label = pmFmtStudyTime(totalSeconds);
+  const onclick = candidateId ? ` onclick="pmOpenStudyAnalytics('${escAttr(candidateId)}','${escAttr(username||'')}',${totalSeconds||0})"` : '';
+  const clickable = candidateId ? ' clickable' : '';
+  if(!label) return `<span class="pm-stat-chip${clickable}"${onclick}>${ICON_BOOK} New here — no study time logged yet</span>`;
+  const studious = (totalSeconds||0) >= 108000; // 30+ hrs lifetime
+  return `<span class="pm-stat-chip${studious?' studious':''}${clickable}"${onclick}>${ICON_BOOK} See Study Analytics</span>`;
+}
+
+/* ── FULL ANALYTICS DEEP-LINK (from the study-stat chip) ───────
+   The modal itself just recaps the lifetime total we already have;
+   "See full analytics" is a real link to the dedicated analytics
+   page (built separately) so it works the moment that page ships —
+   nothing else here needs to change when it does. */
+function pmOpenStudyAnalytics(candidateId, username, totalSeconds){
+  pmCloseStudyAnalytics();
+  const label = pmFmtStudyTime(totalSeconds) || 'No study time logged yet';
+  const wrap = document.createElement('div');
+  wrap.className = 'pm-analytics-modal-overlay';
+  wrap.id = 'pmStudyAnalyticsOverlay';
+  wrap.onclick = (e)=>{ if(e.target===wrap) pmCloseStudyAnalytics(); };
+  wrap.innerHTML = `
+    <div class="pm-analytics-modal">
+      <div class="icon-wrap">${ICON_BOOK}</div>
+      <h3>@${escHtml(username||'')}'s study time</h3>
+      <p>${escHtml(label)} in total, lifetime. See daily streaks, subject breakdown and session history on the full analytics page.</p>
+      <a class="btn btn-gold btn-sm" style="width:100%;display:block;text-align:center;text-decoration:none;box-sizing:border-box;margin-bottom:0.5rem;" href="partner-analytics.html?id=${encodeURIComponent(candidateId)}">See full analytics</a>
+      <button class="btn btn-ghost btn-sm" style="width:100%;" onclick="pmCloseStudyAnalytics()">Close</button>
+    </div>`;
+  document.body.appendChild(wrap);
+}
+function pmCloseStudyAnalytics(){
+  const el = document.getElementById('pmStudyAnalyticsOverlay');
+  if(el) el.remove();
+}
+
+/* ── ANSWER PROMPTS ───────────────────────────────────────────
+   Renders the candidate's Find-a-Partner setup answers (the same
+   PM_QUESTIONS asked when they clicked "Find a Partner" — not
+   collected at signup) as Hinge-style prompt/answer chips, so
+   there's more to go on than just the numeric match score. */
+function pmRenderAnswers(answers){
+  if(!answers || !Object.keys(answers).length) return '';
+  const rows = PM_QUESTIONS.map(q=>{
+    const v = answers[q.key];
+    if(!v) return '';
+    const opt = q.options.find(([ov])=>ov===v);
+    if(!opt) return '';
+    return `<div class="pm-answer-chip"><div class="pm-answer-q">${escHtml(q.label)}</div><div class="pm-answer-a">${escHtml(opt[1])}</div></div>`;
+  }).filter(Boolean).join('');
+  if(!rows) return '';
+  return `<div class="pm-answers">${rows}</div>`;
+}
+
+/* ── SWIPE (drag on mobile, drag/buttons/arrow-keys on desktop) ──
+   Pointer Events unify mouse + touch. Drag only starts from a
+   non-interactive part of the card, so the Meet/Like/Skip/Report
+   buttons and the live video controls keep working normally. */
+let pmDrag = null;
+function pmAttachSwipe(card){
+  if(!card) return;
+  card.addEventListener('pointerdown', pmDragStart);
+}
+function pmDragStart(e){
+  if(e.target.closest('button, a, .pm-live, video, input, textarea')) return;
+  const card = e.currentTarget;
+  try{ card.setPointerCapture(e.pointerId); }catch(_){}
+  pmDrag = { card, id: e.pointerId, startX: e.clientX, startY: e.clientY, dx: 0 };
+  card.classList.add('pm-dragging');
+  card.addEventListener('pointermove', pmDragMove);
+  card.addEventListener('pointerup', pmDragEnd);
+  card.addEventListener('pointercancel', pmDragEnd);
+}
+function pmDragMove(e){
+  if(!pmDrag || e.pointerId !== pmDrag.id) return;
+  const dx = e.clientX - pmDrag.startX;
+  const dy = e.clientY - pmDrag.startY;
+  pmDrag.dx = dx;
+  pmDrag.card.style.transform = `translate(${dx}px, ${dy*0.3}px) rotate(${dx/18}deg)`;
+  const t = Math.min(Math.abs(dx)/100, 1);
+  const likeStamp = document.getElementById('pmStampLike');
+  const nopeStamp = document.getElementById('pmStampNope');
+  if(!likeStamp || !nopeStamp) return;
+  if(dx > 0){ likeStamp.style.opacity = t; nopeStamp.style.opacity = 0; }
+  else { nopeStamp.style.opacity = t; likeStamp.style.opacity = 0; }
+}
+function pmDragEnd(e){
+  if(!pmDrag || e.pointerId !== pmDrag.id) return;
+  const { card, dx } = pmDrag;
+  card.removeEventListener('pointermove', pmDragMove);
+  card.removeEventListener('pointerup', pmDragEnd);
+  card.removeEventListener('pointercancel', pmDragEnd);
+  card.classList.remove('pm-dragging');
+  const THRESHOLD = 110;
+  pmDrag = null;
+  if(dx > THRESHOLD){ pmButtonLike(); }
+  else if(dx < -THRESHOLD){ pmButtonSkip(); }
+  else {
+    card.style.transform = '';
+    const likeStamp = document.getElementById('pmStampLike');
+    const nopeStamp = document.getElementById('pmStampNope');
+    if(likeStamp) likeStamp.style.opacity = 0;
+    if(nopeStamp) nopeStamp.style.opacity = 0;
+  }
+}
+function pmAnimateCardOut(direction){
+  return new Promise(resolve=>{
+    const card = document.getElementById('pmActiveCard');
+    if(!card){ resolve(); return; }
+    card.classList.add(direction === 'right' ? 'pm-fly-right' : 'pm-fly-left');
+    setTimeout(resolve, 260);
+  });
+}
+async function pmButtonSkip(){ await pmAnimateCardOut('left'); pmSkip(); }
+async function pmButtonLike(){ await pmAnimateCardOut('right'); pmLike(); }
+document.addEventListener('keydown', (e)=>{
+  if(!document.getElementById('pmActiveCard')) return;
+  if(document.getElementById('pmReportBackdrop')) return; // don't hijack keys while report modal is open
+  if(e.key === 'ArrowLeft') pmButtonSkip();
+  if(e.key === 'ArrowRight') pmButtonLike();
+});
+
+function pmUpdateIcebreakerCount(){
+  const ta = document.getElementById('pmIcebreakerBox');
+  document.getElementById('pmIcebreakerCount').textContent = `${ta.value.length}/200`;
+}
+function pmCurrentIcebreaker(){
+  const ta = document.getElementById('pmIcebreakerBox');
+  const v = ta ? ta.value.trim() : '';
+  return v ? v : null;
+}
+
+let pmSuperStatus = null;
+async function pmRefreshSuperStatus(){
+  const line = document.getElementById('pmSuperStatusLine');
+  if(!line) return;
+  const {data, error} = await sb.rpc('get_superlike_status');
+  if(error){ line.textContent = ''; return; }
+  pmSuperStatus = data;
+  const btn = document.getElementById('pmSuperBtn');
+  if(data.remaining > 0){
+    line.innerHTML = `${ICON_STAR} ${data.remaining}/${data.total_quota} super likes left today`;
+    if(btn) btn.disabled = false;
+  } else if(data.can_watch_ad){
+    line.innerHTML = `${ICON_STAR} Out of super likes — <span class="pm-report-link" style="display:inline;" onclick="pmWatchAdForSuperlike()">watch an ad for +1</span>`;
+    if(btn) btn.disabled = true;
+  } else {
+    line.innerHTML = `${ICON_STAR} Out of super likes for today (max 9/day) — more tomorrow`;
+    if(btn) btn.disabled = true;
+  }
+}
+
+function pmWatchAdForSuperlike(){
+  const wrap = document.createElement('div');
+  wrap.className = 'pm-modal-backdrop';
+  wrap.id = 'pmAdBackdrop';
+  wrap.innerHTML = `
+    <div class="pm-modal">
+      <h3>Watch a quick ad</h3>
+      <p style="font-size:0.78rem;color:var(--muted);">Simulating a rewarded ad — this is where your ad SDK's rewarded-ad unit would play. +1 super like when it finishes.</p>
+      <div id="pmAdCountdown" style="text-align:center;font-size:1.6rem;margin:1rem 0;">5</div>
+      <div class="pm-modal-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('pmAdBackdrop').remove()">Cancel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+  let n = 5;
+  const timer = setInterval(async ()=>{
+    n--;
+    const el = document.getElementById('pmAdCountdown');
+    if(!el){ clearInterval(timer); return; } // modal was cancelled
+    if(n <= 0){
+      clearInterval(timer);
+      const {data, error} = await sb.rpc('claim_superlike_ad_bonus');
+      const backdrop = document.getElementById('pmAdBackdrop');
+      if(backdrop) backdrop.remove();
+      if(error){ alert(error.message || 'Could not grant bonus super like.'); return; }
+      pmSuperStatus = data;
+      await pmRefreshSuperStatus();
+      return;
+    }
+    el.textContent = n;
+  }, 1000);
+}
+
+async function pmButtonSuperLike(){
+  if(!pmSuperStatus || pmSuperStatus.remaining <= 0){
+    alert('No super likes left today — watch an ad for one more, or come back tomorrow.');
+    return;
+  }
+  await pmAnimateCardOut('right');
+  pmSuperLike();
+}
+
+async function pmSuperLike(){
+  const c = pmQueue[pmIdx];
+  if(!c) return;
+  const ice = pmCurrentIcebreaker();
+  const btn = document.getElementById('pmSuperBtn'); if(btn){ btn.disabled=true; btn.innerHTML='Super liked ✓'; }
+  const {data, error} = await sb.rpc('super_like_partner', {p_target_id: c.id, p_icebreaker: ice});
+  if(error){ alert(error.message||'Could not send super like.'); if(btn){ btn.disabled=false; btn.innerHTML=`${ICON_STAR} Super Like`; } return; }
+  logEvent('partner_superlike', 'partner_match');
+  if(data && data.mutual){
+    pmShowMatchCelebration(c.username, c.avatar_url);
+  }
+}
+
+async function pmSkip(){
+  const c = pmQueue[pmIdx];
+  if(!c) return;
+  teardownPmCall();
+  await sb.rpc('skip_partner', {p_target_id: c.id});
+  pmIdx++;
+  renderCandidate(document.getElementById('findTabContent'));
+}
+
+async function pmLike(){
+  const c = pmQueue[pmIdx];
+  if(!c) return;
+  const ice = pmCurrentIcebreaker();
+  const btn = document.getElementById('pmLikeBtn'); btn.disabled=true; btn.textContent='Liked ✓';
+  const {data, error} = await sb.rpc('like_partner', {p_target_id: c.id, p_icebreaker: ice});
+  if(error){ alert(error.message||'Could not like this profile.'); btn.disabled=false; btn.textContent='Like'; return; }
+  logEvent('partner_like', 'partner_match');
+  if(data && data.mutual){
+    pmShowMatchCelebration(c.username, c.avatar_url);
+  }
+}
+
+const ICON_HEART = `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none" style="vertical-align:-2px;margin-right:0.25rem;"><path d="M12 21s-6.7-4.35-9.5-8.1C.6 10.2 1.2 6.6 4.2 5.1c2.3-1.15 4.8-.35 6.3 1.5.4.5.9 1.1 1.5 1.9.6-.8 1.1-1.4 1.5-1.9 1.5-1.85 4-2.65 6.3-1.5 3 1.5 3.6 5.1 1.7 7.8C18.7 16.65 12 21 12 21z"/></svg>`;
+const ICON_STAR = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:0.3rem;filter:drop-shadow(0 0 3px rgba(31,182,201,0.75));"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M2 9h20M9 3l-2.5 6L12 21l3.5-12L13 3"/></svg>`;
+const ICON_CHAT = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M4 5h16v11H8l-4 4V5Z"/></svg>`;
+const ICON_CHART = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>`;
+const ICON_INFO = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.5h.01"/></svg>`;
+const ICON_X = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`;
+const ICON_HEART_FAB = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.5h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2Z"/><path d="M22 4.5h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7Z"/></svg>`;
+const ICON_STAR_FAB = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M2 9h20M9 3l-2.5 6L12 21l3.5-12L13 3"/></svg>`;
+
+/* ── MUTUAL LIKE → REAL FRIENDSHIP, NO MANUAL ACCEPT NEEDED ──
+   Since both sides already opted in via a mutual like, this skips
+   the usual "wait for them to click Accept" step:
+   - If they already have a pending request in to us (they acted
+     first, or our auto-accept pass below already caught it),
+     accept it immediately.
+   - Otherwise send the normal request — the OTHER person's client
+     will silently accept it for us next time it loads this page
+     (see pmAutoAcceptMutualPartners), so nobody has to babysit an
+     Incoming Requests list for a match they already liked.
+   Once friends, jump straight into chat/video — no extra steps. */
+async function pmMakeStudyPartner(username, btn, boxId){
+  boxId = boxId || 'pmMutualBox';
+  btn.disabled = true; btn.textContent = 'Connecting…';
+  try{
+    const {data: incoming} = await sb.rpc('list_incoming_requests');
+    const theirReq = (incoming||[]).find(r => r.username === username);
+    if(theirReq){
+      const {error} = await sb.rpc('respond_friend_request', {p_friendship_id: theirReq.friendship_id, p_accept: true});
+      if(error) throw error;
+    } else {
+      const {error} = await sb.rpc('send_friend_request', {p_username: username});
+      if(error) throw error;
+    }
+  }catch(e){
+    alert(e.message || 'Could not connect right now.');
+    btn.disabled = false; btn.innerHTML = `${ICON_HEART} Make Study Partner`;
+    return;
+  }
+  logEvent('partner_became_study_partner', 'partner_match');
+  await pmShowConnectedState(username, boxId);
+}
+
+async function pmShowConnectedState(username, boxId){
+  const box = document.getElementById(boxId || 'pmMutualBox');
+  if(!box) return;
+  const {data: friends} = await sb.rpc('list_friends');
+  const match = (friends||[]).find(f => f.username === username);
+  if(match){
+    box.innerHTML = `<div class="pm-mutual">${ICON_HEART}You're study partners now!<br>
+      <div style="display:flex;gap:0.5rem;margin-top:0.6rem;">
+        <button class="btn btn-gold btn-sm" style="flex:1;" onclick="location.href='chat.html?fid=${match.friendship_id}'">${ICON_CHAT} Chat</button>
+        <button class="btn btn-gold btn-sm" style="flex:1;" onclick="location.href='chat.html?fid=${match.friendship_id}&call=video'">${ICON_CAM_ON} Video</button>
+      </div></div>`;
+  } else {
+    box.innerHTML = `<div class="pm-mutual">${ICON_HEART}Request sent<br><span style="font-size:0.68rem;color:var(--muted);">Chat and video unlock as soon as they're online — no extra step needed on their end.</span></div>`;
+  }
+}
+
+/* ── MATCH CELEBRATION ────────────────────────────────────────
+   Full-screen "It's a match!" moment for mutual likes — string
+   lights + falling sparks in the site's gold/cyan palette, both
+   avatars, and a direct path into connecting/chatting. */
+function pmLightsHtml(n){
+  let out = '';
+  for(let i=0;i<n;i++){
+    const color = i % 2 === 0 ? 'gold' : 'cyan';
+    const delay = (Math.random()*1.6).toFixed(2);
+    out += `<span class="pm-light ${color}" style="left:${(i/(n-1)*100).toFixed(2)}%;animation-delay:${delay}s;"></span>`;
+  }
+  return out;
+}
+function pmConfettiHtml(n){
+  let out = '';
+  for(let i=0;i<n;i++){
+    const color = Math.random() < 0.5 ? 'gold' : 'cyan';
+    const left = (Math.random()*100).toFixed(2);
+    const delay = (Math.random()*1.2).toFixed(2);
+    const dur = (2.2 + Math.random()*1.6).toFixed(2);
+    out += `<span class="pm-confetti-piece ${color}" style="left:${left}%;animation-delay:${delay}s;animation-duration:${dur}s;"></span>`;
+  }
+  return out;
+}
+function pmShowMatchCelebration(username, avatarUrl){
+  pmCloseMatchOverlay();
+  const wrap = document.createElement('div');
+  wrap.className = 'pm-match-overlay';
+  wrap.id = 'pmMatchOverlay';
+  wrap.innerHTML = `
+    <div class="pm-match-lights">${pmLightsHtml(28)}</div>
+    <div class="pm-match-confetti">${pmConfettiHtml(36)}</div>
+    <div class="pm-match-content">
+      <div class="pm-match-title">It's a Match!</div>
+      <div class="pm-match-avatars">
+        <div class="pm-match-avatar-wrap you">${avatarHtml(myAvatarUrl)}</div>
+        <div class="pm-match-spark">${ICON_HEART}</div>
+        <div class="pm-match-avatar-wrap them">${avatarHtml(avatarUrl)}</div>
+      </div>
+      <div class="pm-match-sub">You and <strong>@${escHtml(username)}</strong> are Study Mates now</div>
+      <div class="pm-match-actions" id="pmMatchActions">
+        <button class="btn btn-ghost" onclick="pmCloseMatchOverlay()">Keep exploring</button>
+        <button class="btn btn-gold" onclick="pmMakeStudyPartner('${escAttr(username)}', this, 'pmMatchOverlayBox')">${ICON_HEART} Say hi & connect</button>
+      </div>
+      <div id="pmMatchOverlayBox"></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  requestAnimationFrame(()=> wrap.classList.add('show'));
+}
+function pmCloseMatchOverlay(){
+  const el = document.getElementById('pmMatchOverlay');
+  if(el) el.remove();
+}
+
+/* ══════════════════════════════════════════════════════════
+   STUDY MATES WHO LIKED YOU
+   ══════════════════════════════════════════════════════════ */
+async function loadLikedTab(){
+  const el = document.getElementById('likedTabContent');
+  el.innerHTML = `<div class="pw-empty">Loading…</div>`;
+  const {data, error} = await sb.rpc('list_partner_likes_received');
+  if(error){
+    el.innerHTML = `<div class="pm-locked"><h3>Not available yet</h3><p style="font-size:0.76rem;color:var(--muted);">${escHtml(error.message==='not_eligible' ? 'Complete Find a Partner setup first to see who liked you.' : (error.message||'Could not load this right now.'))}</p></div>`;
+    return;
+  }
+  if(!data || !data.length){
+    el.innerHTML = `<div class="pw-empty">No one yet — once someone likes or super-likes you here, they'll show up in this list before you even swipe on them.</div>`;
+    document.getElementById('likedCount').style.display = 'none';
+    return;
+  }
+  const badge = document.getElementById('likedCount');
+  badge.style.display = 'inline-block'; badge.textContent = data.length;
+  data.forEach(l => { pmLikedAvatarMap[l.id] = l.avatar_url; });
+  el.innerHTML = data.map(l => pmLikedRowHtml(l)).join('');
+}
+
+function pmLikedRowHtml(l){
+  const studyLabel = pmFmtStudyTime(l.total_study_seconds);
+  return `<div class="pm-liked-row ${l.is_super?'super':''}" id="pmLikedRow_${l.id}">
+    <div class="pm-liked-top">
+      ${pmMatchBadgeHtml(l.match_score)}
+      <div class="pm-card-avatar">${avatarHtml(l.avatar_url)}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="pm-card-name">@${escHtml(l.username)} ${l.is_super ? `<span class="pm-super-badge">${ICON_STAR} Super Like</span>` : ''}</div>
+        <div class="pm-card-meta">${escHtml(l.exam||'')} ${l.track?'· '+escHtml(l.track):''}</div>
+        <div class="pm-score">${l.match_score}/${PM_QUESTIONS.length} match${studyLabel ? ' · '+escHtml(studyLabel)+' studied' : ''}</div>
+      </div>
+    </div>
+    ${l.bio ? `<div class="pm-bio">${escHtml(l.bio)}</div>` : ''}
+    ${l.icebreaker ? `<div class="pm-icebreaker-received">${ICON_CHAT}“${escHtml(l.icebreaker)}”</div>` : ''}
+    <div class="pm-analytics-row"><span class="pm-analytics-link" onclick="pmOpenAnalytics('${escAttr(l.username)}')">${ICON_CHART}View analytics</span></div>
+    <div class="pm-liked-actions">
+      <button class="btn btn-ghost btn-sm" onclick="pmSkipFromLiked('${l.id}')">Skip</button>
+      <button class="btn btn-gold btn-sm" id="pmLikeBackBtn_${l.id}" onclick="pmLikeBack('${l.id}','${escAttr(l.username)}')">Like back</button>
+    </div>
+    <div id="pmLikedMutualBox_${l.id}"></div>
+  </div>`;
+}
+
+async function pmSkipFromLiked(id){
+  await sb.rpc('skip_partner', {p_target_id: id});
+  const row = document.getElementById(`pmLikedRow_${id}`);
+  if(row) row.remove();
+}
+
+async function pmLikeBack(id, username){
+  const btn = document.getElementById(`pmLikeBackBtn_${id}`);
+  if(btn){ btn.disabled = true; btn.textContent = 'Liking…'; }
+  const {data, error} = await sb.rpc('like_partner', {p_target_id: id});
+  if(error){ alert(error.message || 'Could not like back.'); if(btn){ btn.disabled=false; btn.textContent='Like back'; } return; }
+  logEvent('partner_like_back', 'partner_match');
+  if(btn){ btn.style.display='none'; }
+  if(data && data.mutual){
+    pmShowMatchCelebration(username, pmLikedAvatarMap[id]);
+  }
+}
+
+/* Runs once on page load: silently turns any pending incoming
+   request from a mutual-like match into a real friendship, so the
+   OTHER side of a "Make Study Partner" click doesn't have to visit
+   Incoming Requests and click Accept manually. */
+async function pmAutoAcceptMutualPartners(){
+  try{
+    const {data: incoming} = await sb.rpc('list_incoming_requests');
+    if(!incoming || !incoming.length) return;
+    let acceptedAny = false;
+    for(const r of incoming){
+      const {data: isMutual} = await sb.rpc('check_mutual_like_by_username', {p_username: r.username});
+      if(isMutual){
+        await sb.rpc('respond_friend_request', {p_friendship_id: r.friendship_id, p_accept: true});
+        acceptedAny = true;
+      }
+    }
+    if(acceptedAny){ await Promise.all([loadIncoming(), loadOutgoing(), loadFriends()]); }
+  }catch(e){ /* best-effort background pass — never block the page on this */ }
+}
+
+/* ── REPORT ───────────────────────────────────────────────── */
+const PM_REPORT_REASONS = [
+  ['inappropriate_messages', 'Inappropriate or sexual messages'],
+  ['inappropriate_photos', 'Inappropriate photos'],
+  ['harassment_bullying', 'Harassment or bullying'],
+  ['fake_profile', 'Fake profile / impersonation'],
+  ['spam_scam', 'Spam or scam'],
+  ['underage', 'Appears to be underage'],
+  ['other', 'Other']
+];
+const PM_REPORT_WORD_LIMIT = 40;
+let pmReportCategory = null;
+
+function pmOpenReport(){
+  const c = pmQueue[pmIdx];
+  if(!c) return;
+  pmReportCategory = null;
+  const wrap = document.createElement('div');
+  wrap.className = 'pm-modal-backdrop';
+  wrap.id = 'pmReportBackdrop';
+  wrap.innerHTML = `
+    <div class="pm-modal">
+      <h3>Report @${escHtml(c.username)}</h3>
+      <div id="pmReasonList">
+        ${PM_REPORT_REASONS.map(([v,l])=>`<div class="pm-reason-opt" data-v="${v}" onclick="pmPickReason(this)">${escHtml(l)}</div>`).join('')}
+      </div>
+      <label style="font-size:0.7rem;color:var(--muted);">Briefly explain what happened (required, max ${PM_REPORT_WORD_LIMIT} words)</label>
+      <textarea id="pmReportText" maxlength="600" oninput="pmUpdateWordCount()" placeholder="e.g. Kept asking for my phone number after I said no…"></textarea>
+      <div class="pm-word-count" id="pmWordCount">0 / ${PM_REPORT_WORD_LIMIT} words</div>
+      <div class="pm-modal-actions">
+        <button class="btn btn-ghost" onclick="pmCloseReport()">Cancel</button>
+        <button class="btn btn-gold" id="pmSubmitReportBtn" onclick="pmSubmitReport()">Submit report</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+}
+function pmCloseReport(){
+  const el = document.getElementById('pmReportBackdrop');
+  if(el) el.remove();
+}
+function pmPickReason(elm){
+  document.querySelectorAll('#pmReasonList .pm-reason-opt').forEach(x=>x.classList.remove('selected'));
+  elm.classList.add('selected');
+  pmReportCategory = elm.dataset.v;
+}
+function pmWordCount(text){
+  const t = (text||'').trim();
+  return t ? t.split(/\s+/).length : 0;
+}
+function pmUpdateWordCount(){
+  const n = pmWordCount(document.getElementById('pmReportText').value);
+  const el = document.getElementById('pmWordCount');
+  el.textContent = `${n} / ${PM_REPORT_WORD_LIMIT} words`;
+  el.classList.toggle('over', n > PM_REPORT_WORD_LIMIT);
+}
+async function pmSubmitReport(){
+  const c = pmQueue[pmIdx];
+  if(!c) return;
+  const explanation = document.getElementById('pmReportText').value.trim();
+  if(!pmReportCategory){ alert('Please select a reason.'); return; }
+  if(!explanation){ alert('Please add a short explanation.'); return; }
+  if(pmWordCount(explanation) > PM_REPORT_WORD_LIMIT){ alert(`Please keep your explanation to ${PM_REPORT_WORD_LIMIT} words or fewer.`); return; }
+  const btn = document.getElementById('pmSubmitReportBtn'); btn.disabled=true; btn.textContent='Submitting…';
+  const {error} = await sb.rpc('report_partner', {p_target_id: c.id, p_category: pmReportCategory, p_explanation: explanation});
+  if(error){ alert(error.message||'Could not submit report.'); btn.disabled=false; btn.textContent='Submit report'; return; }
+  logEvent('partner_report', 'partner_match');
+  pmCloseReport();
+  teardownPmCall();
+  pmIdx++;
+  renderCandidate(document.getElementById('findTabContent'));
+}
+
+/* ── EPHEMERAL LIVE MEET (mesh, mic/cam OFF by default) ─────
+   Same STUN+Metered-TURN pattern as chat.html's 1:1 call code.
+   Fill in the same METERED_APP_DOMAIN/METERED_API_KEY there —
+   this reads from the identical constants if you copy them here. */
+const METERED_APP_DOMAIN = 'revm2.metered.live'; // keep in sync with chat.html
+const METERED_API_KEY = '750826d81cf1efa37341c785599505a59e5d';
+const PM_STUN_ONLY = [{ urls: 'stun:stun.l.google.com:19302' }];
+let _pmIceCache=null, _pmIceAt=0;
+async function pmGetIceServers(){
+  if(!METERED_APP_DOMAIN || !METERED_API_KEY) return PM_STUN_ONLY;
+  if(_pmIceCache && (Date.now()-_pmIceAt) < 6*60*60*1000) return _pmIceCache;
+  try{
+    const res = await fetch(`https://${METERED_APP_DOMAIN}/api/v1/turn/credentials?apiKey=${METERED_API_KEY}`);
+    const servers = await res.json();
+    _pmIceCache = [...PM_STUN_ONLY, ...servers]; _pmIceAt = Date.now();
+    return _pmIceCache;
+  }catch(e){ return PM_STUN_ONLY; }
+}
+
+const ICON_MIC_OFF = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/><path d="M8.3 21h7.4"/><line x1="3" y1="3" x2="21" y2="21"/></svg>`;
+const ICON_MIC_ON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/><path d="M8.3 21h7.4"/></svg>`;
+const ICON_CAM_OFF = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.6"/><path d="M15.5 10.2 21 7.3v9.4l-5.5-2.9z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>`;
+const ICON_CAM_ON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.6"/><path d="M15.5 10.2 21 7.3v9.4l-5.5-2.9z"/></svg>`;
+
+let pmPc=null, pmLocalStream=null, pmMicOn=false, pmCamOn=false, pmMeetChannel=null, pmMeetPeerId=null;
+
+async function pmRequestMeet(){
+  const c = pmQueue[pmIdx];
+  if(!c || !pmOnlineIds.has(c.id)) return;
+  pmMeetPeerId = c.id;
+  pmMeetChannel = sb.channel(`partner-meet-${me.id}-${c.id}`)
+    .on('broadcast', {event:'meet'}, ({payload})=>handleMeetSignal(payload))
+    .subscribe();
+  const inviteCh = sb.channel(`partner-meet-${c.id}`).subscribe(status=>{
+    if(status==='SUBSCRIBED') inviteCh.send({type:'broadcast', event:'meet', payload:{from:me.id, kind:'invite', replyTo:`partner-meet-${me.id}-${c.id}`}});
+  });
+  document.getElementById('pmMeetBtn').textContent = 'Waiting for them to join…';
+  document.getElementById('pmMeetBtn').disabled = true;
+  await pmBeginLiveMedia(true); // getUserMedia's permission prompt gives the channel time to finish subscribing
+}
+
+async function handleMeetSignal(payload){
+  if(!payload) return;
+  if(payload.kind === 'invite'){
+    // Someone on the matching tab wants to meet live — only acts on it if
+    // they're the currently-viewed candidate for me too (keeps this from
+    // interrupting an unrelated part of the app).
+    const inviter = payload.from;
+    if(!confirm('A study match wants to meet live (mic/cam start off). Join?')) {
+      const declineCh = sb.channel(payload.replyTo);
+      declineCh.subscribe(status=>{ if(status==='SUBSCRIBED') declineCh.send({type:'broadcast', event:'meet', payload:{kind:'decline'}}); });
+      return;
+    }
+    pmMeetPeerId = inviter;
+    pmMeetChannel = sb.channel(payload.replyTo);
+    pmMeetChannel.on('broadcast', {event:'meet'}, ({payload})=>handleMeetSignal(payload));
+    await pmMeetChannel.subscribe();
+    await pmBeginLiveMedia(false);
+  } else if(payload.kind === 'decline'){
+    alert('They\'re not available right now — try another match.');
+    resetMeetBtn();
+  } else if(payload.kind === 'offer'){
+    if(!pmPc) await pmBeginLiveMedia(false);
+    await pmPc.setRemoteDescription(payload.sdp);
+    const answer = await pmPc.createAnswer();
+    await pmPc.setLocalDescription(answer);
+    pmMeetChannel.send({type:'broadcast', event:'meet', payload:{kind:'answer', sdp: pmPc.localDescription}});
+  } else if(payload.kind === 'answer'){
+    await pmPc.setRemoteDescription(payload.sdp);
+  } else if(payload.kind === 'ice'){
+    try{ await pmPc.addIceCandidate(payload.candidate); }catch(e){}
+  } else if(payload.kind === 'end'){
+    teardownPmCall();
+  }
+}
+
+async function pmBeginLiveMedia(iInitiate){
+  try{
+    pmLocalStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:true });
+  }catch(e){
+    alert('Could not access camera/mic.');
+    return;
+  }
+  // Mic + camera start OFF — this is the default state after a match connects.
+  // The person has to explicitly tap the buttons to turn either on.
+  pmMicOn = false; pmCamOn = false;
+  pmLocalStream.getAudioTracks().forEach(t=>t.enabled=false);
+  pmLocalStream.getVideoTracks().forEach(t=>t.enabled=false);
+
+  document.getElementById('pmLive').classList.add('show');
+  document.getElementById('pmLocalVideo').srcObject = pmLocalStream;
+  document.getElementById('pmMeetBtn').textContent = 'Live — mic/cam off';
+
+  pmPc = new RTCPeerConnection({iceServers: await pmGetIceServers()});
+  pmLocalStream.getTracks().forEach(t=>pmPc.addTrack(t, pmLocalStream));
+  pmPc.onicecandidate = e => { if(e.candidate) pmMeetChannel.send({type:'broadcast', event:'meet', payload:{kind:'ice', candidate:e.candidate}}); };
+  pmPc.ontrack = e => { document.getElementById('pmRemoteVideo').srcObject = e.streams[0]; };
+  if(iInitiate){
+    pmPc.onnegotiationneeded = async () => {
+      const offer = await pmPc.createOffer();
+      await pmPc.setLocalDescription(offer);
+      pmMeetChannel.send({type:'broadcast', event:'meet', payload:{kind:'offer', sdp: pmPc.localDescription}});
+    };
+  }
+}
+
+function pmToggleMic(){
+  if(!pmLocalStream) return;
+  pmMicOn = !pmMicOn;
+  pmLocalStream.getAudioTracks().forEach(t=>t.enabled=pmMicOn);
+  const b=document.getElementById('pmMicBtn'); b.classList.toggle('off', !pmMicOn); b.innerHTML = pmMicOn?ICON_MIC_ON:ICON_MIC_OFF;
+}
+function pmToggleCam(){
+  if(!pmLocalStream) return;
+  pmCamOn = !pmCamOn;
+  pmLocalStream.getVideoTracks().forEach(t=>t.enabled=pmCamOn);
+  const b=document.getElementById('pmCamBtn'); b.classList.toggle('off', !pmCamOn); b.innerHTML = pmCamOn?ICON_CAM_ON:ICON_CAM_OFF;
+}
+function resetMeetBtn(){
+  const b=document.getElementById('pmMeetBtn');
+  if(b){ b.disabled=false; b.innerHTML=`${ICON_CAM_ON} Meet live (mic/cam off until you turn them on)`; }
+}
+function teardownPmCall(){
+  if(pmLocalStream){ pmLocalStream.getTracks().forEach(t=>t.stop()); pmLocalStream=null; }
+  if(pmPc){ try{pmPc.close();}catch(e){} pmPc=null; }
+  if(pmMeetChannel && pmMeetPeerId){ pmMeetChannel.send({type:'broadcast', event:'meet', payload:{kind:'end'}}); }
+  pmMeetChannel=null; pmMeetPeerId=null;
+  const live=document.getElementById('pmLive'); if(live) live.classList.remove('show');
+  resetMeetBtn();
+}
+window.addEventListener('beforeunload', ()=>{ if(pmPc) teardownPmCall(); });
+
+init();
+</script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>
