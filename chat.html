@@ -102,7 +102,7 @@
       <div class="nav-section">Study</div>
       <div class="nav-item" onclick="location.href='tracker.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 11h6M9 15h6"/></svg></span>Tracker</div>
       <div class="nav-item" onclick="location.href='groups.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7.5" r="3.5"/><path d="M17.5 11a3.5 3.5 0 1 0 0-7"/><path d="M22 21v-1.5a4 4 0 0 0-3-3.87"/></svg></span>Study Groups</div>
-      <div class="nav-item active" onclick="location.href='partners.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="7" cy="5" r="2.3"/><path d="M4 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><circle cx="17" cy="5" r="2.3"/><path d="M14 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><path d="M10 14.5h4"/></svg></span>Study Partners</div>
+      <div class="nav-item active" onclick="location.href='partners.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="7" cy="5" r="2.3"/><path d="M4 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><circle cx="17" cy="5" r="2.3"/><path d="M14 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><path d="M10 14.5h4"/></svg></span>Study Partners<span class="nav-badge" id="navPartnersBadge" style="display:none;"></span></div>
       <div class="nav-item" onclick="location.href='store.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg></span>M² Store</div>
     </nav>
   </aside>
@@ -168,8 +168,6 @@
 </div>
 
 <script src="shared.js"></script>
-<script src="floating-timer.js"></script>
-<script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const ICON_PHONE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1v3.4c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1L6.6 10.8z"/></svg>`;
@@ -185,11 +183,13 @@ let me = null;
 const params = new URLSearchParams(location.search);
 const FID = params.get('fid');
 const AUTOSTART_CALL = params.get('call'); // 'voice' | 'video' | null
+const AUTOACCEPT_CALL = params.get('autoaccept') === '1'; // set when the person tapped Accept on the global (cross-page) incoming-call toast
 
 const DEFAULT_AVATAR_ICON = `<svg class="default-avatar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="2.6"/><path d="M6.5 14.2c0-2 2.3-3.4 5.5-3.4s5.5 1.4 5.5 3.4"/><path d="M3 19.5h18"/><path d="M6.5 19.5v-2.3M17.5 19.5v-2.3"/></svg>`;
 function avatarHtml(url){ return url ? `<img src="${escHtml(url)}" alt="">` : DEFAULT_AVATAR_ICON; }
 
 let peer = null; // {id, username, display_name, avatar_url}
+let myUsername = null, myAvatarUrl = null;
 
 /* ── INIT ─────────────────────────────────────────────────── */
 async function init(){
@@ -197,8 +197,15 @@ async function init(){
   const session = await requireAuth();
   if(!session) return;
   me = session.user;
+  RevM2Calls.init(sb, me.id); // start listening for calls that arrive while I'm on OTHER pages too
+  RevM2Notifications.init(sb, me.id);
 
   if(!FID){ showFatal('No conversation selected.'); RevM2Loader.hide(); return; }
+
+  try{
+    const {data:mp} = await sb.from('user_profiles').select('username,avatar_url').eq('id',me.id).single();
+    if(mp){ myUsername = mp.username; myAvatarUrl = mp.avatar_url; }
+  }catch(e){ /* best-effort — call still works, just without a name/avatar on the global toast */ }
 
   const ok = await resolvePeer();
   if(!ok){ showFatal("Couldn't load this conversation — you may no longer be study partners."); RevM2Loader.hide(); return; }
@@ -214,7 +221,19 @@ async function init(){
 
   RevM2Loader.hide();
 
-  if(AUTOSTART_CALL === 'voice' || AUTOSTART_CALL === 'video') startCall(AUTOSTART_CALL);
+  if(AUTOACCEPT_CALL && (AUTOSTART_CALL === 'voice' || AUTOSTART_CALL === 'video')){
+    // They tapped "Accept" on the global incoming-call toast from somewhere else on
+    // the site (see RevM2Calls in shared.js) — jump straight to connecting instead
+    // of making them accept twice.
+    callType = AUTOSTART_CALL;
+    callState = 'incoming';
+    iWasCaller = false;
+    showRingingOverlay(`Incoming ${callType==='video'?'video':'voice'} call…`, []);
+    document.getElementById('callStatusSub').textContent = 'Connecting…';
+    acceptCall();
+  } else if(AUTOSTART_CALL === 'voice' || AUTOSTART_CALL === 'video'){
+    startCall(AUTOSTART_CALL);
+  }
 }
 
 function showFatal(text){
@@ -404,6 +423,7 @@ function initCallChannel(){
   callChannel = sb.channel(`dm-call-${FID}`, { config: { presence: { key: me.id } } })
     .on('broadcast', { event: 'call' }, ({ payload }) => handleCallSignal(payload))
     .subscribe();
+  if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
 }
 
 function sendCallSignal(data){
@@ -416,8 +436,28 @@ async function startCall(type){
   callState = 'outgoing';
   iWasCaller = true;
   showRingingOverlay('Calling…', []);
+  startCallRingtone();
   sendCallSignal({ kind: 'ring', callType: type });
+  ringGlobally(type);
   ringTimeout = setTimeout(()=>{ if(callState==='outgoing'){ sendCallSignal({kind:'cancel'}); logCallOutcome('missed', 0); teardownCall(); } }, 30000);
+}
+
+/* Also pings the callee's cross-page channel (see RevM2Calls in shared.js)
+   so they get a ringing toast + notification even if they don't already
+   have this exact chat conversation open. */
+function ringGlobally(type){
+  try{
+    const ch = sb.channel(`user-calls-${peer.id}`);
+    ch.subscribe(status=>{
+      if(status==='SUBSCRIBED'){
+        ch.send({ type:'broadcast', event:'incoming_call', payload:{
+          fid: FID, fromUserId: me.id, toUserId: peer.id, callType: type,
+          fromUsername: myUsername, fromAvatarUrl: myAvatarUrl
+        }});
+        setTimeout(()=>sb.removeChannel(ch), 800);
+      }
+    });
+  }catch(e){ /* global ring is a nice-to-have, never break the actual call */ }
 }
 
 async function handleCallSignal(payload){
@@ -431,13 +471,18 @@ async function handleCallSignal(payload){
       `<div class="call-btn-wrap"><button class="call-btn decline" onclick="declineCall()">${ICON_CLOSE}</button><span class="call-btn-label">Decline</span></div>`,
       `<div class="call-btn-wrap"><button class="call-btn accept" onclick="acceptCall()">${ICON_PHONE}</button><span class="call-btn-label">Accept</span></div>`
     ]);
+    startCallRingtone();
+    notifyIncomingCall();
   } else if(payload.kind === 'accept'){
     clearTimeout(ringTimeout);
+    stopCallRingtone(); closeCallNotification();
     await beginMedia(true);
   } else if(payload.kind === 'decline'){
+    stopCallRingtone(); closeCallNotification();
     logCallOutcome('declined', 0);
     teardownCall();
   } else if(payload.kind === 'cancel'){
+    stopCallRingtone(); closeCallNotification();
     teardownCall(); // the caller already logged 'cancelled' when they pressed cancel
   } else if(payload.kind === 'end'){
     logCallOutcome('completed', elapsedSeconds()); // no-op unless I'm the caller — covers "other side hung up first"
@@ -457,20 +502,24 @@ async function handleCallSignal(payload){
 function sendCallSignalTo(to, data){ callChannel.send({ type:'broadcast', event:'call', payload:{ from: me.id, to, ...data } }); }
 
 async function acceptCall(){
+  stopCallRingtone(); closeCallNotification();
   sendCallSignal({ kind: 'accept' });
   await beginMedia(true);
 }
 function declineCall(){
+  stopCallRingtone(); closeCallNotification();
   sendCallSignal({ kind: 'decline' }); // caller logs 'declined' when this arrives
   teardownCall();
 }
 function cancelOutgoingCall(){
   clearTimeout(ringTimeout);
+  stopCallRingtone(); closeCallNotification();
   sendCallSignal({ kind: 'cancel' });
   logCallOutcome('cancelled', 0);
   teardownCall();
 }
 function endCall(){
+  stopCallRingtone(); closeCallNotification();
   sendCallSignal({ kind: 'end' });
   logCallOutcome('completed', elapsedSeconds());
   teardownCall();
@@ -613,6 +662,7 @@ async function logCallOutcome(status, duration){
 
 function teardownCall(){
   clearTimeout(ringTimeout);
+  stopCallRingtone(); closeCallNotification();
   if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream=null; }
   if(pc){ pc.close(); pc=null; }
   callState = 'idle';

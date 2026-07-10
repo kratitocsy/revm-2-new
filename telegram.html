@@ -70,8 +70,6 @@
 </div>
 
 <script src="shared.js"></script>
-  <script src="floating-timer.js"></script>
-  <script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const sb = window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL, REVM2_CONFIG.SUPABASE_ANON);
@@ -88,6 +86,8 @@ async function init(){
   const { data: { session } } = await sb.auth.getSession();
   if(!session){ window.location.href = 'login.html'; return; }
   currentUser = session.user;
+  RevM2Calls.init(sb, currentUser.id);
+  RevM2Notifications.init(sb, currentUser.id);
 
   const { data: profile, error } = await sb.from('user_profiles')
     .select('telegram_linked,reminders_enabled')

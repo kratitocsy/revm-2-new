@@ -56,8 +56,6 @@ table.rh-table{width:100%;border-collapse:collapse;font-size:0.75rem;margin-top:
 <div class="rh-wrap" id="howItWorksWrap" style="padding-top:0;"></div>
 
 <script src="shared.js"></script>
-<script src="floating-timer.js"></script>
-<script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 RevM2Loader.show('Loading…');
@@ -68,6 +66,8 @@ async function init(){
   const { data: { session } } = await sb.auth.getSession();
   if(!session){ window.location.href='login.html'; return; }
   me = session.user;
+  RevM2Calls.init(sb, me.id);
+  RevM2Notifications.init(sb, me.id);
 
   const { data: profile } = await sb.from('user_profiles')
     .select('is_revhead,revhead_status,revhead_applied_at,revhead_verified_at,revhead_code,referred_by_code')

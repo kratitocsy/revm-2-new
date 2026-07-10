@@ -123,7 +123,7 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
       <div class="nav-section">Study</div>
       <div class="nav-item" onclick="showPage('tracker',this)"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 11h6M9 15h6"/></svg></span>Tracker</div>
       <div class="nav-item" onclick="go('groups.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7.5" r="3.5"/><path d="M17.5 11a3.5 3.5 0 1 0 0-7"/><path d="M22 21v-1.5a4 4 0 0 0-3-3.87"/></svg></span>Study Groups</div>
-      <div class="nav-item" onclick="go('partners.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="7" cy="5" r="2.3"/><path d="M4 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><circle cx="17" cy="5" r="2.3"/><path d="M14 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><path d="M10 14.5h4"/></svg></span>Study Partners</div>
+      <div class="nav-item" onclick="go('partners.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="7" cy="5" r="2.3"/><path d="M4 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><circle cx="17" cy="5" r="2.3"/><path d="M14 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><path d="M10 14.5h4"/></svg></span>Study Partners<span class="nav-badge" id="navPartnersBadge" style="display:none;"></span></div>
       <div class="nav-item" onclick="go('store.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg></span>M² Store</div>
       <div class="nav-item" onclick="go('revhead.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M12 2c1 3-3 4.5-3 8a3 3 0 0 0 6 0c1.5 1 2 2.8 2 4.3A6.3 6.3 0 0 1 5.5 14C5.5 8 12 6 12 2Z"/></svg></span>Become a RevHead</div>
       <div class="nav-item active" onclick="showPage('timer',this)"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M7 3h10M7 21h10"/><path d="M8 3c0 4 3 5 4 6.5C13 8 16 7 16 3"/><path d="M8 21c0-4 3-5 4-6.5C13 16 16 17 16 21"/></svg></span>Study Timer</div>
@@ -311,6 +311,7 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
           <button class="mode-btn" onclick="setMode('long',this)">Long break 15m</button>
           <button class="mode-btn" onclick="setMode('deep',this)">Deep work 90m</button>
           <button class="mode-btn" onclick="setMode('custom',this)">Custom</button>
+          <button class="mode-btn" onclick="setMode('unlimited',this)">Unlimited</button>
         </div>
 
         <div class="field" style="max-width:280px;margin-bottom:1.25rem;">
@@ -319,6 +320,9 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
         </div>
 
         <div class="timer-display" id="timerDisplay">25:00</div>
+        <div id="timerLiveTag" style="display:none;text-align:center;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-top:-0.5rem;margin-bottom:0.75rem;">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);margin-right:0.35rem;vertical-align:1px;"></span>Live on RevMGrid
+        </div>
 
         <div class="timer-controls">
           <button class="btn btn-gold" id="timerStartBtn" onclick="toggleTimer()">▶ Start</button>
@@ -457,8 +461,6 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
 </div>
 
 <script src="shared.js"></script>
-  <script src="floating-timer.js"></script>
-  <script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const sb=window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL,REVM2_CONFIG.SUPABASE_ANON);
@@ -478,6 +480,8 @@ async function init(){
   RevM2Loader.show('Loading your tracker…');
   const session = await requireAuth();
   if(!session) return;
+  RevM2Calls.init(sb, session.user.id);
+  RevM2Notifications.init(sb, session.user.id);
   if(!cfg.start_date){window.location.href='onboarding.html';return;}
   const synced = await pullTrackerFromSupabase();
   if(synced && synced.rows && synced.rows.length){ rows=synced.rows; slog=synced.slog||{}; }
@@ -507,6 +511,7 @@ async function init(){
   updateStats(); renderTable();
   initGuideStrip();
   renderTimerHistory(); renderHeatmap(); // Timer is now the default landing view, not just a nav-click destination
+  resumeActiveSessionIfAny();
   RevM2Loader.hide();
 }
 
@@ -739,14 +744,45 @@ function showPage(p,el){
 }
 
 /* ── TIMER ── */
-const MODES={pomodoro:25*60,short:5*60,long:15*60,deep:90*60,custom:30*60};
+const MODES={pomodoro:25*60,short:5*60,long:15*60,deep:90*60,custom:30*60,unlimited:null};
 let timerMode='pomodoro',timerSecs=MODES.pomodoro,timerRunning=false,timerIv=null,sessStart=null;
+
+/* ── RevMGrid sync ────────────────────────────────────────────
+   Same localStorage key + RPCs groups.html's embedded Focus card
+   and RevMGrid presence already read (previously only written by
+   floating-timer.js, now removed). Starting a session here makes
+   it show up live in every group the user is in, ticking in real
+   time, exactly like starting it from inside a group room. */
+const FT_ACTIVE_KEY='revm2_active_session';
+let remoteSessionId=null;
+
+async function startRemoteSession(subject){
+  try{
+    const {data,error}=await sb.rpc('rpc_start_study_session',{p_group_id:null,p_subject:subject});
+    if(error) throw error;
+    remoteSessionId=data.id;
+    Store.set(FT_ACTIVE_KEY,{id:data.id,group_id:data.group_id,subject:data.subject,started_at:data.started_at,paused_at:null,accumPaused:0});
+    document.getElementById('timerLiveTag').style.display='block';
+  }catch(e){
+    console.warn('RevMGrid sync unavailable, timer still runs locally:',e);
+    remoteSessionId=null;
+    document.getElementById('timerLiveTag').style.display='none';
+  }
+}
+async function stopRemoteSession(){
+  if(!remoteSessionId) return;
+  try{ await sb.rpc('rpc_stop_study_session',{p_session_id:remoteSessionId}); }
+  catch(e){ console.warn('stop remote session failed',e); }
+  remoteSessionId=null;
+  Store.del(FT_ACTIVE_KEY);
+  document.getElementById('timerLiveTag').style.display='none';
+}
 
 function setMode(m,btn){
   if(timerRunning){clearInterval(timerIv);timerRunning=false;logSession();}
   timerMode=m;
   if(m==='custom'){const mins=parseInt(prompt('Minutes:','45')||'45');MODES.custom=(isNaN(mins)?45:mins)*60;}
-  timerSecs=MODES[m];
+  timerSecs=(m==='unlimited')?0:MODES[m];
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('timerStartBtn').textContent='▶ Start';
@@ -763,7 +799,10 @@ function toggleTimer(){
     sessStart=Date.now();timerRunning=true;
     document.getElementById('timerStartBtn').textContent='⏸ Pause';
     document.getElementById('timerDisplay').classList.add('running');
+    const sub=document.getElementById('timerSub').value||'General';
+    startRemoteSession(sub);
     timerIv=setInterval(()=>{
+      if(timerMode==='unlimited'){ timerSecs++; renderTimerDisplay(); return; }
       if(timerSecs<=0){clearInterval(timerIv);timerRunning=false;logSession();document.getElementById('timerDisplay').classList.remove('running');document.getElementById('timerStartBtn').textContent='▶ Start';return;}
       timerSecs--;renderTimerDisplay();
     },1000);
@@ -772,7 +811,7 @@ function toggleTimer(){
 
 function resetTimer(){
   if(timerRunning){clearInterval(timerIv);timerRunning=false;logSession();}
-  timerSecs=MODES[timerMode];
+  timerSecs=(timerMode==='unlimited')?0:MODES[timerMode];
   document.getElementById('timerStartBtn').textContent='▶ Start';
   document.getElementById('timerDisplay').classList.remove('running');
   renderTimerDisplay();
@@ -786,6 +825,7 @@ function renderTimerDisplay(){
 }
 
 function logSession(){
+  stopRemoteSession();
   if(!sessStart) return;
   const elapsed=Math.round((Date.now()-sessStart)/1000);
   sessStart=null;
@@ -801,6 +841,30 @@ function logSession(){
   logEvent('study_session','timer',{subject:sub,seconds:elapsed,mode:timerMode});
   savelog();
   renderTimerHistory();renderHeatmap();
+}
+
+/* If a session is already live (started from here earlier, or from
+   inside a group room) when this page loads, pick it back up instead
+   of showing a stale "Start" button — keeps this page, the group
+   Focus card, and RevMGrid all agreeing on the same session. */
+function resumeActiveSessionIfAny(){
+  const state=Store.get(FT_ACTIVE_KEY);
+  if(!state || state.paused_at) return;
+  remoteSessionId=state.id;
+  timerMode='unlimited';
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  const unlimitedBtn=[...document.querySelectorAll('.mode-btn')].find(b=>b.textContent.trim()==='Unlimited');
+  if(unlimitedBtn) unlimitedBtn.classList.add('active');
+  const subSel=document.getElementById('timerSub');
+  if(subSel && state.subject) subSel.value=state.subject;
+  sessStart=new Date(state.started_at).getTime();
+  timerSecs=Math.max(0,Math.floor((Date.now()-sessStart)/1000));
+  timerRunning=true;
+  document.getElementById('timerStartBtn').textContent='⏸ Pause';
+  document.getElementById('timerDisplay').classList.add('running');
+  document.getElementById('timerLiveTag').style.display='block';
+  timerIv=setInterval(()=>{ timerSecs++; renderTimerDisplay(); },1000);
+  renderTimerDisplay();
 }
 
 function renderTimerHistory(){

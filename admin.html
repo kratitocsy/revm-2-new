@@ -69,8 +69,6 @@ table.adm-table{width:100%;border-collapse:collapse;font-size:0.75rem;}
 </div>
 
 <script src="shared.js"></script>
-  <script src="floating-timer.js"></script>
-  <script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 RevM2Loader.show('Checking access…');
@@ -85,6 +83,8 @@ let leastActiveFirst = false;
 async function init(){
   const { data: { session } } = await sb.auth.getSession();
   if(!session){ window.location.href='login.html'; return; }
+  RevM2Calls.init(sb, session.user.id);
+  RevM2Notifications.init(sb, session.user.id);
 
   const { data: me } = await sb.from('user_profiles').select('is_admin,is_moderator').eq('id', session.user.id).single();
   const { data: ownerCheck } = await sb.rpc('is_owner');

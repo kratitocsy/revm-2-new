@@ -23,6 +23,11 @@
 .p-avatar .default-avatar-icon{width:60%;height:60%;color:inherit;}
 .p-name{font-size:0.82rem;font-weight:600;color:var(--text);}
 .p-meta{font-size:0.68rem;color:var(--muted);}
+.p-missed-badge{display:inline-flex;align-items:center;gap:0.2rem;font-size:0.64rem;font-weight:700;
+  color:var(--danger);background:rgba(248,113,113,0.12);padding:0.08rem 0.4rem;border-radius:8px;margin-left:0.3rem;}
+.p-unread-badge{position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;font-size:0.6rem;
+  font-weight:700;min-width:15px;height:15px;border-radius:8px;display:inline-flex;align-items:center;
+  justify-content:center;padding:0 3px;}
 .p-actions{margin-left:auto;display:flex;gap:0.4rem;flex-shrink:0;}
 .btn-tiny{font-size:0.68rem;padding:0.35rem 0.7rem;border:1px solid var(--border2);background:none;color:var(--muted);cursor:pointer;font-family:var(--font);white-space:nowrap;}
 .btn-tiny:hover{border-color:var(--gold);color:var(--gold);}
@@ -252,7 +257,7 @@
       <div class="nav-section">Study</div>
       <div class="nav-item" onclick="location.href='tracker.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 11h6M9 15h6"/></svg></span>Tracker</div>
       <div class="nav-item" onclick="location.href='groups.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7.5" r="3.5"/><path d="M17.5 11a3.5 3.5 0 1 0 0-7"/><path d="M22 21v-1.5a4 4 0 0 0-3-3.87"/></svg></span>Study Groups</div>
-      <div class="nav-item active"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="7" cy="5" r="2.3"/><path d="M4 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><circle cx="17" cy="5" r="2.3"/><path d="M14 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><path d="M10 14.5h4"/></svg></span>Study Partners</div>
+      <div class="nav-item active"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="7" cy="5" r="2.3"/><path d="M4 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><circle cx="17" cy="5" r="2.3"/><path d="M14 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><path d="M10 14.5h4"/></svg></span>Study Partners<span class="nav-badge" id="navPartnersBadge" style="display:none;"></span></div>
       <div class="nav-item" onclick="location.href='store.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg></span>M² Store</div>
     </nav>
   </aside>
@@ -310,8 +315,6 @@
 </div>
 
 <script src="shared.js"></script>
-<script src="floating-timer.js"></script>
-<script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const sb=window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL,REVM2_CONFIG.SUPABASE_ANON);
@@ -327,12 +330,18 @@ async function init(){
   const session = await requireAuth();
   if(!session){ return; }
   me = session.user;
+  RevM2Calls.init(sb, me.id);
+  RevM2Notifications.init(sb, me.id);
   const {data: myProfile} = await sb.from('user_profiles').select('avatar_url').eq('id', me.id).single();
   myAvatarUrl = myProfile ? myProfile.avatar_url : null;
   await Promise.all([loadIncoming(), loadOutgoing(), loadFriends()]);
   pmAutoAcceptMutualPartners();
   refreshLikedBadge();
   RevM2Loader.hide();
+  // Keep the missed-call/unread badges on this page fresh as new events arrive
+  sb.channel(`partners-dm-refresh-${me.id}`)
+    .on('postgres_changes', { event:'*', schema:'public', table:'dm_messages', filter:`recipient_id=eq.${me.id}` }, () => loadFriends())
+    .subscribe();
 }
 
 async function refreshLikedBadge(){
@@ -447,16 +456,34 @@ async function loadFriends(){
   const badge=document.getElementById('friendsCount');
   if(error||!data||!data.length){ el.innerHTML='<div class="pw-empty">No study partners yet — search a username above to send a request.</div>'; badge.style.display='none'; return; }
   badge.style.display='inline-block'; badge.textContent=data.length;
-  el.innerHTML=data.map(f=>`<div class="p-row">
-  rm2Stagger(el.children);
+
+  // Per-friend unread message + missed-call counts, so you can see AT A GLANCE
+  // who messaged or tried to call you, not just a total on the sidebar.
+  let unreadByFriendship = {};
+  try{
+    const { data: unread } = await sb.from('dm_messages').select('friendship_id,kind,call_status').eq('recipient_id',me.id).is('read_at',null);
+    (unread||[]).forEach(r=>{
+      const u = unreadByFriendship[r.friendship_id] || (unreadByFriendship[r.friendship_id] = {msgs:0, missed:0});
+      if(r.kind==='text') u.msgs++;
+      else if(r.kind==='call_log' && r.call_status==='missed') u.missed++;
+    });
+  }catch(e){ /* badges are a nice-to-have — friend list still works without them */ }
+
+  el.innerHTML=data.map(f=>{
+    const u = unreadByFriendship[f.friendship_id] || {msgs:0, missed:0};
+    const missedBadge = u.missed ? `<span class="p-missed-badge" title="${u.missed} missed call${u.missed===1?'':'s'}">${ICON_MISSED_CALL} ${u.missed}</span>` : '';
+    const msgBadge = u.msgs ? `<span class="p-unread-badge" title="${u.msgs} unread message${u.msgs===1?'':'s'}">${u.msgs}</span>` : '';
+    return `<div class="p-row">
     <div class="p-avatar">${avatarHtml(f.avatar_url)}</div>
-    <div><div class="p-name">@${escHtml(f.username)}</div><div class="p-meta">${escHtml(f.track||'')}</div></div>
+    <div><div class="p-name">@${escHtml(f.username)} ${missedBadge}</div><div class="p-meta">${escHtml(f.track||'')}</div></div>
     <div class="p-actions">
       <button class="btn-tiny gold btn-icon" onclick="location.href='chat.html?fid=${f.friendship_id}&call=video'"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6.5" width="12" height="11" rx="2"/><path d="M17.5 10.2 21 8v8l-3.5-2.2z"/></svg>Cam</button>
-      <button class="btn-tiny gold btn-icon" onclick="location.href='chat.html?fid=${f.friendship_id}'"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c0 4.14-3.98 7.5-8.5 7.5-1.06 0-2.07-.18-3-.52L4 20l1.18-3.98A7.3 7.3 0 0 1 3.5 12C3.5 7.86 7.48 4.5 12 4.5S21 7.86 21 12z"/></svg>Chat</button>
+      <button class="btn-tiny gold btn-icon" onclick="location.href='chat.html?fid=${f.friendship_id}'" style="position:relative;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c0 4.14-3.98 7.5-8.5 7.5-1.06 0-2.07-.18-3-.52L4 20l1.18-3.98A7.3 7.3 0 0 1 3.5 12C3.5 7.86 7.48 4.5 12 4.5S21 7.86 21 12z"/></svg>Chat${msgBadge}</button>
       <button class="btn-tiny danger" onclick="unfriend('${f.friendship_id}',this)">Remove</button>
     </div>
-  </div>`).join('');
+  </div>`;
+  }).join('');
+  rm2Stagger(el.children);
 }
 
 async function unfriend(id, btn){
@@ -498,13 +525,17 @@ async function loadFindTab(){
   const el = document.getElementById('findTabContent');
   el.innerHTML = '<div class="pw-empty">Loading…</div>';
   const {data, error} = await sb.rpc('get_partner_status');
-  if(error){ el.innerHTML = `<div class="pw-empty">Couldn't load — try again.</div>`; return; }
+  if(error){
+    console.error('get_partner_status RPC failed:', error); // check console/network tab — this RPC must exist in Supabase (Database > Functions) with the exact name 'get_partner_status'
+    el.innerHTML = `<div class="pw-empty">Couldn't load — try again.<br><span style="font-size:0.65rem;color:var(--dim);">${escHtml(error.message||'')}</span></div>`;
+    return;
+  }
   pmStatus = data;
 
   const examBlocked = (data.blockers||[]).some(b=>b.includes('only available for'));
   if(examBlocked){
     el.innerHTML = `<div class="pm-locked"><h3>Not available for your exam track</h3>
-      <p style="font-size:0.76rem;color:var(--muted);">Find a Partner isn't available for your exam track yet.</p></div>`;
+      <p style="font-size:0.76rem;color:var(--muted);">Find a Partner is currently limited to CAT, UPSC CSE, SSC, GATE, JEE and NEET aspirants.</p></div>`;
     return;
   }
 
@@ -1093,6 +1124,7 @@ const ICON_HEART = `<svg viewBox="0 0 24 24" width="14" height="14" fill="curren
 const ICON_STAR = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:0.3rem;filter:drop-shadow(0 0 3px rgba(31,182,201,0.75));"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M2 9h20M9 3l-2.5 6L12 21l3.5-12L13 3"/></svg>`;
 const ICON_CHAT = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M4 5h16v11H8l-4 4V5Z"/></svg>`;
 const ICON_CHART = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>`;
+const ICON_MISSED_CALL = `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.2 1.1L6.6 10.8z"/><path d="M22 6l-6 6M16 6l6 6"/></svg>`;
 const ICON_INFO = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.5h.01"/></svg>`;
 const ICON_X = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`;
 const ICON_HEART_FAB = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.5h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2Z"/><path d="M22 4.5h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7Z"/></svg>`;
