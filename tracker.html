@@ -536,6 +536,7 @@ async function init(){
   renderTimerHistory(); renderHeatmap(); // Timer is now the default landing view, not just a nav-click destination
   renderSubjectTimerList();
   resumeActiveSessionIfAny();
+  startTimerDayRolloverWatcher();
   RevM2Loader.hide();
 }
 
@@ -772,6 +773,59 @@ const MODES={pomodoro:25*60,short:5*60,long:15*60,deep:90*60,custom:30*60,unlimi
 let timerMode='pomodoro',timerSecs=MODES.pomodoro,timerRunning=false,timerIv=null,sessStart=null;
 let activeSubject=null; // which subject's per-subject timer is currently running (Unlimited mode only)
 
+/* ── LIVE "TODAY" FOR THE TIMER ───────────────────────────────
+   TODAY_STR (shared.js) is computed once at page load and never
+   changes — fine for the revision tracker table (calendar dates
+   are fixed per row), but wrong for a timer someone might leave
+   open across midnight: the clock would keep counting into what's
+   actually yesterday instead of rolling to 0 for the new day.
+   timerDayStr is the timer feature's own live pointer, kept in
+   sync by checkTimerDayRollover() below, and used everywhere the
+   timer reads/writes "today" in slog (today's total, per-subject
+   rows, Today's sessions, the 30-day heatmap's rightmost cell). */
+let timerDayStr=TODAY_STR;
+function computeCalendarDayStr(){
+  const d=new Date(); d.setHours(0,0,0,0);
+  return d.toISOString().split('T')[0]; // same convention TODAY_STR itself uses
+}
+function checkTimerDayRollover(){
+  const nowDayStr=computeCalendarDayStr();
+  if(nowDayStr===timerDayStr) return;
+  const oldDayStr=timerDayStr;
+  if(timerRunning && sessStart){
+    // A session was mid-flight when the day flipped — commit whatever was
+    // studied on the OLD day into that day's bucket (so it lands in
+    // yesterday's history/heatmap/analytics, not counted against today),
+    // then keep the session (and RevMGrid's underlying row) running
+    // uninterrupted, just re-anchored to start counting the NEW day.
+    const subEl=document.getElementById('timerSub');
+    const sub=(subEl && subEl.value) || activeSubject || 'General';
+    const elapsedOld=Math.round((Date.now()-sessStart)/1000);
+    if(elapsedOld>=30){
+      if(!slog[oldDayStr]) slog[oldDayStr]={};
+      if(!slog[oldDayStr][sub]) slog[oldDayStr][sub]=0;
+      slog[oldDayStr][sub]+=elapsedOld;
+      const sessions=Store.get('revm2_sessions',[]);
+      sessions.unshift({date:oldDayStr,subject:sub,secs:elapsedOld,mode:timerMode,ts:Date.now()});
+      Store.set('revm2_sessions',sessions.slice(0,200));
+      logEvent('study_session','timer',{subject:sub,seconds:elapsedOld,mode:timerMode,day_rollover:true});
+    }
+    sessStart=Date.now();
+    if(timerMode==='unlimited') timerSecs=0; // unlimited mode's timerSecs is elapsed — countdown modes' timerSecs is time-remaining, untouched
+  }
+  timerDayStr=nowDayStr;
+  savelog();
+  renderTimerHistory();
+  renderHeatmap();
+  renderSubjectTimerList();
+  if(timerMode==='unlimited') renderTimerDisplayCumulative();
+}
+let timerDayRolloverIv=null;
+function startTimerDayRolloverWatcher(){
+  if(timerDayRolloverIv) return;
+  timerDayRolloverIv=setInterval(checkTimerDayRollover, 20000); // catches rollover even while idle on this page
+}
+
 /* ── RevMGrid sync ────────────────────────────────────────────
    Same localStorage key + RPCs groups.html's embedded Focus card
    and RevMGrid presence already read (previously only written by
@@ -871,12 +925,12 @@ function logSession(){
   sessStart=null;
   if(elapsed<30) return;
   const sub=document.getElementById('timerSub').value||'General';
-  if(!slog[TODAY_STR]) slog[TODAY_STR]={};
-  if(!slog[TODAY_STR][sub]) slog[TODAY_STR][sub]=0;
-  slog[TODAY_STR][sub]+=elapsed;
+  if(!slog[timerDayStr]) slog[timerDayStr]={};
+  if(!slog[timerDayStr][sub]) slog[timerDayStr][sub]=0;
+  slog[timerDayStr][sub]+=elapsed;
   // also store as session entry
   const sessions=Store.get('revm2_sessions',[]);
-  sessions.unshift({date:TODAY_STR,subject:sub,secs:elapsed,mode:timerMode,ts:Date.now()});
+  sessions.unshift({date:timerDayStr,subject:sub,secs:elapsed,mode:timerMode,ts:Date.now()});
   Store.set('revm2_sessions',sessions.slice(0,200)); // keep last 200
   logEvent('study_session','timer',{subject:sub,seconds:elapsed,mode:timerMode});
   savelog();
@@ -902,7 +956,7 @@ function subjSlug(s){
   return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'general';
 }
 function todaysCommittedTotal(){
-  return Object.values(slog[TODAY_STR]||{}).reduce((a,b)=>a+b,0);
+  return Object.values(slog[timerDayStr]||{}).reduce((a,b)=>a+b,0);
 }
 function renderTimerDisplayCumulative(){
   const total=todaysCommittedTotal()+(timerRunning?timerSecs:0);
@@ -914,7 +968,7 @@ function renderSubjectTimerList(){
   const wrap=document.getElementById('subjectTimerList');
   if(!wrap) return;
   const subs=(cfg.subjects&&cfg.subjects.length)?cfg.subjects:['General'];
-  const todayTotals=slog[TODAY_STR]||{};
+  const todayTotals=slog[timerDayStr]||{};
   wrap.innerHTML=subs.map(sub=>{
     const slug=subjSlug(sub);
     const isActive=timerRunning&&activeSubject===sub;
@@ -931,12 +985,13 @@ function tickActiveSubjectRow(){
   if(!activeSubject) return;
   const el=document.getElementById('subj-time-'+subjSlug(activeSubject));
   if(!el) return;
-  const committed=(slog[TODAY_STR]||{})[activeSubject]||0;
+  const committed=(slog[timerDayStr]||{})[activeSubject]||0;
   el.textContent=fmtClock(committed+timerSecs);
 }
 function startUnlimitedTick(){
   clearInterval(timerIv);
   timerIv=setInterval(()=>{
+    checkTimerDayRollover(); // rolls timerSecs/sessStart onto the new day first, if midnight just passed
     timerSecs++;
     renderTimerDisplayCumulative();
     tickActiveSubjectRow();
@@ -1016,7 +1071,7 @@ function resumeActiveSessionIfAny(){
 }
 
 function renderTimerHistory(){
-  const log=slog[TODAY_STR]||{};
+  const log=slog[timerDayStr]||{};
   let total=0;
   const html=Object.entries(log).map(([sub,secs])=>{total+=secs;
     return `<div class="history-row"><span class="history-sub">${escHtml(sub)}</span><span class="history-time">${fmtTime(secs)}</span></div>`;
@@ -1037,8 +1092,9 @@ function renderTimerHistory(){
 
 function renderHeatmap(){
   const hm=document.getElementById('heatmap'); hm.innerHTML='';
+  const anchor=new Date(timerDayStr+'T00:00:00');
   for(let i=29;i>=0;i--){
-    const d=new Date(TODAY.getTime()-i*86400000);
+    const d=new Date(anchor.getTime()-i*86400000);
     const key=d.toISOString().split('T')[0];
     const total=Object.values(slog[key]||{}).reduce((a,b)=>a+b,0);
     const l=total>14400?4:total>7200?3:total>3600?2:total>0?1:0;
