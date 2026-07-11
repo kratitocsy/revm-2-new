@@ -801,7 +801,7 @@ function checkTimerDayRollover(){
     const subEl=document.getElementById('timerSub');
     const sub=(subEl && subEl.value) || activeSubject || 'General';
     const elapsedOld=Math.round((Date.now()-sessStart)/1000);
-    if(elapsedOld>=30){
+    if(elapsedOld>=1){
       if(!slog[oldDayStr]) slog[oldDayStr]={};
       if(!slog[oldDayStr][sub]) slog[oldDayStr][sub]=0;
       slog[oldDayStr][sub]+=elapsedOld;
@@ -923,7 +923,7 @@ function logSession(){
   if(!sessStart) return;
   const elapsed=Math.round((Date.now()-sessStart)/1000);
   sessStart=null;
-  if(elapsed<30) return;
+  if(elapsed<1) return; // only guard against a stray 0-length tap, never discard real studied seconds
   const sub=document.getElementById('timerSub').value||'General';
   if(!slog[timerDayStr]) slog[timerDayStr]={};
   if(!slog[timerDayStr][sub]) slog[timerDayStr][sub]=0;
