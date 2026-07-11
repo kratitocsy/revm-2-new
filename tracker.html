@@ -72,6 +72,18 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
 .timer-display{font-size:5.5rem;font-weight:900;letter-spacing:-0.04em;color:var(--white);text-align:center;margin:1.25rem 0;font-variant-numeric:tabular-nums;line-height:1;}
 .timer-display.running{color:var(--gold);}
 .timer-controls{display:flex;gap:0.75rem;justify-content:center;margin-bottom:1.5rem;}
+/* PER-SUBJECT TIMER LIST (Unlimited mode) */
+.subj-timer-wrap{margin-bottom:1.5rem;}
+.subj-timer-list{display:flex;flex-direction:column;gap:0.5rem;}
+.subj-timer-row{display:flex;align-items:center;gap:0.75rem;background:var(--s1);border:1px solid var(--border);padding:0.6rem 0.85rem;transition:border-color 0.2s,background 0.2s;}
+.subj-timer-row--active{border-color:var(--gold);background:var(--gold-dim);}
+.subj-timer-btn{width:32px;height:32px;flex-shrink:0;border-radius:50%;border:1.5px solid var(--border2);background:var(--black);color:var(--text);font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.subj-timer-btn:hover{border-color:var(--gold);color:var(--gold);}
+.subj-timer-btn.running{background:var(--gold);border-color:var(--gold);color:#000;}
+.subj-timer-name{flex:1;font-size:0.82rem;color:var(--text);font-weight:500;}
+.subj-timer-row--active .subj-timer-name{color:var(--gold);font-weight:700;}
+.subj-timer-time{font-size:0.85rem;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums;}
+.subj-timer-row--active .subj-timer-time{color:var(--gold);}
 .session-history{margin-top:1.5rem;}
 .history-title{font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem;}
 .history-row{display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border);}
@@ -314,7 +326,7 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
           <button class="mode-btn" onclick="setMode('unlimited',this)">Unlimited</button>
         </div>
 
-        <div class="field" style="max-width:280px;margin-bottom:1.25rem;">
+        <div class="field" id="timerSubField" style="max-width:280px;margin-bottom:1.25rem;">
           <label>Studying subject</label>
           <select id="timerSub" style="background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.6rem 0.85rem;font-family:var(--font);font-size:0.85rem;outline:none;width:100%;color-scheme:dark;"></select>
         </div>
@@ -324,7 +336,18 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
           <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);margin-right:0.35rem;vertical-align:1px;"></span>Live on RevMGrid
         </div>
 
-        <div class="timer-controls">
+        <!-- UNLIMITED MODE: one timer per subject. Starting any subject drives the
+             big cumulative clock above (also what RevMGrid/live grid reads); each
+             row below shows just that subject's own studied time today. -->
+        <div class="subj-timer-wrap" id="subjectTimerWrap" style="display:none;">
+          <div class="history-title">Tap a subject to start / switch — the clock above is your cumulative total today</div>
+          <div class="subj-timer-list" id="subjectTimerList"></div>
+          <div style="display:flex;justify-content:center;margin-top:0.9rem;">
+            <button class="btn btn-ghost btn-sm" onclick="stopAllSubjectTimers()">■ Stop</button>
+          </div>
+        </div>
+
+        <div class="timer-controls" id="timerControlsRow">
           <button class="btn btn-gold" id="timerStartBtn" onclick="toggleTimer()">▶ Start</button>
           <button class="btn btn-ghost" onclick="resetTimer()">↺ Reset</button>
         </div>
@@ -511,6 +534,7 @@ async function init(){
   updateStats(); renderTable();
   initGuideStrip();
   renderTimerHistory(); renderHeatmap(); // Timer is now the default landing view, not just a nav-click destination
+  renderSubjectTimerList();
   resumeActiveSessionIfAny();
   RevM2Loader.hide();
 }
@@ -738,7 +762,7 @@ function showPage(p,el){
   el.classList.add('active');
   const titles={tracker:'Revision Tracker',timer:'Study Timer',analytics:'Analytics'};
   document.getElementById('pageTitle').textContent=titles[p]||p;
-  if(p==='timer'){renderTimerHistory();renderHeatmap();}
+  if(p==='timer'){renderTimerHistory();renderHeatmap();renderSubjectTimerList();}
   if(p==='analytics') renderAnalytics();
   logEvent('feature_used', p);
 }
@@ -746,6 +770,7 @@ function showPage(p,el){
 /* ── TIMER ── */
 const MODES={pomodoro:25*60,short:5*60,long:15*60,deep:90*60,custom:30*60,unlimited:null};
 let timerMode='pomodoro',timerSecs=MODES.pomodoro,timerRunning=false,timerIv=null,sessStart=null;
+let activeSubject=null; // which subject's per-subject timer is currently running (Unlimited mode only)
 
 /* ── RevMGrid sync ────────────────────────────────────────────
    Same localStorage key + RPCs groups.html's embedded Focus card
@@ -780,13 +805,28 @@ async function stopRemoteSession(){
 
 function setMode(m,btn){
   if(timerRunning){clearInterval(timerIv);timerRunning=false;logSession();}
+  activeSubject=null;
   timerMode=m;
   if(m==='custom'){const mins=parseInt(prompt('Minutes:','45')||'45');MODES.custom=(isNaN(mins)?45:mins)*60;}
   timerSecs=(m==='unlimited')?0:MODES[m];
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('timerStartBtn').textContent='▶ Start';
-  renderTimerDisplay();
+  document.getElementById('timerDisplay').classList.remove('running');
+  document.getElementById('timerLiveTag').style.display='none';
+  updateTimerModeUI();
+  if(m==='unlimited'){ renderSubjectTimerList(); renderTimerDisplayCumulative(); }
+  else renderTimerDisplay();
+}
+
+/* Unlimited mode swaps the single subject-dropdown+Start/Reset controls for
+   the per-subject timer list; every other mode keeps the original single
+   countdown-timer controls untouched. */
+function updateTimerModeUI(){
+  const isMulti = timerMode==='unlimited';
+  document.getElementById('timerSubField').style.display = isMulti ? 'none' : '';
+  document.getElementById('timerControlsRow').style.display = isMulti ? 'none' : '';
+  document.getElementById('subjectTimerWrap').style.display = isMulti ? 'block' : 'none';
 }
 
 function toggleTimer(){
@@ -840,7 +880,112 @@ function logSession(){
   Store.set('revm2_sessions',sessions.slice(0,200)); // keep last 200
   logEvent('study_session','timer',{subject:sub,seconds:elapsed,mode:timerMode});
   savelog();
-  renderTimerHistory();renderHeatmap();
+  renderTimerHistory();renderHeatmap();renderSubjectTimerList();
+}
+
+/* ── PER-SUBJECT TIMERS (Unlimited mode) ─────────────────────
+   One row per subject, each with its own start/pause icon and its
+   own studied-today readout. Only one can run at a time (there's
+   only one live study_sessions row per user, which is what feeds
+   RevMGrid), so starting a new subject cleanly stops/logs whichever
+   one was running first. The big clock above stays cumulative —
+   it's today's total across every subject, not just the active
+   one — because logSession() commits the outgoing subject's elapsed
+   time into slog *before* the new subject starts at 0, so the sum
+   never jumps or resets when you switch. */
+function fmtClock(totalSecs){
+  const t=Math.max(0,Math.floor(totalSecs));
+  const h=Math.floor(t/3600), m=Math.floor((t%3600)/60).toString().padStart(2,'0'), s=(t%60).toString().padStart(2,'0');
+  return h>0 ? `${h}:${m}:${s}` : `${m}:${s}`;
+}
+function subjSlug(s){
+  return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'general';
+}
+function todaysCommittedTotal(){
+  return Object.values(slog[TODAY_STR]||{}).reduce((a,b)=>a+b,0);
+}
+function renderTimerDisplayCumulative(){
+  const total=todaysCommittedTotal()+(timerRunning?timerSecs:0);
+  const text=fmtClock(total);
+  document.getElementById('timerDisplay').textContent=text;
+  document.title=timerRunning?`${text} — RevM²`:'RevM²';
+}
+function renderSubjectTimerList(){
+  const wrap=document.getElementById('subjectTimerList');
+  if(!wrap) return;
+  const subs=(cfg.subjects&&cfg.subjects.length)?cfg.subjects:['General'];
+  const todayTotals=slog[TODAY_STR]||{};
+  wrap.innerHTML=subs.map(sub=>{
+    const slug=subjSlug(sub);
+    const isActive=timerRunning&&activeSubject===sub;
+    const committed=todayTotals[sub]||0;
+    const liveExtra=isActive?timerSecs:0;
+    return `<div class="subj-timer-row${isActive?' subj-timer-row--active':''}" id="subj-row-${slug}">
+      <button class="subj-timer-btn${isActive?' running':''}" id="subj-btn-${slug}" onclick="subjectTimerToggle('${escAttr(sub)}')" title="${isActive?'Pause':'Start'} ${escAttr(sub)}">${isActive?'⏸':'▶'}</button>
+      <span class="subj-timer-name">${escHtml(sub)}</span>
+      <span class="subj-timer-time" id="subj-time-${slug}">${fmtClock(committed+liveExtra)}</span>
+    </div>`;
+  }).join('');
+}
+function tickActiveSubjectRow(){
+  if(!activeSubject) return;
+  const el=document.getElementById('subj-time-'+subjSlug(activeSubject));
+  if(!el) return;
+  const committed=(slog[TODAY_STR]||{})[activeSubject]||0;
+  el.textContent=fmtClock(committed+timerSecs);
+}
+function startUnlimitedTick(){
+  clearInterval(timerIv);
+  timerIv=setInterval(()=>{
+    timerSecs++;
+    renderTimerDisplayCumulative();
+    tickActiveSubjectRow();
+  },1000);
+}
+async function subjectTimerToggle(sub){
+  if(timerMode!=='unlimited'){
+    // Switching subjects only makes sense in Unlimited mode — jump into it.
+    const unlimitedBtn=[...document.querySelectorAll('.mode-btn')].find(b=>b.textContent.trim()==='Unlimited');
+    if(unlimitedBtn) setMode('unlimited', unlimitedBtn);
+  }
+
+  if(timerRunning && activeSubject===sub){
+    // Tapped the currently-running subject again — pause/stop it.
+    clearInterval(timerIv); timerRunning=false;
+    document.getElementById('timerDisplay').classList.remove('running');
+    logSession(); // reads #timerSub (still = sub), commits elapsed, stops remote session
+    activeSubject=null;
+    renderSubjectTimerList();
+    renderTimerDisplayCumulative();
+    return;
+  }
+
+  if(timerRunning){
+    // Switching from a different subject — stop/log the old one first.
+    clearInterval(timerIv); timerRunning=false;
+    document.getElementById('timerDisplay').classList.remove('running');
+    logSession();
+  }
+
+  const subSel=document.getElementById('timerSub');
+  if(subSel) subSel.value=sub;
+  activeSubject=sub;
+  sessStart=Date.now();
+  timerSecs=0;
+  timerRunning=true;
+  document.getElementById('timerDisplay').classList.add('running');
+  startRemoteSession(sub);
+  renderSubjectTimerList();
+  startUnlimitedTick();
+}
+function stopAllSubjectTimers(){
+  if(!timerRunning) return;
+  clearInterval(timerIv); timerRunning=false;
+  document.getElementById('timerDisplay').classList.remove('running');
+  logSession();
+  activeSubject=null;
+  renderSubjectTimerList();
+  renderTimerDisplayCumulative();
 }
 
 /* If a session is already live (started from here earlier, or from
@@ -855,6 +1000,8 @@ function resumeActiveSessionIfAny(){
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
   const unlimitedBtn=[...document.querySelectorAll('.mode-btn')].find(b=>b.textContent.trim()==='Unlimited');
   if(unlimitedBtn) unlimitedBtn.classList.add('active');
+  updateTimerModeUI();
+  activeSubject=state.subject||'General';
   const subSel=document.getElementById('timerSub');
   if(subSel && state.subject) subSel.value=state.subject;
   sessStart=new Date(state.started_at).getTime();
@@ -863,8 +1010,9 @@ function resumeActiveSessionIfAny(){
   document.getElementById('timerStartBtn').textContent='⏸ Pause';
   document.getElementById('timerDisplay').classList.add('running');
   document.getElementById('timerLiveTag').style.display='block';
-  timerIv=setInterval(()=>{ timerSecs++; renderTimerDisplay(); },1000);
-  renderTimerDisplay();
+  renderSubjectTimerList();
+  startUnlimitedTick();
+  renderTimerDisplayCumulative();
 }
 
 function renderTimerHistory(){
