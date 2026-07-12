@@ -63,12 +63,21 @@ body{
 /* App layout (tracker, calculator etc.) */
 .app-layout{display:flex;min-height:100vh;}
 
-/* SIDEBAR */
+/* SIDEBAR — hidden overlay by default everywhere. On desktop it slides
+   out on hover near the left edge (see .sidebar-hover-zone below,
+   toggled by initSidebarHoverReveal() in shared.js); on mobile it's
+   opened by the hamburger button (openMobileSidebar()/.mobile-open),
+   see the responsive block further down. */
 .sidebar{
   width:216px;flex-shrink:0;
   background:var(--black);border-right:1px solid var(--border);
   display:flex;flex-direction:column;
   position:fixed;left:0;top:0;bottom:0;z-index:50;
+  transform:translateX(-100%);transition:transform 0.22s ease;
+}
+.sidebar.hover-open{
+  transform:translateX(0);
+  box-shadow:24px 0 48px rgba(0,0,0,0.55);
 }
 .sidebar-logo{
   padding:1.25rem 1rem 1rem;display:block;
@@ -111,8 +120,20 @@ body{
 }
 .sidebar-logout:hover{border-color:var(--danger);color:var(--danger);}
 
-/* APP MAIN */
-.app-main{margin-left:216px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+/* Thin invisible strip glued to the left edge — hovering it (desktop
+   only; see media query below) slides the sidebar out. Sits just
+   under the sidebar's own z-index so the sidebar can render on top
+   of it once open. */
+.sidebar-hover-zone{display:none;}
+@media(min-width:769px){
+  .sidebar-hover-zone{
+    display:block;position:fixed;left:0;top:0;bottom:0;width:14px;z-index:49;
+  }
+}
+
+/* APP MAIN — no longer offsets for a permanently-pinned sidebar; the
+   sidebar is always an overlay now, mobile and desktop alike. */
+.app-main{margin-left:0;flex:1;display:flex;flex-direction:column;min-height:100vh;}
 
 /* TOPBAR */
 .topbar{
