@@ -141,14 +141,18 @@
       <!-- CONNECT EXTENSION -->
       <div class="bl-card">
         <div class="bl-card-title">Connect the extension</div>
-        <p class="empty-note" style="margin-bottom:0.9rem;">Generate a token, paste it into the extension's options page (right-click the extension icon → Options). Blocks started here reach it within about a minute.</p>
-        <button class="btn btn-ghost btn-sm" onclick="showTokenLabelPrompt()">+ Generate new token</button>
+        <p class="empty-note" id="connectExplainer" style="margin-bottom:0.9rem;">One click — if the extension is installed we send it the token directly, no copy/paste.</p>
+        <button class="btn btn-gold btn-sm" id="connectBtn" onclick="showTokenLabelPrompt()">+ Connect extension</button>
         <div id="newTokenBox" style="display:none;margin-top:0.9rem;">
-          <div class="token-box">
-            <input type="text" id="newTokenValue" readonly>
-            <button class="btn btn-gold btn-sm" onclick="copyToken()">Copy</button>
+          <p id="connectSuccess" class="empty-note" style="display:none;color:var(--gold);">Connected — the extension has the token, nothing else to do.</p>
+          <div id="manualFallback" style="display:none;">
+            <p class="empty-note" style="margin-bottom:0.5rem;">Couldn't reach the extension automatically (not installed, or a different browser). Paste this in manually instead: right-click the extension icon → Options.</p>
+            <div class="token-box">
+              <input type="text" id="newTokenValue" readonly>
+              <button class="btn btn-gold btn-sm" onclick="copyToken()">Copy</button>
+            </div>
+            <p class="empty-note" style="margin-top:0.4rem;color:var(--warn);">Shown once — copy it now. API base: <code id="apiBaseHint"></code>.</p>
           </div>
-          <p class="empty-note" style="margin-top:0.4rem;color:var(--warn);">Shown once — copy it now. Paste it into the extension's Options page along with API base <code id="apiBaseHint"></code>.</p>
         </div>
         <div id="deviceList" style="margin-top:1rem;"></div>
       </div>
@@ -171,6 +175,7 @@ requireAuth().then(session=>{
   loadActiveBlock();
   loadPresets();
   loadDevices();
+  autoConnectExtension(); // silent - no click needed if the extension is already installed
   setInterval(loadActiveBlock, 5000); // cheap poll - good enough for a status card, no realtime plumbing needed
 });
 const cfg=Store.get('revm2_config',{});
@@ -243,8 +248,10 @@ async function startBlock(){
     else alert(error.message || 'Could not start block.');
     return;
   }
+  const startedSites=pendingSites, startedMinutes=pendingMinutes;
   pendingSites=[]; renderSiteChips();
   document.getElementById('blockName').value='';
+  sendToExtension({ type:'RM2_START_SESSION', payload:{ blockName:name, sites:startedSites, durationMinutes: startedMinutes>0 ? startedMinutes : null } });
   loadActiveBlock();
 }
 
@@ -257,6 +264,7 @@ async function stopActiveBlock(){
   await sb.from('focus_lock_sessions').update({
     active:false, verified:false, ended_at:new Date().toISOString(), end_reason:'manual_unlock_web'
   }).eq('id', active.id);
+  sendToExtension({ type:'RM2_END_SESSION', reason:'ended_remotely' });
   loadActiveBlock();
 }
 
@@ -342,6 +350,7 @@ async function startPreset(id){
     else alert(error.message);
     return;
   }
+  sendToExtension({ type:'RM2_START_SESSION', payload:{ blockName:preset.name, sites:preset.sites, durationMinutes: preset.duration_minutes || null } });
   loadActiveBlock();
 }
 
@@ -355,18 +364,87 @@ async function sha256Hex(input){
   const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-function showTokenLabelPrompt(){
+// Runs on every page load. If the extension is installed but has never
+// been connected, this pairs it silently - no click needed. If it's
+// already connected, this is just a cheap no-op status check.
+async function autoConnectExtension(){
+  const status = await sendToExtension({ type:'RM2_STATUS' });
+  const btn = document.getElementById('connectBtn');
+  const explainer = document.getElementById('connectExplainer');
+
+  if(!status.ok || !status.installed){
+    // Not installed / not this browser - leave the manual button + copy
+    // fallback as the only path, same as before.
+    return;
+  }
+
+  if(status.connected){
+    if(btn) btn.style.display='none';
+    if(explainer) explainer.textContent='Extension connected — blocks you start here apply automatically.';
+    return;
+  }
+
+  // Installed, never paired - connect it now without waiting for a click.
+  await generateSyncToken('Extension (auto-connected)');
+}
+
+async function showTokenLabelPrompt(){
   const label=prompt('Label this device (e.g. "Chrome on laptop"):','Chrome');
   if(label===null) return;
-  generateSyncToken(label||'Extension');
+  await generateSyncToken(label||'Extension');
 }
+// The extension's manifest.json pins this ID via the "key" field so it
+// never changes across reinstalls. If you rebuild the extension with a
+// different key, regenerate this to match (see manifest.json comments).
+const RM2_EXTENSION_ID = 'knofmgookchmjekaefloaljcamjlbnmp';
+
+// Wraps chrome.runtime.sendMessage in a promise with a timeout, since an
+// uninstalled/absent extension just never calls back rather than erroring.
+function sendToExtension(msg, timeoutMs=1500){
+  return new Promise((resolve)=>{
+    if(typeof chrome==='undefined' || !chrome.runtime || !chrome.runtime.sendMessage){
+      resolve({ok:false, reason:'no_extension_api'}); return;
+    }
+    let done=false;
+    const timer=setTimeout(()=>{ if(!done){ done=true; resolve({ok:false, reason:'timeout'}); } }, timeoutMs);
+    try{
+      chrome.runtime.sendMessage(RM2_EXTENSION_ID, msg, (response)=>{
+        if(done) return;
+        done=true; clearTimeout(timer);
+        if(chrome.runtime.lastError){ resolve({ok:false, reason:chrome.runtime.lastError.message}); return; }
+        resolve(response || {ok:false, reason:'empty_response'});
+      });
+    }catch(e){
+      if(!done){ done=true; clearTimeout(timer); resolve({ok:false, reason:e.message}); }
+    }
+  });
+}
+
 async function generateSyncToken(label){
   const raw = crypto.randomUUID()+crypto.randomUUID();
   const hash = await sha256Hex(raw);
   const { error } = await sb.from('extension_sync_tokens').insert({ token_hash: hash, user_id: myUserId, label });
   if(error){ alert(error.message); return; }
-  document.getElementById('newTokenValue').value = raw;
+
   document.getElementById('newTokenBox').style.display='block';
+  const pushResult = await sendToExtension({ type:'RM2_CONNECT', token: raw });
+
+  if(pushResult.ok){
+    document.getElementById('connectSuccess').style.display='block';
+    document.getElementById('manualFallback').style.display='none';
+    const btn = document.getElementById('connectBtn');
+    const explainer = document.getElementById('connectExplainer');
+    if(btn) btn.style.display='none';
+    if(explainer) explainer.textContent='Extension connected — blocks you start here apply automatically.';
+  } else {
+    // Extension not installed / different browser / origin not in
+    // externally_connectable yet - fall back to the old copy/paste path.
+    document.getElementById('connectSuccess').style.display='none';
+    document.getElementById('manualFallback').style.display='block';
+    document.getElementById('newTokenValue').value = raw;
+    const hint = document.getElementById('apiBaseHint');
+    if(hint) hint.textContent = REVM2_CONFIG.SUPABASE_URL + '/functions/v1';
+  }
   loadDevices();
 }
 function copyToken(){
