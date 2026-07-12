@@ -1,5 +1,5 @@
 /* RevM² Service Worker — Offline Support */
-const CACHE = 'revm2-v5';
+const CACHE = 'revm2-v6'; // bumped: purges stale pre-cleanup caches (old floating-timer.js etc.) for every client
 const SHELL = [
   '/',
   '/index.html',

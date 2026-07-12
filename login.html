@@ -27,11 +27,50 @@
 .login-note{margin-top:1.6rem;font-size:0.65rem;color:var(--muted);line-height:1.65;max-width:270px;}
 .fixed-footer{position:fixed;bottom:1.25rem;left:0;right:0;text-align:center;z-index:10;}
 .fixed-footer p{font-size:0.6rem;color:var(--dim);letter-spacing:0.14em;text-transform:uppercase;}
+
+/* ── DRAWER (lightweight, login-page only — always an overlay,
+   never permanently pinned like the app's internal .sidebar) ── */
+.login-hamburger{position:fixed;top:1.1rem;left:1.1rem;z-index:60;width:38px;height:38px;
+  display:flex;align-items:center;justify-content:center;background:var(--s1);
+  border:1px solid var(--border2);color:var(--text);font-size:1.05rem;cursor:pointer;}
+.login-hamburger:hover{border-color:var(--gold);color:var(--gold);}
+.login-drawer-backdrop{display:none;position:fixed;inset:0;z-index:150;background:rgba(0,0,0,0.6);}
+.login-drawer-backdrop.active{display:block;}
+.login-drawer{position:fixed;top:0;left:0;bottom:0;z-index:200;width:240px;
+  background:var(--black);border-right:1px solid var(--border);
+  transform:translateX(-100%);transition:transform 0.25s ease;
+  display:flex;flex-direction:column;padding:1.25rem 1.1rem;}
+.login-drawer.open{transform:translateX(0);box-shadow:24px 0 48px rgba(0,0,0,0.55);}
+.login-drawer .rm2-logo{margin-bottom:1.75rem;}
+.login-drawer-close{align-self:flex-end;background:none;border:none;color:var(--muted);
+  font-size:1.2rem;cursor:pointer;margin-bottom:0.5rem;line-height:1;}
+.login-drawer-close:hover{color:var(--gold);}
+.login-drawer-links{display:flex;flex-direction:column;gap:0.15rem;}
+.login-drawer-links a{display:block;padding:0.65rem 0.4rem;color:var(--muted);
+  text-decoration:none;font-size:0.8rem;letter-spacing:0.02em;border-left:2px solid transparent;transition:all 0.15s;}
+.login-drawer-links a:hover{color:var(--white);border-left-color:var(--gold);background:rgba(255,255,255,0.02);}
+.login-drawer-foot{margin-top:auto;font-size:0.62rem;color:var(--dim);letter-spacing:0.08em;text-transform:uppercase;padding-top:1rem;border-top:1px solid var(--border);}
 </style>
 </head>
 <body>
 <canvas id="starfield"></canvas>
 <div class="orb"></div>
+
+<button class="login-hamburger" id="loginHamburger" onclick="openLoginDrawer()" aria-label="Open menu">☰</button>
+<div class="login-drawer-backdrop" id="loginDrawerBackdrop" onclick="closeLoginDrawer()"></div>
+<aside class="login-drawer" id="loginDrawer">
+  <button class="login-drawer-close" onclick="closeLoginDrawer()" aria-label="Close menu">✕</button>
+  <a href="index.html"><div class="rm2-logo" data-size="small" data-noaudio="1"></div></a>
+  <nav class="login-drawer-links">
+    <a href="index.html">Home</a>
+    <a href="index.html#features">Features</a>
+    <a href="index.html#story">Our story</a>
+    <a href="privacy.html">Privacy Policy</a>
+    <a href="https://t.me/revm2_bot" target="_blank" rel="noopener">Telegram bot</a>
+    <a href="mailto:revisionnm2@gmail.com">Contact us</a>
+  </nav>
+  <div class="login-drawer-foot">RevM² · Free forever</div>
+</aside>
 
 <div class="page-center">
   <div class="login-wrap">
@@ -59,6 +98,15 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const sb = window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL, REVM2_CONFIG.SUPABASE_ANON);
+
+function openLoginDrawer(){
+  document.getElementById('loginDrawer').classList.add('open');
+  document.getElementById('loginDrawerBackdrop').classList.add('active');
+}
+function closeLoginDrawer(){
+  document.getElementById('loginDrawer').classList.remove('open');
+  document.getElementById('loginDrawerBackdrop').classList.remove('active');
+}
 
 async function checkSession(){
   const {data:{session}} = await sb.auth.getSession();
