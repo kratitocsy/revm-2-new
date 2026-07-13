@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RevM² — Blocks</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#c8a96e">
+<style>
+.blocks-wrap{padding:1.75rem;max-width:820px;overflow-y:auto;}
+.bl-card{background:var(--s2);border:1px solid var(--border2);padding:1.25rem;margin-bottom:1.25rem;}
+.bl-card-title{font-size:0.65rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:0.9rem;}
+.bl-field{margin-bottom:1rem;}
+.bl-field label{display:block;font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.4rem;}
+.bl-field input[type=text]{width:100%;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.6rem 0.85rem;font-family:var(--font);font-size:0.85rem;outline:none;color-scheme:dark;}
+.bl-field input[type=text]:focus{border-color:var(--gold-border);}
+.site-chips{display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.5rem;}
+.site-chip{display:flex;align-items:center;gap:0.4rem;background:var(--s1);border:1px solid var(--border);padding:0.3rem 0.55rem;font-size:0.75rem;color:var(--text);}
+.site-chip button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.85rem;line-height:1;padding:0;}
+.site-chip button:hover{color:var(--danger);}
+.site-add-row{display:flex;gap:0.5rem;}
+.site-add-row input{flex:1;}
+.mode-opts{display:flex;gap:0.5rem;flex-wrap:wrap;}
+.mode-opt{padding:0.5rem 0.9rem;border:1px solid var(--border2);background:var(--s1);color:var(--muted);font-family:var(--font);font-size:0.78rem;font-weight:600;cursor:pointer;letter-spacing:0.03em;text-align:left;}
+.mode-opt:hover{border-color:var(--gold-border);color:var(--text);}
+.mode-opt.active{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+.yt-panel{margin-top:0.9rem;padding:0.9rem;background:var(--s1);border:1px solid var(--border);}
+.yt-panel-title{font-size:0.7rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text);margin-bottom:0.3rem;}
+.yt-panel-hint{font-size:0.72rem;color:var(--muted);margin-bottom:0.7rem;}
+.dur-opts{display:flex;flex-wrap:wrap;gap:0.5rem;}
+.dur-opt{padding:0.45rem 0.9rem;border:1px solid var(--border2);background:var(--s1);color:var(--muted);font-family:var(--font);font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.03em;}
+.dur-opt:hover{border-color:var(--gold-border);color:var(--text);}
+.dur-opt.active{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+.dur-custom{display:flex;align-items:center;gap:0.4rem;}
+.dur-custom input{width:70px;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.45rem 0.6rem;font-family:var(--font);font-size:0.8rem;outline:none;color-scheme:dark;}
+.active-block-card{border-color:var(--gold);}
+.active-block-name{font-size:1.3rem;font-weight:800;color:var(--white);margin-bottom:0.2rem;}
+.active-block-timer{font-size:2.1rem;font-weight:900;color:var(--gold);font-variant-numeric:tabular-nums;letter-spacing:-0.02em;margin:0.4rem 0;}
+.active-block-sites{font-size:0.75rem;color:var(--muted);margin-bottom:0.9rem;}
+.verified-pill{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.65rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:0.2rem 0.55rem;border:1px solid var(--success);color:var(--success);}
+.unverified-pill{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.65rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:0.2rem 0.55rem;border:1px solid var(--warn);color:var(--warn);}
+.preset-list{display:flex;flex-direction:column;gap:0.6rem;}
+.preset-row{display:flex;align-items:center;justify-content:space-between;gap:0.75rem;padding:0.7rem 0.85rem;background:var(--s1);border:1px solid var(--border);}
+.preset-name{font-size:0.85rem;font-weight:600;color:var(--text);}
+.preset-sites{font-size:0.7rem;color:var(--muted);margin-top:0.15rem;}
+.preset-actions{display:flex;gap:0.4rem;flex-shrink:0;}
+.empty-note{font-size:0.78rem;color:var(--muted);}
+.token-box{display:flex;gap:0.5rem;align-items:center;}
+.token-box input{flex:1;font-family:monospace;font-size:0.72rem;background:var(--black);border:1px solid var(--border2);color:var(--gold);padding:0.55rem 0.75rem;outline:none;}
+.device-row{display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border);font-size:0.78rem;color:var(--text);}
+.device-row:last-child{border-bottom:none;}
+.device-meta{color:var(--muted);font-size:0.68rem;}
+
+/* Illustrated "load unpacked" guide (blocks.html download-extension box) */
+.ext-guide{display:grid;grid-template-columns:repeat(2,1fr);gap:0.9rem;}
+.ext-step{background:var(--s1);border:1px solid var(--border);padding:0.9rem;}
+.ext-step-head{display:flex;align-items:center;gap:0.55rem;margin-bottom:0.7rem;}
+.ext-step-num{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--gold-dim);border:1px solid var(--gold-border);color:var(--gold);font-size:0.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.ext-step-title{font-size:0.78rem;font-weight:700;color:var(--text);}
+.ext-mock{background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:0.9rem 0.7rem;min-height:88px;display:flex;align-items:center;justify-content:center;}
+.ext-mock-row{display:flex;align-items:center;justify-content:center;gap:0.7rem;width:100%;}
+.ext-mock-arrow{flex-shrink:0;opacity:0.7;}
+.ext-mock-file{display:flex;flex-direction:column;align-items:center;gap:0.3rem;font-size:0.62rem;color:var(--muted);text-align:center;max-width:80px;}
+.ext-mock-browser{width:100%;border:1px solid var(--border2);border-radius:6px;overflow:hidden;background:var(--s2);}
+.ext-mock-browser-dots{display:flex;gap:0.3rem;padding:0.4rem 0.5rem;background:var(--s1);border-bottom:1px solid var(--border);}
+.ext-mock-browser-dots i{width:7px;height:7px;border-radius:50%;background:var(--dim);display:block;}
+.ext-mock-addressbar{margin:0.55rem;padding:0.4rem 0.65rem;background:var(--black);border:1px solid var(--border2);border-radius:14px;color:var(--gold);font-family:monospace;font-size:0.7rem;}
+.ext-mock-toggle-wrap{display:flex;flex-direction:column;align-items:center;gap:0.35rem;font-size:0.65rem;color:var(--muted);}
+.ext-mock-toggle{width:34px;height:19px;border-radius:10px;background:var(--dim);border:1px solid var(--border2);position:relative;flex-shrink:0;}
+.ext-mock-toggle .knob{position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:var(--muted);transition:none;}
+.ext-mock-toggle.on{background:var(--gold-dim);border-color:var(--gold);}
+.ext-mock-toggle.on .knob{left:auto;right:2px;background:var(--gold);}
+.ext-mock-btn{background:var(--gold-dim);border:1px solid var(--gold);color:var(--gold);font-size:0.68rem;font-weight:700;padding:0.5rem 0.75rem;border-radius:5px;white-space:nowrap;}
+.ext-mock-folder-pick{display:flex;flex-direction:column;align-items:center;gap:0.25rem;font-size:0.62rem;color:var(--text);background:var(--s1);border:1px dashed var(--gold-border);border-radius:6px;padding:0.5rem 0.7rem;}
+.ext-step-note{font-size:0.72rem;color:var(--muted);line-height:1.55;margin-top:0.65rem;}
+@media(max-width:600px){.ext-guide{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <a class="sidebar-logo" href="index.html"><div class="rm2-logo" data-size="small"></div></a>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Study</div>
+      <div class="nav-item" onclick="go('tracker.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 11h6M9 15h6"/></svg></span>Tracker</div>
+      <div class="nav-section">Community</div>
+      <div class="nav-item" onclick="go('groups.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7.5" r="3.5"/><path d="M17.5 11a3.5 3.5 0 1 0 0-7"/><path d="M22 21v-1.5a4 4 0 0 0-3-3.87"/></svg></span>Study Groups</div>
+      <div class="nav-item" onclick="go('partners.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="7" cy="5" r="2.3"/><path d="M4 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><circle cx="17" cy="5" r="2.3"/><path d="M14 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><path d="M10 14.5h4"/></svg></span>Study Partners</div>
+      <div class="nav-section">Tools</div>
+      <div class="nav-item" onclick="go('calculator.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg></span>Marks Calc</div>
+      <div class="nav-item active"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>Blocks</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-track" id="sTrack">—</div>
+      <div class="sidebar-exam" id="sExam">—</div>
+    </div>
+  </aside>
+
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
+  <div class="app-main">
+    <div class="topbar">
+      <button class="hamburger-btn" onclick="openMobileSidebar()" aria-label="Open menu">☰</button>
+      <div><div class="topbar-title">Blocks</div><div class="topbar-sub">Name a block, pick sites, start it — the extension picks it up within a minute</div></div>
+      <div class="topbar-right"><span class="badge-track" id="topTrack">—</span></div>
+    </div>
+
+    <div class="blocks-wrap">
+
+      <!-- ACTIVE BLOCK (shown only while one is running) -->
+      <div id="activeBlockCard" style="display:none;" class="bl-card active-block-card">
+        <div class="bl-card-title">Currently active</div>
+        <div class="active-block-name" id="abName">—</div>
+        <div class="active-block-timer" id="abTimer">—</div>
+        <div class="active-block-sites" id="abSites">—</div>
+        <div id="abVerifiedPill"></div>
+        <div style="margin-top:0.9rem;display:flex;gap:0.6rem;">
+          <button class="btn btn-ghost btn-sm" onclick="stopActiveBlock()">Stop early</button>
+        </div>
+        <p class="empty-note" style="margin-top:0.6rem;">Stop early opens the same code-typing gate the extension shows on a blocked site — type it exactly to end the session, and it's marked unverified either way.</p>
+      </div>
+
+      <!-- START A NEW BLOCK -->
+      <div class="bl-card" id="startCard">
+        <div class="bl-card-title">Start a block</div>
+
+        <div class="bl-field">
+          <label>Name</label>
+          <input type="text" id="blockName" placeholder="e.g. Deep work, No Instagram">
+        </div>
+
+        <div class="bl-field">
+          <label id="sitesFieldLabel">Sites to block</label>
+          <div class="mode-opts" style="margin-bottom:0.6rem;">
+            <button type="button" class="mode-opt active" data-mode="blacklist" onclick="pickMode('blacklist',this)">Block these sites</button>
+            <button type="button" class="mode-opt" data-mode="whitelist" onclick="pickMode('whitelist',this)">Allow only these sites</button>
+          </div>
+          <div class="site-add-row">
+            <input type="text" id="siteInput" placeholder="youtube.com" onkeydown="if(event.key==='Enter'){event.preventDefault();addSite();}">
+            <button class="btn btn-ghost btn-sm" onclick="addSite()">Add</button>
+          </div>
+          <div class="site-chips" id="siteChips"></div>
+        </div>
+
+        <!-- Per-channel YouTube rules - only shown once youtube.com is one of the sites above -->
+        <div class="bl-field yt-panel" id="ytPanel" style="display:none;">
+          <div class="yt-panel-title">YouTube channels</div>
+          <div class="yt-panel-hint" id="ytPanelHint">Optional — restrict which channels are reachable on YouTube during this block, instead of blocking or allowing all of it.</div>
+          <div class="mode-opts" style="margin-bottom:0.6rem;">
+            <button type="button" class="mode-opt active" data-yt-mode="block" onclick="pickYtMode('block',this)">Block specific channels</button>
+            <button type="button" class="mode-opt" data-yt-mode="allow" onclick="pickYtMode('allow',this)">Allow only these channels</button>
+          </div>
+          <div class="site-add-row">
+            <input type="text" id="ytChannelInput" placeholder="@channelhandle or youtube.com/@channelhandle" onkeydown="if(event.key==='Enter'){event.preventDefault();addYtChannel();}">
+            <button class="btn btn-ghost btn-sm" onclick="addYtChannel()">Add</button>
+          </div>
+          <div class="site-chips" id="ytChannelChips"></div>
+        </div>
+
+        <div class="bl-field">
+          <label>Duration</label>
+          <div class="dur-opts" id="durOpts">
+            <button class="dur-opt" data-mins="25" onclick="pickDuration(25,this)">25m</button>
+            <button class="dur-opt" data-mins="60" onclick="pickDuration(60,this)">1h</button>
+            <button class="dur-opt" data-mins="120" onclick="pickDuration(120,this)">2h</button>
+            <button class="dur-opt" data-mins="240" onclick="pickDuration(240,this)">4h</button>
+            <button class="dur-opt active" data-mins="0" onclick="pickDuration(0,this)">Unlimited</button>
+          </div>
+          <div class="dur-custom" style="margin-top:0.6rem;">
+            <span style="font-size:0.75rem;color:var(--muted);">or custom:</span>
+            <input type="number" id="customMins" min="1" placeholder="90">
+            <span style="font-size:0.75rem;color:var(--muted);">minutes</span>
+            <button class="btn btn-ghost btn-sm" onclick="useCustomDuration()">Use</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+          <button class="btn btn-gold" onclick="startBlock()">Start block →</button>
+          <button class="btn btn-ghost" onclick="saveAsPreset()">Save as preset (don't start)</button>
+        </div>
+      </div>
+
+      <!-- SAVED PRESETS -->
+      <div class="bl-card">
+        <div class="bl-card-title">Saved blocks</div>
+        <div class="preset-list" id="presetList"><p class="empty-note">No saved blocks yet.</p></div>
+      </div>
+
+      <!-- CONNECT EXTENSION -->
+      <div class="bl-card">
+        <div class="bl-card-title">Connect the extension</div>
+        <p class="empty-note" id="connectExplainer" style="margin-bottom:0.9rem;">One click — if the extension is installed we send it the token directly, no copy/paste.</p>
+        <button class="btn btn-gold btn-sm" id="connectBtn" onclick="showTokenLabelPrompt()">+ Connect extension</button>
+        <div id="newTokenBox" style="display:none;margin-top:0.9rem;">
+          <p id="connectSuccess" class="empty-note" style="display:none;color:var(--gold);">Connected — the extension has the token, nothing else to do.</p>
+          <div id="manualFallback" style="display:none;">
+            <p class="empty-note" style="margin-bottom:0.5rem;">Couldn't reach the extension automatically (not installed, or a different browser). Paste this in manually instead: right-click the extension icon → Options.</p>
+            <div class="token-box">
+              <input type="text" id="newTokenValue" readonly>
+              <button class="btn btn-gold btn-sm" onclick="copyToken()">Copy</button>
+            </div>
+            <p class="empty-note" style="margin-top:0.4rem;color:var(--warn);">Shown once — copy it now. API base: <code id="apiBaseHint"></code>.</p>
+          </div>
+        </div>
+
+        <!-- Shown only when autoConnectExtension() can't find the extension at all -->
+        <div id="downloadExtensionBox" style="display:none;margin-top:0.9rem;padding-top:0.9rem;border-top:1px solid var(--border);">
+          <p class="empty-note" style="margin-bottom:0.9rem;">Don't have the extension yet? It's not on the Chrome Web Store, so it has to be added by hand — takes about a minute, follow the pictures below exactly and you can't go wrong.</p>
+          <a href="downloads/revm2-extension.zip" download class="btn btn-gold btn-sm" style="display:inline-block;text-decoration:none;margin-bottom:1.1rem;">⬇ Download extension (.zip)</a>
+
+          <div class="ext-guide">
+
+            <!-- STEP 1 -->
+            <div class="ext-step">
+              <div class="ext-step-head"><span class="ext-step-num">1</span><span class="ext-step-title">Unzip the downloaded file</span></div>
+              <div class="ext-mock">
+                <div class="ext-mock-row">
+                  <div class="ext-mock-file">
+                    <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--gold)" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 12v6M10 13h4M10 15h4M10 17h4"/></svg>
+                    <span>revm2-extension.zip</span>
+                  </div>
+                  <svg class="ext-mock-arrow" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--muted)" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                  <div class="ext-mock-file">
+                    <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--gold)" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                    <span>revm2-extension (folder)</span>
+                  </div>
+                </div>
+              </div>
+              <p class="ext-step-note">Double-click the .zip to unzip it. Keep the resulting folder somewhere permanent (like Documents) — don't delete it later, Chrome reads the extension straight from it.</p>
+            </div>
+
+            <!-- STEP 2 -->
+            <div class="ext-step">
+              <div class="ext-step-head"><span class="ext-step-num">2</span><span class="ext-step-title">Open the extensions page</span></div>
+              <div class="ext-mock">
+                <div class="ext-mock-browser">
+                  <div class="ext-mock-browser-dots"><i></i><i></i><i></i></div>
+                  <div class="ext-mock-addressbar">chrome://extensions</div>
+                </div>
+              </div>
+              <p class="ext-step-note">Copy <code>chrome://extensions</code> (or <code>edge://extensions</code> if you use Edge) into your browser's address bar at the top and press Enter.</p>
+            </div>
+
+            <!-- STEP 3 -->
+            <div class="ext-step">
+              <div class="ext-step-head"><span class="ext-step-num">3</span><span class="ext-step-title">Turn on Developer mode</span></div>
+              <div class="ext-mock">
+                <div class="ext-mock-row">
+                  <div class="ext-mock-toggle-wrap">
+                    <div class="ext-mock-toggle off"><div class="knob"></div></div>
+                    <span>Off</span>
+                  </div>
+                  <svg class="ext-mock-arrow" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--muted)" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                  <div class="ext-mock-toggle-wrap">
+                    <div class="ext-mock-toggle on"><div class="knob"></div></div>
+                    <span>On</span>
+                  </div>
+                </div>
+              </div>
+              <p class="ext-step-note">There's a "Developer mode" switch in the top-right corner of that page. Click it once so it turns gold/blue like the "On" example above.</p>
+            </div>
+
+            <!-- STEP 4 -->
+            <div class="ext-step">
+              <div class="ext-step-head"><span class="ext-step-num">4</span><span class="ext-step-title">Click "Load unpacked"</span></div>
+              <div class="ext-mock">
+                <div class="ext-mock-row">
+                  <div class="ext-mock-btn">Load unpacked</div>
+                  <svg class="ext-mock-arrow" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--muted)" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                  <div class="ext-mock-folder-pick">
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="var(--gold)" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                    <span>revm2-extension</span>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--success)" stroke-width="2.2"><path d="M5 13l4 4L19 7"/></svg>
+                  </div>
+                </div>
+              </div>
+              <p class="ext-step-note">Three new buttons appear once Developer mode is on — click <strong>Load unpacked</strong>, then pick the unzipped <strong>revm2-extension</strong> folder from Step 1.</p>
+            </div>
+
+          </div>
+
+          <p class="empty-note" style="margin-top:1rem;">That's it — the extension icon will appear in your browser toolbar. Come back to this tab and hit the button below.</p>
+          <button class="btn btn-ghost btn-sm" style="margin-top:0.6rem;" onclick="autoConnectExtension()">✓ Check again</button>
+        </div>
+
+        <div id="deviceList" style="margin-top:1rem;"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script src="floating-timer.js"></script>
+<script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const sb=window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL,REVM2_CONFIG.SUPABASE_ANON);
+let myUserId=null;
+requireAuth().then(session=>{
+  if(!session) return;
+  myUserId=session.user.id;
+  logEvent('feature_used','blocks');
+  loadActiveBlock();
+  loadPresets();
+  loadDevices();
+  autoConnectExtension(); // silent - no click needed if the extension is already installed
+  setInterval(loadActiveBlock, 5000); // cheap poll - good enough for a status card, no realtime plumbing needed
+});
+const cfg=Store.get('revm2_config',{});
+document.getElementById('sTrack').textContent=cfg.track||'—';
+document.getElementById('sExam').textContent=cfg.exam||'—';
+document.getElementById('topTrack').textContent=cfg.track||'—';
+document.getElementById('apiBaseHint').textContent = REVM2_CONFIG.SUPABASE_URL + '/functions/v1';
+
+/* ── domain normalizing (mirrors the extension's utils/storage.js) ── */
+function normalizeDomain(input){
+  let value=(input||'').trim().toLowerCase();
+  if(!value) return '';
+  try{
+    if(!value.startsWith('http')) value=`https://${value}`;
+    const url=new URL(value);
+    return url.hostname.replace(/^www\./,'');
+  }catch{
+    return value.replace(/^www\./,'').split('/')[0];
+  }
+}
+
+/* ── site chips ── */
+let pendingSites=[];
+let pendingMode='blacklist'; // 'blacklist' = block these sites, 'whitelist' = allow only these sites
+function hasYoutubeSite(){
+  return pendingSites.some(s=>s==='youtube.com'||s==='youtu.be'||s.endsWith('.youtube.com'));
+}
+function renderSiteChips(){
+  const wrap=document.getElementById('siteChips');
+  if(!pendingSites.length){ wrap.innerHTML=''; } else {
+    wrap.innerHTML=pendingSites.map((s,i)=>`<span class="site-chip">${escHtml(s)}<button onclick="removeSite(${i})">✕</button></span>`).join('');
+  }
+  document.getElementById('ytPanel').style.display = hasYoutubeSite() ? 'block' : 'none';
+}
+function addSite(){
+  const input=document.getElementById('siteInput');
+  const domain=normalizeDomain(input.value);
+  if(!domain) return;
+  if(!pendingSites.includes(domain)) pendingSites.push(domain);
+  input.value='';
+  renderSiteChips();
+}
+function removeSite(i){ pendingSites.splice(i,1); renderSiteChips(); }
+
+function pickMode(mode, btn){
+  pendingMode = mode==='whitelist' ? 'whitelist' : 'blacklist';
+  document.querySelectorAll('#startCard .mode-opts [data-mode]').forEach(b=>b.classList.toggle('active', b===btn));
+  const label=document.getElementById('sitesFieldLabel');
+  const input=document.getElementById('siteInput');
+  if(pendingMode==='whitelist'){
+    label.textContent='Sites to allow';
+    input.placeholder='notion.so';
+  } else {
+    label.textContent='Sites to block';
+    input.placeholder='youtube.com';
+  }
+}
+
+/* ── YouTube per-channel rules ── */
+let pendingYtMode='block'; // 'block' = these channels are off-limits, 'allow' = only these channels reachable
+let pendingYtChannels=[]; // [{id,label}]
+function normalizeChannelRef(input){
+  let v=(input||'').trim().toLowerCase();
+  if(!v) return '';
+  v=v.replace(/^https?:\/\/(www\.|m\.)?youtube\.com\//,'');
+  v=v.replace(/\/$/,'').split(/[?#]/)[0];
+  v=v.replace(/^channel\//,'').replace(/^c\//,'').replace(/^user\//,'');
+  return v;
+}
+function pickYtMode(mode, btn){
+  pendingYtMode = mode==='allow' ? 'allow' : 'block';
+  document.querySelectorAll('#ytPanel .mode-opts [data-yt-mode]').forEach(b=>b.classList.toggle('active', b===btn));
+  document.getElementById('ytPanelHint').textContent = pendingYtMode==='allow'
+    ? 'Only these channels stay reachable on YouTube — the home feed, search, Shorts, and every other channel get blocked.'
+    : 'These channels get blocked on YouTube — everything else (home feed, search, other channels) stays reachable.';
+}
+function renderYtChips(){
+  const wrap=document.getElementById('ytChannelChips');
+  wrap.innerHTML = pendingYtChannels.map((c,i)=>`<span class="site-chip">${escHtml(c.label)}<button onclick="removeYtChannel(${i})">✕</button></span>`).join('');
+}
+function addYtChannel(){
+  const input=document.getElementById('ytChannelInput');
+  const raw=input.value.trim();
+  const id=normalizeChannelRef(raw);
+  if(!id) return;
+  if(!pendingYtChannels.some(c=>c.id===id)) pendingYtChannels.push({ id, label: raw.startsWith('@')||id.startsWith('@') ? (id.startsWith('@')?id:'@'+id) : id });
+  input.value='';
+  renderYtChips();
+}
+function removeYtChannel(i){ pendingYtChannels.splice(i,1); renderYtChips(); }
+function resetYtPanel(){
+  pendingYtChannels=[]; pendingYtMode='block';
+  renderYtChips();
+  document.querySelectorAll('#ytPanel .mode-opts [data-yt-mode]').forEach(b=>b.classList.toggle('active', b.dataset.ytMode==='block'));
+}
+function currentYoutubeRulesPayload(){
+  return (hasYoutubeSite() && pendingYtChannels.length)
+    ? { mode: pendingYtMode, channels: pendingYtChannels }
+    : null;
+}
+
+/* ── duration picker ── */
+let pendingMinutes=0; // 0 = unlimited
+function pickDuration(mins, btn){
+  pendingMinutes=mins;
+  document.querySelectorAll('#durOpts .dur-opt').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function useCustomDuration(){
+  const v=parseInt(document.getElementById('customMins').value,10);
+  if(!v || v<1) return;
+  pendingMinutes=v;
+  document.querySelectorAll('#durOpts .dur-opt').forEach(b=>b.classList.remove('active'));
+}
+
+/* ── start / stop a block ── */
+async function startBlock(){
+  if(!myUserId) return;
+  const name=document.getElementById('blockName').value.trim() || 'Block';
+  if(!pendingSites.length){ alert(pendingMode==='whitelist' ? 'Add at least one site to allow.' : 'Add at least one site to block.'); return; }
+
+  const endsAt = pendingMinutes>0 ? new Date(Date.now()+pendingMinutes*60000).toISOString() : null;
+  const youtubeRules = currentYoutubeRulesPayload();
+  const { error } = await sb.from('focus_lock_sessions').insert({
+    user_id: myUserId,
+    block_name: name,
+    sites: pendingSites,
+    mode: pendingMode,
+    youtube_rules: youtubeRules,
+    ends_at: endsAt,
+    unlimited: pendingMinutes===0,
+    source: 'web'
+  });
+  if(error){
+    if(error.code==='23505') alert("You already have a block running. Stop it first, or wait for it to finish.");
+    else if(error.code==='42703') alert("Could not start block: the database is missing the 'mode'/'youtube_rules' columns. Run the migration in supabase-migration.sql, then try again.");
+    else alert(error.message || 'Could not start block.');
+    return;
+  }
+  const startedSites=pendingSites, startedMinutes=pendingMinutes, startedMode=pendingMode;
+  pendingSites=[]; renderSiteChips(); resetYtPanel();
+  document.getElementById('blockName').value='';
+  sendToExtension({ type:'RM2_START_SESSION', payload:{ blockName:name, sites:startedSites, durationMinutes: startedMinutes>0 ? startedMinutes : null, mode:startedMode, youtubeRules } });
+  loadActiveBlock();
+}
+
+async function stopActiveBlock(){
+  if(!myUserId) return;
+  // Stopping early no longer ends the session from here directly - that was
+  // trivially bypassable (devtools could call this function, or edit the
+  // row, without ever proving the person actually wanted out). Instead this
+  // asks the extension to redirect this tab to its blocked-page gate: type
+  // the 150-char gibberish code exactly, same honesty rule as unlocking a
+  // blocked site mid-session. Only that flow (unlock.js -> backend ->
+  // SESSION_ENDED_EARLY) actually marks the session unverified and ends it.
+  const result = await sendToExtension({ type:'RM2_OPEN_UNLOCK_GATE' });
+  if(!result.ok){
+    const reasons = {
+      not_connected: "Connect the extension first (see below) - stopping early goes through it now.",
+      no_active_session: "The extension doesn't see an active session to stop.",
+      no_extension_api: "This needs the RevM2 browser extension installed and connected to stop a block early.",
+      timeout: "Couldn't reach the extension - make sure it's installed and this tab isn't blocked.",
+    };
+    alert(reasons[result.reason] || "Couldn't open the unlock gate. Make sure the RevM2 extension is installed and connected.");
+    return;
+  }
+  // This tab is about to be navigated to the extension's gate page by the
+  // extension itself - nothing left to do here.
+}
+
+let activeTickHandle=null;
+async function loadActiveBlock(){
+  if(!myUserId) return;
+  const { data } = await sb.from('focus_lock_sessions')
+    .select('*').eq('user_id', myUserId).eq('active', true).maybeSingle();
+  const card=document.getElementById('activeBlockCard');
+  const startCard=document.getElementById('startCard');
+  if(!data){
+    card.style.display='none';
+    startCard.style.display='block';
+    if(activeTickHandle){ clearInterval(activeTickHandle); activeTickHandle=null; }
+    return;
+  }
+  startCard.style.display='none';
+  card.style.display='block';
+  document.getElementById('abName').textContent=data.block_name || 'Block';
+  const modeLabel = data.mode==='whitelist' ? 'Allowing only' : 'Blocking';
+  let sitesLine = `${modeLabel}: ${(data.sites||[]).join(', ')}`;
+  if(data.youtube_rules && Array.isArray(data.youtube_rules.channels) && data.youtube_rules.channels.length){
+    const ytLabel = data.youtube_rules.mode==='allow' ? 'allowing only' : 'blocking';
+    sitesLine += ` · YouTube ${ytLabel}: ${data.youtube_rules.channels.map(c=>c.label||c.id).join(', ')}`;
+  }
+  document.getElementById('abSites').textContent=sitesLine;
+  document.getElementById('abVerifiedPill').innerHTML = data.verified
+    ? '<span class="verified-pill">✓ Verified</span>'
+    : '<span class="unverified-pill">Unverified — unlocked early</span>';
+
+  function tick(){
+    const el=document.getElementById('abTimer');
+    if(!el) return;
+    if(data.unlimited || !data.ends_at){
+      const secs=Math.floor((Date.now()-new Date(data.started_at).getTime())/1000);
+      el.textContent = fmtTime(secs) + ' elapsed';
+    } else {
+      const remain=Math.max(0, Math.floor((new Date(data.ends_at).getTime()-Date.now())/1000));
+      el.textContent = remain>0 ? fmtTime(remain)+' left' : 'Ending…';
+    }
+  }
+  tick();
+  if(activeTickHandle) clearInterval(activeTickHandle);
+  activeTickHandle=setInterval(tick, 1000);
+}
+
+/* ── presets ── */
+async function loadPresets(){
+  const { data } = await sb.from('focus_lock_presets').select('*').eq('user_id', myUserId).order('created_at',{ascending:false});
+  const list=document.getElementById('presetList');
+  if(!data || !data.length){ list.innerHTML='<p class="empty-note">No saved blocks yet.</p>'; return; }
+  list.innerHTML=data.map(p=>`
+    <div class="preset-row">
+      <div>
+        <div class="preset-name">${escHtml(p.name)}</div>
+        <div class="preset-sites">${p.mode==='whitelist'?'Allow only':'Block'}: ${escHtml((p.sites||[]).join(', '))} · ${p.duration_minutes ? p.duration_minutes+'m' : 'unlimited'}</div>
+      </div>
+      <div class="preset-actions">
+        <button class="btn btn-gold btn-sm" onclick="startPreset('${p.id}')">Start</button>
+        <button class="btn btn-ghost btn-sm" onclick="deletePreset('${p.id}')">Remove</button>
+      </div>
+    </div>`).join('');
+}
+
+async function saveAsPreset(){
+  if(!myUserId) return;
+  const name=document.getElementById('blockName').value.trim();
+  if(!name){ alert('Give it a name first.'); return; }
+  if(!pendingSites.length){ alert('Add at least one site.'); return; }
+  await sb.from('focus_lock_presets').insert({
+    user_id: myUserId, name, sites: pendingSites,
+    mode: pendingMode, youtube_rules: currentYoutubeRulesPayload(),
+    duration_minutes: pendingMinutes>0 ? pendingMinutes : null
+  });
+  pendingSites=[]; renderSiteChips(); resetYtPanel();
+  document.getElementById('blockName').value='';
+  loadPresets();
+}
+
+async function startPreset(id){
+  const { data: preset } = await sb.from('focus_lock_presets').select('*').eq('id', id).maybeSingle();
+  if(!preset) return;
+  const endsAt = preset.duration_minutes ? new Date(Date.now()+preset.duration_minutes*60000).toISOString() : null;
+  const presetMode = preset.mode==='whitelist' ? 'whitelist' : 'blacklist';
+  const { error } = await sb.from('focus_lock_sessions').insert({
+    user_id: myUserId, block_name: preset.name, sites: preset.sites,
+    mode: presetMode, youtube_rules: preset.youtube_rules || null,
+    ends_at: endsAt, unlimited: !preset.duration_minutes, source: 'web'
+  });
+  if(error){
+    if(error.code==='23505') alert('You already have a block running.');
+    else alert(error.message);
+    return;
+  }
+  sendToExtension({ type:'RM2_START_SESSION', payload:{ blockName:preset.name, sites:preset.sites, durationMinutes: preset.duration_minutes || null, mode:presetMode, youtubeRules: preset.youtube_rules || null } });
+  loadActiveBlock();
+}
+
+async function deletePreset(id){
+  await sb.from('focus_lock_presets').delete().eq('id', id);
+  loadPresets();
+}
+
+/* ── extension connection / sync tokens ── */
+async function sha256Hex(input){
+  const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+// Runs on every page load. If the extension is installed but has never
+// been connected, this pairs it silently - no click needed. If it's
+// already connected, this is just a cheap no-op status check.
+async function autoConnectExtension(){
+  const status = await sendToExtension({ type:'RM2_STATUS' });
+  const btn = document.getElementById('connectBtn');
+  const explainer = document.getElementById('connectExplainer');
+  const downloadBox = document.getElementById('downloadExtensionBox');
+
+  if(!status.ok || !status.installed){
+    // Not installed / not this browser / blocked from reaching it - offer
+    // the manual download+load-unpacked path since it isn't on the Chrome
+    // Web Store yet.
+    if(downloadBox) downloadBox.style.display='block';
+    if(btn) btn.style.display='none';
+    if(explainer) explainer.textContent="Extension not detected in this browser.";
+    return;
+  }
+
+  if(downloadBox) downloadBox.style.display='none';
+
+  if(status.connected){
+    if(btn) btn.style.display='none';
+    if(explainer) explainer.textContent='Extension connected — blocks you start here apply automatically.';
+    return;
+  }
+
+  if(btn) btn.style.display='inline-block';
+  // Installed, never paired - connect it now without waiting for a click.
+  await generateSyncToken('Extension (auto-connected)');
+}
+
+async function showTokenLabelPrompt(){
+  const label=prompt('Label this device (e.g. "Chrome on laptop"):','Chrome');
+  if(label===null) return;
+  await generateSyncToken(label||'Extension');
+}
+// The extension's manifest.json pins this ID via the "key" field so it
+// never changes across reinstalls. If you rebuild the extension with a
+// different key, regenerate this to match (see manifest.json comments).
+const RM2_EXTENSION_ID = 'knofmgookchmjekaefloaljcamjlbnmp';
+
+// Wraps chrome.runtime.sendMessage in a promise with a timeout, since an
+// uninstalled/absent extension just never calls back rather than erroring.
+function sendToExtension(msg, timeoutMs=1500){
+  return new Promise((resolve)=>{
+    if(typeof chrome==='undefined' || !chrome.runtime || !chrome.runtime.sendMessage){
+      resolve({ok:false, reason:'no_extension_api'}); return;
+    }
+    let done=false;
+    const timer=setTimeout(()=>{ if(!done){ done=true; resolve({ok:false, reason:'timeout'}); } }, timeoutMs);
+    try{
+      chrome.runtime.sendMessage(RM2_EXTENSION_ID, msg, (response)=>{
+        if(done) return;
+        done=true; clearTimeout(timer);
+        if(chrome.runtime.lastError){ resolve({ok:false, reason:chrome.runtime.lastError.message}); return; }
+        resolve(response || {ok:false, reason:'empty_response'});
+      });
+    }catch(e){
+      if(!done){ done=true; clearTimeout(timer); resolve({ok:false, reason:e.message}); }
+    }
+  });
+}
+
+async function generateSyncToken(label){
+  const raw = crypto.randomUUID()+crypto.randomUUID();
+  const hash = await sha256Hex(raw);
+  const { error } = await sb.from('extension_sync_tokens').insert({ token_hash: hash, user_id: myUserId, label });
+  if(error){ alert(error.message); return; }
+
+  document.getElementById('newTokenBox').style.display='block';
+  const pushResult = await sendToExtension({ type:'RM2_CONNECT', token: raw });
+
+  if(pushResult.ok){
+    document.getElementById('connectSuccess').style.display='block';
+    document.getElementById('manualFallback').style.display='none';
+    const btn = document.getElementById('connectBtn');
+    const explainer = document.getElementById('connectExplainer');
+    if(btn) btn.style.display='none';
+    if(explainer) explainer.textContent='Extension connected — blocks you start here apply automatically.';
+  } else {
+    // Extension not installed / different browser / origin not in
+    // externally_connectable yet - fall back to the old copy/paste path.
+    document.getElementById('connectSuccess').style.display='none';
+    document.getElementById('manualFallback').style.display='block';
+    document.getElementById('newTokenValue').value = raw;
+    const hint = document.getElementById('apiBaseHint');
+    if(hint) hint.textContent = REVM2_CONFIG.SUPABASE_URL + '/functions/v1';
+  }
+  loadDevices();
+}
+function copyToken(){
+  const el=document.getElementById('newTokenValue');
+  el.select();
+  navigator.clipboard.writeText(el.value).catch(()=>document.execCommand('copy'));
+}
+async function loadDevices(){
+  const { data } = await sb.from('extension_sync_tokens').select('token_hash,label,created_at,last_seen_at').eq('user_id', myUserId).order('created_at',{ascending:false});
+  const wrap=document.getElementById('deviceList');
+  if(!data || !data.length){ wrap.innerHTML=''; return; }
+  wrap.innerHTML='<div class="bl-card-title" style="margin-top:0.6rem;">Connected devices</div>' + data.map(d=>`
+    <div class="device-row">
+      <div>${escHtml(d.label||'Extension')}<div class="device-meta">Connected ${fmtDateShort(d.created_at.split('T')[0])}${d.last_seen_at ? ' · last synced '+fmtDateShort(d.last_seen_at.split('T')[0]) : ' · never synced yet'}</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="revokeToken('${d.token_hash}')">Revoke</button>
+    </div>`).join('');
+}
+async function revokeToken(hash){
+  if(!confirm('Disconnect this device? It will stop syncing.')) return;
+  await sb.from('extension_sync_tokens').delete().eq('token_hash', hash);
+  loadDevices();
+}
+</script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>
