@@ -22,6 +22,13 @@
 .site-chip button:hover{color:var(--danger);}
 .site-add-row{display:flex;gap:0.5rem;}
 .site-add-row input{flex:1;}
+.mode-opts{display:flex;gap:0.5rem;flex-wrap:wrap;}
+.mode-opt{padding:0.5rem 0.9rem;border:1px solid var(--border2);background:var(--s1);color:var(--muted);font-family:var(--font);font-size:0.78rem;font-weight:600;cursor:pointer;letter-spacing:0.03em;text-align:left;}
+.mode-opt:hover{border-color:var(--gold-border);color:var(--text);}
+.mode-opt.active{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+.yt-panel{margin-top:0.9rem;padding:0.9rem;background:var(--s1);border:1px solid var(--border);}
+.yt-panel-title{font-size:0.7rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text);margin-bottom:0.3rem;}
+.yt-panel-hint{font-size:0.72rem;color:var(--muted);margin-bottom:0.7rem;}
 .dur-opts{display:flex;flex-wrap:wrap;gap:0.5rem;}
 .dur-opt{padding:0.45rem 0.9rem;border:1px solid var(--border2);background:var(--s1);color:var(--muted);font-family:var(--font);font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.03em;}
 .dur-opt:hover{border-color:var(--gold-border);color:var(--text);}
@@ -101,12 +108,31 @@
         </div>
 
         <div class="bl-field">
-          <label>Sites to block</label>
+          <label id="sitesFieldLabel">Sites to block</label>
+          <div class="mode-opts" style="margin-bottom:0.6rem;">
+            <button type="button" class="mode-opt active" data-mode="blacklist" onclick="pickMode('blacklist',this)">Block these sites</button>
+            <button type="button" class="mode-opt" data-mode="whitelist" onclick="pickMode('whitelist',this)">Allow only these sites</button>
+          </div>
           <div class="site-add-row">
             <input type="text" id="siteInput" placeholder="youtube.com" onkeydown="if(event.key==='Enter'){event.preventDefault();addSite();}">
             <button class="btn btn-ghost btn-sm" onclick="addSite()">Add</button>
           </div>
           <div class="site-chips" id="siteChips"></div>
+        </div>
+
+        <!-- Per-channel YouTube rules - only shown once youtube.com is one of the sites above -->
+        <div class="bl-field yt-panel" id="ytPanel" style="display:none;">
+          <div class="yt-panel-title">YouTube channels</div>
+          <div class="yt-panel-hint" id="ytPanelHint">Optional — restrict which channels are reachable on YouTube during this block, instead of blocking or allowing all of it.</div>
+          <div class="mode-opts" style="margin-bottom:0.6rem;">
+            <button type="button" class="mode-opt active" data-yt-mode="block" onclick="pickYtMode('block',this)">Block specific channels</button>
+            <button type="button" class="mode-opt" data-yt-mode="allow" onclick="pickYtMode('allow',this)">Allow only these channels</button>
+          </div>
+          <div class="site-add-row">
+            <input type="text" id="ytChannelInput" placeholder="@channelhandle or youtube.com/@channelhandle" onkeydown="if(event.key==='Enter'){event.preventDefault();addYtChannel();}">
+            <button class="btn btn-ghost btn-sm" onclick="addYtChannel()">Add</button>
+          </div>
+          <div class="site-chips" id="ytChannelChips"></div>
         </div>
 
         <div class="bl-field">
@@ -199,10 +225,16 @@ function normalizeDomain(input){
 
 /* ── site chips ── */
 let pendingSites=[];
+let pendingMode='blacklist'; // 'blacklist' = block these sites, 'whitelist' = allow only these sites
+function hasYoutubeSite(){
+  return pendingSites.some(s=>s==='youtube.com'||s==='youtu.be'||s.endsWith('.youtube.com'));
+}
 function renderSiteChips(){
   const wrap=document.getElementById('siteChips');
-  if(!pendingSites.length){ wrap.innerHTML=''; return; }
-  wrap.innerHTML=pendingSites.map((s,i)=>`<span class="site-chip">${escHtml(s)}<button onclick="removeSite(${i})">✕</button></span>`).join('');
+  if(!pendingSites.length){ wrap.innerHTML=''; } else {
+    wrap.innerHTML=pendingSites.map((s,i)=>`<span class="site-chip">${escHtml(s)}<button onclick="removeSite(${i})">✕</button></span>`).join('');
+  }
+  document.getElementById('ytPanel').style.display = hasYoutubeSite() ? 'block' : 'none';
 }
 function addSite(){
   const input=document.getElementById('siteInput');
@@ -213,6 +245,63 @@ function addSite(){
   renderSiteChips();
 }
 function removeSite(i){ pendingSites.splice(i,1); renderSiteChips(); }
+
+function pickMode(mode, btn){
+  pendingMode = mode==='whitelist' ? 'whitelist' : 'blacklist';
+  document.querySelectorAll('#startCard .mode-opts [data-mode]').forEach(b=>b.classList.toggle('active', b===btn));
+  const label=document.getElementById('sitesFieldLabel');
+  const input=document.getElementById('siteInput');
+  if(pendingMode==='whitelist'){
+    label.textContent='Sites to allow';
+    input.placeholder='notion.so';
+  } else {
+    label.textContent='Sites to block';
+    input.placeholder='youtube.com';
+  }
+}
+
+/* ── YouTube per-channel rules ── */
+let pendingYtMode='block'; // 'block' = these channels are off-limits, 'allow' = only these channels reachable
+let pendingYtChannels=[]; // [{id,label}]
+function normalizeChannelRef(input){
+  let v=(input||'').trim().toLowerCase();
+  if(!v) return '';
+  v=v.replace(/^https?:\/\/(www\.|m\.)?youtube\.com\//,'');
+  v=v.replace(/\/$/,'').split(/[?#]/)[0];
+  v=v.replace(/^channel\//,'').replace(/^c\//,'').replace(/^user\//,'');
+  return v;
+}
+function pickYtMode(mode, btn){
+  pendingYtMode = mode==='allow' ? 'allow' : 'block';
+  document.querySelectorAll('#ytPanel .mode-opts [data-yt-mode]').forEach(b=>b.classList.toggle('active', b===btn));
+  document.getElementById('ytPanelHint').textContent = pendingYtMode==='allow'
+    ? 'Only these channels stay reachable on YouTube — the home feed, search, Shorts, and every other channel get blocked.'
+    : 'These channels get blocked on YouTube — everything else (home feed, search, other channels) stays reachable.';
+}
+function renderYtChips(){
+  const wrap=document.getElementById('ytChannelChips');
+  wrap.innerHTML = pendingYtChannels.map((c,i)=>`<span class="site-chip">${escHtml(c.label)}<button onclick="removeYtChannel(${i})">✕</button></span>`).join('');
+}
+function addYtChannel(){
+  const input=document.getElementById('ytChannelInput');
+  const raw=input.value.trim();
+  const id=normalizeChannelRef(raw);
+  if(!id) return;
+  if(!pendingYtChannels.some(c=>c.id===id)) pendingYtChannels.push({ id, label: raw.startsWith('@')||id.startsWith('@') ? (id.startsWith('@')?id:'@'+id) : id });
+  input.value='';
+  renderYtChips();
+}
+function removeYtChannel(i){ pendingYtChannels.splice(i,1); renderYtChips(); }
+function resetYtPanel(){
+  pendingYtChannels=[]; pendingYtMode='block';
+  renderYtChips();
+  document.querySelectorAll('#ytPanel .mode-opts [data-yt-mode]').forEach(b=>b.classList.toggle('active', b.dataset.ytMode==='block'));
+}
+function currentYoutubeRulesPayload(){
+  return (hasYoutubeSite() && pendingYtChannels.length)
+    ? { mode: pendingYtMode, channels: pendingYtChannels }
+    : null;
+}
 
 /* ── duration picker ── */
 let pendingMinutes=0; // 0 = unlimited
@@ -232,26 +321,30 @@ function useCustomDuration(){
 async function startBlock(){
   if(!myUserId) return;
   const name=document.getElementById('blockName').value.trim() || 'Block';
-  if(!pendingSites.length){ alert('Add at least one site to block.'); return; }
+  if(!pendingSites.length){ alert(pendingMode==='whitelist' ? 'Add at least one site to allow.' : 'Add at least one site to block.'); return; }
 
   const endsAt = pendingMinutes>0 ? new Date(Date.now()+pendingMinutes*60000).toISOString() : null;
+  const youtubeRules = currentYoutubeRulesPayload();
   const { error } = await sb.from('focus_lock_sessions').insert({
     user_id: myUserId,
     block_name: name,
     sites: pendingSites,
+    mode: pendingMode,
+    youtube_rules: youtubeRules,
     ends_at: endsAt,
     unlimited: pendingMinutes===0,
     source: 'web'
   });
   if(error){
     if(error.code==='23505') alert("You already have a block running. Stop it first, or wait for it to finish.");
+    else if(error.code==='42703') alert("Could not start block: the database is missing the 'mode'/'youtube_rules' columns. Run the migration in supabase-migration.sql, then try again.");
     else alert(error.message || 'Could not start block.');
     return;
   }
-  const startedSites=pendingSites, startedMinutes=pendingMinutes;
-  pendingSites=[]; renderSiteChips();
+  const startedSites=pendingSites, startedMinutes=pendingMinutes, startedMode=pendingMode;
+  pendingSites=[]; renderSiteChips(); resetYtPanel();
   document.getElementById('blockName').value='';
-  sendToExtension({ type:'RM2_START_SESSION', payload:{ blockName:name, sites:startedSites, durationMinutes: startedMinutes>0 ? startedMinutes : null } });
+  sendToExtension({ type:'RM2_START_SESSION', payload:{ blockName:name, sites:startedSites, durationMinutes: startedMinutes>0 ? startedMinutes : null, mode:startedMode, youtubeRules } });
   loadActiveBlock();
 }
 
@@ -284,7 +377,13 @@ async function loadActiveBlock(){
   startCard.style.display='none';
   card.style.display='block';
   document.getElementById('abName').textContent=data.block_name || 'Block';
-  document.getElementById('abSites').textContent=(data.sites||[]).join(', ');
+  const modeLabel = data.mode==='whitelist' ? 'Allowing only' : 'Blocking';
+  let sitesLine = `${modeLabel}: ${(data.sites||[]).join(', ')}`;
+  if(data.youtube_rules && Array.isArray(data.youtube_rules.channels) && data.youtube_rules.channels.length){
+    const ytLabel = data.youtube_rules.mode==='allow' ? 'allowing only' : 'blocking';
+    sitesLine += ` · YouTube ${ytLabel}: ${data.youtube_rules.channels.map(c=>c.label||c.id).join(', ')}`;
+  }
+  document.getElementById('abSites').textContent=sitesLine;
   document.getElementById('abVerifiedPill').innerHTML = data.verified
     ? '<span class="verified-pill">✓ Verified</span>'
     : '<span class="unverified-pill">Unverified — unlocked early</span>';
@@ -314,7 +413,7 @@ async function loadPresets(){
     <div class="preset-row">
       <div>
         <div class="preset-name">${escHtml(p.name)}</div>
-        <div class="preset-sites">${escHtml((p.sites||[]).join(', '))} · ${p.duration_minutes ? p.duration_minutes+'m' : 'unlimited'}</div>
+        <div class="preset-sites">${p.mode==='whitelist'?'Allow only':'Block'}: ${escHtml((p.sites||[]).join(', '))} · ${p.duration_minutes ? p.duration_minutes+'m' : 'unlimited'}</div>
       </div>
       <div class="preset-actions">
         <button class="btn btn-gold btn-sm" onclick="startPreset('${p.id}')">Start</button>
@@ -330,9 +429,10 @@ async function saveAsPreset(){
   if(!pendingSites.length){ alert('Add at least one site.'); return; }
   await sb.from('focus_lock_presets').insert({
     user_id: myUserId, name, sites: pendingSites,
+    mode: pendingMode, youtube_rules: currentYoutubeRulesPayload(),
     duration_minutes: pendingMinutes>0 ? pendingMinutes : null
   });
-  pendingSites=[]; renderSiteChips();
+  pendingSites=[]; renderSiteChips(); resetYtPanel();
   document.getElementById('blockName').value='';
   loadPresets();
 }
@@ -341,8 +441,10 @@ async function startPreset(id){
   const { data: preset } = await sb.from('focus_lock_presets').select('*').eq('id', id).maybeSingle();
   if(!preset) return;
   const endsAt = preset.duration_minutes ? new Date(Date.now()+preset.duration_minutes*60000).toISOString() : null;
+  const presetMode = preset.mode==='whitelist' ? 'whitelist' : 'blacklist';
   const { error } = await sb.from('focus_lock_sessions').insert({
     user_id: myUserId, block_name: preset.name, sites: preset.sites,
+    mode: presetMode, youtube_rules: preset.youtube_rules || null,
     ends_at: endsAt, unlimited: !preset.duration_minutes, source: 'web'
   });
   if(error){
@@ -350,7 +452,7 @@ async function startPreset(id){
     else alert(error.message);
     return;
   }
-  sendToExtension({ type:'RM2_START_SESSION', payload:{ blockName:preset.name, sites:preset.sites, durationMinutes: preset.duration_minutes || null } });
+  sendToExtension({ type:'RM2_START_SESSION', payload:{ blockName:preset.name, sites:preset.sites, durationMinutes: preset.duration_minutes || null, mode:presetMode, youtubeRules: preset.youtube_rules || null } });
   loadActiveBlock();
 }
 
