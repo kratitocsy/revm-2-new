@@ -94,8 +94,34 @@ async function requireAuth(){
     if(typeof sb === 'undefined') { window.location.href='login.html'; return null; }
     const {data:{session}} = await sb.auth.getSession();
     if(!session){ window.location.href='login.html'; return null; }
+    autoConnectDesktop(session.user.id); // no-op outside the desktop app
     return session;
   }catch(e){ window.location.href='login.html'; return null; }
+}
+
+// Silently pairs this desktop app instance with the signed-in account, the
+// same way autoConnectExtension() (in blocks.html) pairs the browser
+// extension - fires once per login, no click needed. Completely inert in
+// a normal browser tab; window.__TAURI__ only exists when this page is
+// loaded inside the desktop app's window.
+async function autoConnectDesktop(userId){
+  if(typeof window.__TAURI__ === 'undefined') return;
+  try{
+    const invoke = window.__TAURI__.core.invoke;
+    const existing = await invoke('get_token').catch(()=>'');
+    if(existing) return; // already paired on this device
+
+    const raw = crypto.randomUUID()+crypto.randomUUID();
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+    const hash = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+
+    const { error } = await sb.from('extension_sync_tokens').insert({
+      token_hash: hash, user_id: userId, label: 'Desktop app'
+    });
+    if(error) return; // pairing must never break the page
+
+    await invoke('save_token', { token: raw });
+  }catch(e){ /* pairing must never break the page */ }
 }
 
 /* ── ANALYTICS / EVENT LOGGING ───────────────────────────── */
