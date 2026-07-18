@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RevM2</title>
+    <script type="module" src="/main.js" defer></script>
+  </head>
+  <body>
+    <main class="container">
+      <h1>RevM2</h1>
+      <p id="status-text">Checking...</p>
+      <form id="connect-form" class="row" style="display:none">
+        <input id="token-input" placeholder="Paste sync token from your dashboard" />
+        <button type="submit">Connect</button>
+      </form>
+      <button id="disconnect-btn" style="display:none">Disconnect</button>
+    </main>
+  </body>
+</html>
