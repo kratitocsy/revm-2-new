@@ -1,0 +1,43 @@
+name: Build Desktop App
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/build-desktop.yml'
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "desktop/src-tauri -> target"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Build Tauri app
+        run: npm run tauri build
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: revm2-desktop-windows
+          path: |
+            desktop/src-tauri/target/release/bundle/**
+            desktop/src-tauri/target/release/revm2-desktop.exe
