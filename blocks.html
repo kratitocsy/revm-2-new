@@ -449,6 +449,7 @@ async function startBlock(){
   const startedSites=pendingSites, startedMinutes=pendingMinutes, startedMode=pendingMode;
   pendingSites=[]; renderSiteChips(); resetYtPanel();
   document.getElementById('blockName').value='';
+  try{ await window.__TAURI__.core.invoke('set_session_active', {active:true}); }catch(e){}
   sendToExtension({ type:'RM2_START_SESSION', payload:{ blockName:name, sites:startedSites, durationMinutes: startedMinutes>0 ? startedMinutes : null, mode:startedMode, youtubeRules } });
   loadActiveBlock();
 }
@@ -482,6 +483,7 @@ async function loadActiveBlock(){
   if(!myUserId) return;
   const { data } = await sb.from('focus_lock_sessions')
     .select('*').eq('user_id', myUserId).eq('active', true).maybeSingle();
+  try{ await window.__TAURI__.core.invoke('set_session_active', {active: !!data}); }catch(e){}
   const card=document.getElementById('activeBlockCard');
   const startCard=document.getElementById('startCard');
   if(!data){
