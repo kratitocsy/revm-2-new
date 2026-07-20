@@ -842,7 +842,7 @@ async function startRemoteSession(subject){
     if(error) throw error;
     remoteSessionId=data.id;
     Store.set(FT_ACTIVE_KEY,{id:data.id,group_id:data.group_id,subject:data.subject,started_at:data.started_at,paused_at:null,accumPaused:0});
-    try{ await window.__TAURI__.core.invoke('set_session_active', {active:true}); }catch(e){}
+    try{ await window.__TAURI__.core.invoke('set_session_active', {active:true}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
     document.getElementById('timerLiveTag').style.display='block';
   }catch(e){
     console.warn('RevMGrid sync unavailable, timer still runs locally:',e);
@@ -856,7 +856,7 @@ async function stopRemoteSession(){
   catch(e){ console.warn('stop remote session failed',e); }
   remoteSessionId=null;
   Store.del(FT_ACTIVE_KEY);
-  try{ await window.__TAURI__.core.invoke('set_session_active', {active:false}); }catch(e){}
+  try{ await window.__TAURI__.core.invoke('set_session_active', {active:false}); }catch(e){ alert('RM2 desktop invoke error (stop): '+(e&&e.message||e)); }
   document.getElementById('timerLiveTag').style.display='none';
 }
 
