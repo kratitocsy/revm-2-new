@@ -1,4 +1,8 @@
 mod browser_guard;
+#[tauri::command]
+fn greet(name: String) -> String {
+    format!("Hello, {}! You've been greeted from Rust!", name)
+}
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
