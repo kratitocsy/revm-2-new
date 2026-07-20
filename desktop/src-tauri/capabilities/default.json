@@ -8,6 +8,10 @@
   "permissions": [
     "core:default",
     "opener:default",
-    "store:default"
+    "store:default",
+    "allow-greet",
+    "allow-set-session-active",
+    "allow-debug-browser-status",
+    "allow-set-tray-status"
   ]
 }
