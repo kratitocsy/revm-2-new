@@ -126,17 +126,21 @@ pub fn unprotected_running_browsers() -> Vec<&'static str> {
     result
 }
 
-// Kills every running process matching any supported browser that doesn't
-// have the extension - called only while a focus session is active.
-// Only reports a browser as "killed" if kill() actually reported success -
-// previously this assumed every kill() call worked without checking.
-pub fn kill_unprotected_browsers() -> Vec<&'static str> {
+// Kills every running process matching any of the given browser names
+// (as returned by unprotected_running_browsers/supported_browsers -
+// e.g. "Chrome", "Edge"), regardless of current extension state. This
+// is the low-level primitive; deciding WHICH names to pass in (e.g.
+// after a grace period) lives in lib.rs's guard loop, not here - this
+// module only knows how to detect and how to kill, not how long to wait.
+pub fn kill_browsers_by_name(names: &[&'static str]) -> Vec<&'static str> {
     let mut sys = System::new_all();
     sys.refresh_processes();
 
     let mut killed = Vec::new();
     for target in supported_browsers() {
-        if is_extension_installed(&target) { continue; }
+        if !names.contains(&target.name) {
+            continue;
+        }
         let pids: Vec<Pid> = sys
             .processes()
             .iter()
@@ -161,4 +165,15 @@ pub fn kill_unprotected_browsers() -> Vec<&'static str> {
         }
     }
     killed
+}
+
+// Kills every running process matching any supported browser that doesn't
+// have the extension, with NO grace period - kept for the debug/manual
+// path (e.g. a future "close now" button); the guard loop itself uses
+// unprotected_running_browsers() + kill_browsers_by_name() so it can
+// apply the 60s grace period in between. Only reports a browser as
+// "killed" if kill() actually reported success.
+pub fn kill_unprotected_browsers() -> Vec<&'static str> {
+    let unprotected = unprotected_running_browsers();
+    kill_browsers_by_name(&unprotected)
 }
