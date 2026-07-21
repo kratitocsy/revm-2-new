@@ -159,6 +159,24 @@
           <div class="site-chips" id="ytChannelChips"></div>
         </div>
 
+        <!-- Native apps (desktop only - extension can't reach these). Only
+             shown/usable when running inside the RevM2 desktop app; a plain
+             browser tab has no way to see or close local processes. -->
+        <div class="bl-field yt-panel" id="appsPanel" style="display:none;">
+          <div class="yt-panel-title">Apps to block</div>
+          <div class="yt-panel-hint">Optional — close these while this block is active. Only the desktop app can enforce this, not the browser extension.</div>
+          <div class="site-add-row">
+            <input type="text" id="appInput" placeholder="e.g. steam.exe" onkeydown="if(event.key==='Enter'){event.preventDefault();addApp();}">
+            <button class="btn btn-ghost btn-sm" onclick="addApp()">Add</button>
+            <button class="btn btn-ghost btn-sm" onclick="refreshRunningApps()">Pick from running apps</button>
+          </div>
+          <div class="site-chips" id="appChips"></div>
+          <div id="runningAppsPicker" style="display:none;margin-top:0.6rem;max-height:180px;overflow-y:auto;border:1px solid var(--border2);padding:0.5rem;"></div>
+        </div>
+        <div class="bl-field yt-panel" id="appsPanelUnavailable" style="display:none;">
+          <div class="yt-panel-hint">Open this page inside the RevM2 desktop app to also block specific apps during this session.</div>
+        </div>
+
         <div class="bl-field">
           <label>Duration</label>
           <div class="dur-opts" id="durOpts">
@@ -303,6 +321,7 @@ requireAuth().then(session=>{
   if(!session) return;
   myUserId=session.user.id;
   logEvent('feature_used','blocks');
+  initAppsPanel();
   loadActiveBlock();
   loadPresets();
   loadDevices();
@@ -408,6 +427,66 @@ function currentYoutubeRulesPayload(){
     : null;
 }
 
+/* ── native apps (desktop only) ──
+   Only the Tauri-wrapped window has window.__TAURI__ - a plain browser
+   tab visiting this same URL doesn't, and has no way to enumerate or
+   close local processes anyway, so the whole panel is hidden there. */
+let pendingApps=[]; // process names, e.g. "steam.exe"
+function isDesktopApp(){
+  return typeof window.__TAURI__ !== 'undefined' && !!window.__TAURI__.core;
+}
+function initAppsPanel(){
+  const available = isDesktopApp();
+  document.getElementById('appsPanel').style.display = available ? 'block' : 'none';
+  document.getElementById('appsPanelUnavailable').style.display = available ? 'none' : 'block';
+}
+function renderAppChips(){
+  const wrap=document.getElementById('appChips');
+  wrap.innerHTML = pendingApps.map((a,i)=>`<span class="site-chip">${escHtml(a)}<button onclick="removeApp(${i})">✕</button></span>`).join('');
+}
+function addApp(name){
+  const input=document.getElementById('appInput');
+  const value=(name || input.value || '').trim();
+  if(!value) return;
+  if(!pendingApps.includes(value)) pendingApps.push(value);
+  input.value='';
+  renderAppChips();
+}
+function removeApp(i){ pendingApps.splice(i,1); renderAppChips(); }
+function resetAppsPanel(){ pendingApps=[]; renderAppChips(); document.getElementById('runningAppsPicker').style.display='none'; }
+
+async function refreshRunningApps(){
+  if(!isDesktopApp()) return;
+  const picker=document.getElementById('runningAppsPicker');
+  picker.style.display='block';
+  picker.innerHTML='<div class="empty-note">Loading…</div>';
+  try{
+    const apps = await window.__TAURI__.core.invoke('list_running_apps');
+    if(!apps.length){ picker.innerHTML='<div class="empty-note">No apps found.</div>'; return; }
+    picker.innerHTML = apps.map(a=>`
+      <label style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0;font-size:0.8rem;">
+        <input type="checkbox" ${pendingApps.includes(a.name)?'checked':''} onchange="toggleAppPick('${escHtml(a.name).replace(/'/g,"\\'")}', this.checked)">
+        ${escHtml(a.name)}
+      </label>`).join('');
+  }catch(e){
+    picker.innerHTML='<div class="empty-note">Could not list running apps.</div>';
+  }
+}
+function toggleAppPick(name, checked){
+  if(checked){ if(!pendingApps.includes(name)) pendingApps.push(name); }
+  else { pendingApps = pendingApps.filter(a=>a!==name); }
+  renderAppChips();
+}
+
+// Called after a block/session actually starts (or when the poller sees
+// one is already active) so the desktop app's own enforcement list
+// matches what this block specifies - a no-op in a plain browser tab.
+async function syncBlockedAppsToDesktop(apps){
+  if(!isDesktopApp()) return;
+  try{ await window.__TAURI__.core.invoke('set_blocked_apps', {apps: apps||[]}); }
+  catch(e){ console.error('RM2 desktop invoke error (set_blocked_apps):', e); }
+}
+
 /* ── duration picker ── */
 let pendingMinutes=0; // 0 = unlimited
 function pickDuration(mins, btn){
@@ -436,6 +515,7 @@ async function startBlock(){
     sites: pendingSites,
     mode: pendingMode,
     youtube_rules: youtubeRules,
+    apps: pendingApps,
     ends_at: endsAt,
     unlimited: pendingMinutes===0,
     source: 'web'
@@ -446,10 +526,11 @@ async function startBlock(){
     else alert(error.message || 'Could not start block.');
     return;
   }
-  const startedSites=pendingSites, startedMinutes=pendingMinutes, startedMode=pendingMode;
-  pendingSites=[]; renderSiteChips(); resetYtPanel();
+  const startedSites=pendingSites, startedMinutes=pendingMinutes, startedMode=pendingMode, startedApps=pendingApps;
+  pendingSites=[]; renderSiteChips(); resetYtPanel(); resetAppsPanel();
   document.getElementById('blockName').value='';
-  try{ await window.__TAURI__.core.invoke('set_session_active', {active:true}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
+  try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
+  await syncBlockedAppsToDesktop(startedApps);
   sendToExtension({ type:'RM2_START_SESSION', payload:{ blockName:name, sites:startedSites, durationMinutes: startedMinutes>0 ? startedMinutes : null, mode:startedMode, youtubeRules } });
   loadActiveBlock();
 }
@@ -490,6 +571,7 @@ async function loadActiveBlock(){
     card.style.display='none';
     startCard.style.display='block';
     if(activeTickHandle){ clearInterval(activeTickHandle); activeTickHandle=null; }
+    syncBlockedAppsToDesktop([]);
     return;
   }
   startCard.style.display='none';
@@ -501,7 +583,11 @@ async function loadActiveBlock(){
     const ytLabel = data.youtube_rules.mode==='allow' ? 'allowing only' : 'blocking';
     sitesLine += ` · YouTube ${ytLabel}: ${data.youtube_rules.channels.map(c=>c.label||c.id).join(', ')}`;
   }
+  if(data.apps && data.apps.length){
+    sitesLine += ` · Apps: ${data.apps.join(', ')}`;
+  }
   document.getElementById('abSites').textContent=sitesLine;
+  syncBlockedAppsToDesktop(data.apps || []); // covers a block started elsewhere (another tab/device) reaching this desktop instance
   document.getElementById('abVerifiedPill').innerHTML = data.verified
     ? '<span class="verified-pill">✓ Verified</span>'
     : '<span class="unverified-pill">Unverified — unlocked early</span>';
@@ -531,7 +617,7 @@ async function loadPresets(){
     <div class="preset-row">
       <div>
         <div class="preset-name">${escHtml(p.name)}</div>
-        <div class="preset-sites">${p.mode==='whitelist'?'Allow only':'Block'}: ${escHtml((p.sites||[]).join(', '))} · ${p.duration_minutes ? p.duration_minutes+'m' : 'unlimited'}</div>
+        <div class="preset-sites">${p.mode==='whitelist'?'Allow only':'Block'}: ${escHtml((p.sites||[]).join(', '))} · ${p.duration_minutes ? p.duration_minutes+'m' : 'unlimited'}${(p.apps&&p.apps.length) ? ` · ${p.apps.length} app${p.apps.length===1?'':'s'} blocked` : ''}</div>
       </div>
       <div class="preset-actions">
         <button class="btn btn-gold btn-sm" onclick="startPreset('${p.id}')">Start</button>
@@ -548,9 +634,10 @@ async function saveAsPreset(){
   await sb.from('focus_lock_presets').insert({
     user_id: myUserId, name, sites: pendingSites,
     mode: pendingMode, youtube_rules: currentYoutubeRulesPayload(),
+    apps: pendingApps,
     duration_minutes: pendingMinutes>0 ? pendingMinutes : null
   });
-  pendingSites=[]; renderSiteChips(); resetYtPanel();
+  pendingSites=[]; renderSiteChips(); resetYtPanel(); resetAppsPanel();
   document.getElementById('blockName').value='';
   loadPresets();
 }
@@ -560,9 +647,11 @@ async function startPreset(id){
   if(!preset) return;
   const endsAt = preset.duration_minutes ? new Date(Date.now()+preset.duration_minutes*60000).toISOString() : null;
   const presetMode = preset.mode==='whitelist' ? 'whitelist' : 'blacklist';
+  const presetApps = preset.apps || [];
   const { error } = await sb.from('focus_lock_sessions').insert({
     user_id: myUserId, block_name: preset.name, sites: preset.sites,
     mode: presetMode, youtube_rules: preset.youtube_rules || null,
+    apps: presetApps,
     ends_at: endsAt, unlimited: !preset.duration_minutes, source: 'web'
   });
   if(error){
@@ -570,6 +659,8 @@ async function startPreset(id){
     else alert(error.message);
     return;
   }
+  try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
+  await syncBlockedAppsToDesktop(presetApps);
   sendToExtension({ type:'RM2_START_SESSION', payload:{ blockName:preset.name, sites:preset.sites, durationMinutes: preset.duration_minutes || null, mode:presetMode, youtubeRules: preset.youtube_rules || null } });
   loadActiveBlock();
 }

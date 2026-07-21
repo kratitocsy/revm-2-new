@@ -327,6 +327,13 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
           <button class="mode-btn" onclick="setMode('unlimited',this)">Unlimited</button>
         </div>
 
+        <div class="field" id="timerBlockField" style="max-width:280px;margin-bottom:0.75rem;">
+          <label>Block <span style="opacity:0.6;font-weight:400;">(optional — blocks sites/apps while this timer runs)</span></label>
+          <select id="timerBlockPreset" style="background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.6rem 0.85rem;font-family:var(--font);font-size:0.85rem;outline:none;width:100%;color-scheme:dark;">
+            <option value="">No blocking</option>
+          </select>
+        </div>
+
         <div class="field" id="timerSubField" style="max-width:280px;margin-bottom:1.25rem;">
           <label>Studying subject</label>
           <select id="timerSub" style="background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.6rem 0.85rem;font-family:var(--font);font-size:0.85rem;outline:none;width:100%;color-scheme:dark;"></select>
@@ -488,6 +495,7 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const sb=window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL,REVM2_CONFIG.SUPABASE_ANON);
+let myUserId=null;
 let cfg=Store.get('revm2_config',{});
 let rows=Store.get('revm2_tracker',[]);
 let slog=Store.get('revm2_slog',{});  // {date:{subject:secs}}
@@ -504,8 +512,11 @@ async function init(){
   RevM2Loader.show('Loading your tracker…');
   const session = await requireAuth();
   if(!session) return;
+  myUserId = session.user.id;
   RevM2Calls.init(sb, session.user.id);
   RevM2Notifications.init(sb, session.user.id);
+  loadBlockPresetOptions();
+  startBlockStatusPoller();
   if(!cfg.start_date){window.location.href='onboarding.html';return;}
   const synced = await pullTrackerFromSupabase();
   if(synced && synced.rows && synced.rows.length){ rows=synced.rows; slog=synced.slog||{}; }
@@ -836,13 +847,113 @@ function startTimerDayRolloverWatcher(){
 const FT_ACTIVE_KEY='revm2_active_session';
 let remoteSessionId=null;
 
+/* ── block presets (shared table with blocks.html) ──────────────
+   Starting the Study Timer can optionally also start one of the
+   same named "Block" presets used on the Blocks page - same sites/
+   YouTube-rules/apps, same enforcement, just triggered from here
+   instead of navigating over. Manually starting a block from the
+   Blocks page directly (with no timer running) still works exactly
+   as before - this only adds a second entry point, it doesn't
+   replace the first. */
+function isDesktopApp(){
+  return typeof window.__TAURI__ !== 'undefined' && !!window.__TAURI__.core;
+}
+const RM2_EXTENSION_ID = 'knofmgookchmjekaefloaljcamjlbnmp';
+function sendToExtension(msg, timeoutMs=1500){
+  return new Promise((resolve)=>{
+    if(typeof chrome==='undefined' || !chrome.runtime || !chrome.runtime.sendMessage){
+      resolve({ok:false, reason:'no_extension_api'}); return;
+    }
+    let done=false;
+    const timer=setTimeout(()=>{ if(!done){ done=true; resolve({ok:false, reason:'timeout'}); } }, timeoutMs);
+    try{
+      chrome.runtime.sendMessage(RM2_EXTENSION_ID, msg, (response)=>{
+        if(done) return;
+        done=true; clearTimeout(timer);
+        if(chrome.runtime.lastError){ resolve({ok:false, reason:chrome.runtime.lastError.message}); return; }
+        resolve(response || {ok:false, reason:'empty_response'});
+      });
+    }catch(e){
+      if(!done){ done=true; clearTimeout(timer); resolve({ok:false, reason:e.message}); }
+    }
+  });
+}
+
+async function loadBlockPresetOptions(){
+  const { data } = await sb.from('focus_lock_presets').select('*').eq('user_id', myUserId).order('created_at',{ascending:false});
+  const sel=document.getElementById('timerBlockPreset');
+  const prev=sel.value;
+  sel.innerHTML='<option value="">No blocking</option>' +
+    (data||[]).map(p=>`<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
+  if(prev && (data||[]).some(p=>p.id===prev)) sel.value=prev;
+}
+
+// Starts the selected preset's block (sites/YouTube/apps) alongside the
+// study timer. If the person already has a block running (from here,
+// blocks.html, or another device), this quietly skips creating a
+// duplicate row and just lets the existing one keep enforcing - the
+// timer itself still starts either way.
+async function startSelectedBlockPreset(){
+  const presetId = document.getElementById('timerBlockPreset').value;
+  if(!presetId) return;
+
+  const { data: existing } = await sb.from('focus_lock_sessions')
+    .select('id').eq('user_id', myUserId).eq('active', true).maybeSingle();
+  if(existing) return; // already covered - don't fight it, don't duplicate it
+
+  const { data: preset } = await sb.from('focus_lock_presets').select('*').eq('id', presetId).maybeSingle();
+  if(!preset) return;
+
+  const endsAt = preset.duration_minutes ? new Date(Date.now()+preset.duration_minutes*60000).toISOString() : null;
+  const presetMode = preset.mode==='whitelist' ? 'whitelist' : 'blacklist';
+  const presetApps = preset.apps || [];
+
+  const { error } = await sb.from('focus_lock_sessions').insert({
+    user_id: myUserId, block_name: preset.name, sites: preset.sites,
+    mode: presetMode, youtube_rules: preset.youtube_rules || null,
+    apps: presetApps,
+    ends_at: endsAt, unlimited: !preset.duration_minutes, source: 'web'
+  });
+  if(error){
+    if(error.code!=='23505') console.error('Could not start block from timer:', error.message);
+    return; // 23505 = someone else beat us to it in a race - fine, not our job to duplicate
+  }
+
+  if(isDesktopApp()){
+    try{ await window.__TAURI__.core.invoke('set_blocked_apps', {apps: presetApps}); }
+    catch(e){ console.error('RM2 desktop invoke error (set_blocked_apps):', e); }
+  }
+  sendToExtension({ type:'RM2_START_SESSION', payload:{ blockName:preset.name, sites:preset.sites, durationMinutes: preset.duration_minutes || null, mode:presetMode, youtubeRules: preset.youtube_rules || null } });
+}
+
+// Sole source of truth for whether the desktop app should be
+// enforcing anything - deliberately NOT tied to the local pomodoro
+// timer's pause/resume (see stopRemoteSession below for why). Mirrors
+// blocks.html's loadActiveBlock poller so both pages agree.
+async function pollBlockStatusForDesktop(){
+  if(!myUserId) return;
+  const { data } = await sb.from('focus_lock_sessions')
+    .select('apps').eq('user_id', myUserId).eq('active', true).maybeSingle();
+  if(isDesktopApp()){
+    try{ await window.__TAURI__.core.invoke('set_session_active', {active: !!data}); }
+    catch(e){ console.error('RM2 desktop invoke error (poll):', e); }
+    try{ await window.__TAURI__.core.invoke('set_blocked_apps', {apps: data?.apps || []}); }
+    catch(e){ console.error('RM2 desktop invoke error (set_blocked_apps):', e); }
+  }
+}
+function startBlockStatusPoller(){
+  pollBlockStatusForDesktop();
+  setInterval(pollBlockStatusForDesktop, 5000);
+}
+
 async function startRemoteSession(subject){
   try{
     const {data,error}=await sb.rpc('rpc_start_study_session',{p_group_id:null,p_subject:subject});
     if(error) throw error;
     remoteSessionId=data.id;
     Store.set(FT_ACTIVE_KEY,{id:data.id,group_id:data.group_id,subject:data.subject,started_at:data.started_at,paused_at:null,accumPaused:0});
-    try{ await window.__TAURI__.core.invoke('set_session_active', {active:true}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
+    try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
+    await startSelectedBlockPreset();
     document.getElementById('timerLiveTag').style.display='block';
   }catch(e){
     console.warn('RevMGrid sync unavailable, timer still runs locally:',e);
@@ -856,7 +967,13 @@ async function stopRemoteSession(){
   catch(e){ console.warn('stop remote session failed',e); }
   remoteSessionId=null;
   Store.del(FT_ACTIVE_KEY);
-  try{ await window.__TAURI__.core.invoke('set_session_active', {active:false}); }catch(e){ alert('RM2 desktop invoke error (stop): '+(e&&e.message||e)); }
+  // Deliberately NOT an unconditional set_session_active(false) here.
+  // Pausing/stopping the personal pomodoro clock is not the same thing
+  // as ending a real block - if one's still active (started from here
+  // or blocks.html), desktop enforcement must keep running regardless
+  // of what the study-time timer is doing. Re-checking the real status
+  // is what decides this, not the act of pausing itself.
+  await pollBlockStatusForDesktop();
   document.getElementById('timerLiveTag').style.display='none';
 }
 
