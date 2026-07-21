@@ -5,6 +5,11 @@
   "windows": [
     "main"
   ],
+  "remote": {
+    "urls": [
+      "https://revm-2-new.vercel.app/*"
+    ]
+  },
   "permissions": [
     "core:default",
     "opener:default",
