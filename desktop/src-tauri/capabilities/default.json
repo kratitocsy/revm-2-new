@@ -13,6 +13,13 @@
   "permissions": [
     "core:default",
     "opener:default",
-    "store:default"
+    "store:default",
+    "allow-greet",
+    "allow-set_tray_status",
+    "allow-set_session_active",
+    "allow-debug_browser_status",
+    "allow-list_running_apps",
+    "allow-get_blocked_apps",
+    "allow-set_blocked_apps"
   ]
 }
