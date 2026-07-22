@@ -90,11 +90,36 @@ pub fn is_extension_installed(target: &BrowserTarget) -> bool {
     false
 }
 
+/// Whether a browser process with the given name is currently running.
+/// Split out of the various "is X running" checks below so heartbeat.rs
+/// can reuse it (attributing an ambiguous heartbeat to "the only supported
+/// browser that's actually open") without duplicating the sysinfo dance.
+pub fn is_process_running(target: &BrowserTarget) -> bool {
+    let mut sys = System::new_all();
+    sys.refresh_processes();
+    sys.processes().values().any(|p| {
+        target.process_names.iter().any(|pn| pn.eq_ignore_ascii_case(p.name()))
+    })
+}
+
+/// The combined protection check: disk state OR a recent heartbeat.
+///
+/// The disk read is checked first and is authoritative when it says
+/// "enabled" - no reason to second-guess it. It's only when the disk says
+/// "disabled/missing" that the heartbeat gets a say, on the theory that a
+/// heartbeat can only exist if the extension's background script is
+/// genuinely alive and running right now (impossible for a disabled
+/// extension), so it's trustworthy even when it disagrees with a stale or
+/// lagging disk write. See heartbeat.rs for the full rationale.
+pub fn is_protected(target: &BrowserTarget, heartbeat: &crate::heartbeat::HeartbeatState) -> bool {
+    is_extension_installed(target) || heartbeat.is_fresh(target.name)
+}
+
 // Diagnostic snapshot - for each supported browser, is it currently
-// running, and does is_extension_installed() think the extension is
-// there. Exposed via a Tauri command so it can be queried live from
-// DevTools without needing a rebuild each time.
-pub fn debug_status() -> Vec<(String, bool, bool)> {
+// running, and is it protected (disk read OR a recent heartbeat - see
+// is_protected). Exposed via a Tauri command so it can be queried live
+// from DevTools without needing a rebuild each time.
+pub fn debug_status(heartbeat: &crate::heartbeat::HeartbeatState) -> Vec<(String, bool, bool)> {
     let mut sys = System::new_all();
     sys.refresh_processes();
 
@@ -104,15 +129,16 @@ pub fn debug_status() -> Vec<(String, bool, bool)> {
             let running = sys.processes().values().any(|p| {
                 target.process_names.iter().any(|pn| pn.eq_ignore_ascii_case(p.name()))
             });
-            let extension_installed = is_extension_installed(&target);
-            (target.name.to_string(), running, extension_installed)
+            let protected = is_protected(&target, heartbeat);
+            (target.name.to_string(), running, protected)
         })
         .collect()
 }
 
 // Returns the names of every supported browser that's currently running
-// but doesn't have the extension enabled in any of its profiles.
-pub fn unprotected_running_browsers() -> Vec<&'static str> {
+// but isn't protected (no enabled extension on disk, and no recent
+// heartbeat backing it up either).
+pub fn unprotected_running_browsers(heartbeat: &crate::heartbeat::HeartbeatState) -> Vec<&'static str> {
     let mut sys = System::new_all();
     sys.refresh_processes();
 
@@ -121,7 +147,7 @@ pub fn unprotected_running_browsers() -> Vec<&'static str> {
         let running = sys.processes().values().any(|p| {
             target.process_names.iter().any(|pn| pn.eq_ignore_ascii_case(p.name()))
         });
-        if running && !is_extension_installed(&target) {
+        if running && !is_protected(&target, heartbeat) {
             result.push(target.name);
         }
     }
@@ -229,7 +255,7 @@ pub fn kill_browsers_by_name(names: &[&'static str]) -> Vec<&'static str> {
 // unprotected_running_browsers() + kill_browsers_by_name() so it can
 // apply the 60s grace period in between. Only reports a browser as
 // "killed" if kill() actually reported success.
-pub fn kill_unprotected_browsers() -> Vec<&'static str> {
-    let unprotected = unprotected_running_browsers();
+pub fn kill_unprotected_browsers(heartbeat: &crate::heartbeat::HeartbeatState) -> Vec<&'static str> {
+    let unprotected = unprotected_running_browsers(heartbeat);
     kill_browsers_by_name(&unprotected)
 }

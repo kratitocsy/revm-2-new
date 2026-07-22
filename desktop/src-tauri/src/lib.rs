@@ -1,5 +1,6 @@
 mod app_guard;
 mod browser_guard;
+mod heartbeat;
 
 #[tauri::command]
 fn greet(name: String) -> String {
@@ -45,7 +46,7 @@ const BLOCKED_APPS_KEY: &str = "blocked_apps";
 // re-enable it" moment, short enough that it isn't a real bypass.
 const EXTENSION_GRACE_SECS: i64 = 60;
 
-fn now_ts() -> i64 {
+pub(crate) fn now_ts() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs() as i64)
@@ -93,8 +94,8 @@ fn set_session_active(state: tauri::State<SessionState>, active: bool) -> Result
 }
 
 #[tauri::command]
-fn debug_browser_status() -> Result<Vec<(String, bool, bool)>, String> {
-    Ok(browser_guard::debug_status())
+fn debug_browser_status(heartbeat: tauri::State<Arc<heartbeat::HeartbeatState>>) -> Result<Vec<(String, bool, bool)>, String> {
+    Ok(browser_guard::debug_status(&heartbeat))
 }
 
 // icon's tooltip always reflects the latest known state, even when the
@@ -155,13 +156,14 @@ fn set_blocked_apps(
 //      covered again" popup).
 fn apply_grace_period(
     tracker: &BrowserGraceTracker,
+    heartbeat: &heartbeat::HeartbeatState,
 ) -> (
     Vec<&'static str>,
     Option<(&'static str, i64)>,
     Vec<&'static str>,
     Vec<&'static str>,
 ) {
-    let unprotected = browser_guard::unprotected_running_browsers();
+    let unprotected = browser_guard::unprotected_running_browsers(heartbeat);
     let unprotected_set: std::collections::HashSet<&'static str> =
         unprotected.iter().copied().collect();
 
@@ -210,7 +212,7 @@ fn apply_grace_period(
 
     let mut recovered = Vec::new();
     if !recovered_candidates.is_empty() {
-        let statuses = browser_guard::debug_status();
+        let statuses = browser_guard::debug_status(heartbeat);
         for target in browser_guard::supported_browsers() {
             if !recovered_candidates.iter().any(|n| n == target.name) {
                 continue;
@@ -235,6 +237,7 @@ fn spawn_guard_loop(
     session_active: Arc<AtomicBool>,
     blocked_apps: app_guard::SharedBlockList,
     grace_tracker: Arc<BrowserGraceTracker>,
+    heartbeat_state: Arc<heartbeat::HeartbeatState>,
 ) {
     tauri::async_runtime::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs(3));
@@ -251,7 +254,7 @@ fn spawn_guard_loop(
 
             let mut closed: Vec<String> = Vec::new();
 
-            let (to_close, soonest_grace, newly_started, recovered) = apply_grace_period(&grace_tracker);
+            let (to_close, soonest_grace, newly_started, recovered) = apply_grace_period(&grace_tracker, &heartbeat_state);
 
             // One popup per disable event, right when the countdown
             // starts - not once per 3s tick, and not silently buried
@@ -324,6 +327,14 @@ pub fn run() {
     let session_active = Arc::new(AtomicBool::new(false));
     let blocked_apps: app_guard::SharedBlockList = Arc::new(Mutex::new(app_guard::BlockedApps::default()));
     let grace_tracker = Arc::new(BrowserGraceTracker(Mutex::new(HashMap::new())));
+    let heartbeat_state = Arc::new(heartbeat::HeartbeatState::new());
+
+    // Starts listening immediately, independent of session state - the
+    // extension heartbeats regardless of whether a focus session is
+    // active, so by the time a session actually starts we already have a
+    // fresh signal instead of waiting on the first heartbeat after the
+    // fact.
+    heartbeat::spawn_heartbeat_server(heartbeat_state.clone());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::new().build())
@@ -331,6 +342,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .manage(SessionState(session_active.clone()))
         .manage(blocked_apps.clone())
+        .manage(heartbeat_state.clone())
         .setup(move |app| {
             if let Ok(store) = app.store(BLOCKED_APPS_STORE) {
                 if let Some(apps) = store
@@ -356,6 +368,7 @@ pub fn run() {
 
             let debug_session_active = session_active.clone();
             let debug_blocked_apps = blocked_apps.clone();
+            let debug_heartbeat = heartbeat_state.clone();
 
             let _tray = TrayIconBuilder::with_id("main-tray")
                 .icon(app.default_window_icon().unwrap().clone())
@@ -367,9 +380,14 @@ pub fn run() {
                         "debug_status" => {
                             let active = debug_session_active.load(Ordering::SeqCst);
                             let apps = debug_blocked_apps.lock().map(|g| g.0.clone()).unwrap_or_default();
-                            let browsers = browser_guard::debug_status();
+                            let browsers = browser_guard::debug_status(&debug_heartbeat);
                             let lines: Vec<String> = browsers.iter()
-                                .map(|(name, running, ext_ok)| format!("{name}: running={running} extension_ok={ext_ok}"))
+                                .map(|(name, running, protected)| {
+                                    let hb_age = debug_heartbeat.seconds_since_last(name)
+                                        .map(|s| format!("{s}s ago"))
+                                        .unwrap_or_else(|| "never".to_string());
+                                    format!("{name}: running={running} protected={protected} last_heartbeat={hb_age}")
+                                })
                                 .collect();
                             let msg = format!(
                                 "session_active: {active}\\nblocked_apps: {:?}\\n\\n{}",
@@ -389,6 +407,7 @@ pub fn run() {
                 session_active.clone(),
                 blocked_apps.clone(),
                 grace_tracker.clone(),
+                heartbeat_state.clone(),
             );
 
             Ok(())
