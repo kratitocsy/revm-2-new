@@ -15,11 +15,11 @@
     "opener:default",
     "store:default",
     "allow-greet",
-    "allow-set_tray_status",
-    "allow-set_session_active",
-    "allow-debug_browser_status",
-    "allow-list_running_apps",
-    "allow-get_blocked_apps",
-    "allow-set_blocked_apps"
+    "allow-set-tray-status",
+    "allow-set-session-active",
+    "allow-debug-browser-status",
+    "allow-list-running-apps",
+    "allow-get-blocked-apps",
+    "allow-set-blocked-apps"
   ]
 }
