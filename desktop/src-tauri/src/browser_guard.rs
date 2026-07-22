@@ -9,6 +9,8 @@
 
 use serde_json::Value;
 use std::path::PathBuf;
+use std::process::Command;
+use std::time::Duration;
 use sysinfo::{Pid, System};
 
 // Computed once (see the conversation) from the fixed "key" in the
@@ -126,12 +128,53 @@ pub fn unprotected_running_browsers() -> Vec<&'static str> {
     result
 }
 
+// Asks a process to close via taskkill WITHOUT /F - on Windows this posts
+// WM_CLOSE to the process's top-level windows rather than calling
+// TerminateProcess. That matters a lot here specifically because of how
+// Chromium persists prefs: writes to the Preferences file are batched and
+// some (including, per Chromium's own prefs README, "lossy" prefs that
+// don't schedule their own write) are only guaranteed to reach disk on a
+// clean shutdown - otherwise they just sit bundled in memory waiting for
+// the next commit that never comes. A hard TerminateProcess (what
+// sysinfo's Process::kill() does on Windows, and what this function used
+// to always use) skips that shutdown path entirely.
+//
+// Concretely, this is what caused the "re-enabling the extension doesn't
+// stop the browser being closed" bug: disabling the extension writes
+// "disabled" to disk fine (that already happened before the 60s grace
+// timer even starts), but re-enabling it while the browser keeps getting
+// hard-killed every cycle means the "enabled" write never survives long
+// enough to hit disk - it's stuck in memory, gets wiped by the next
+// TerminateProcess, and is_extension_installed() keeps reading the stale
+// "disabled" value off disk forever, no matter how many times the person
+// re-enables it in the UI.
+//
+// Only the browser's main process actually owns windows and responds to
+// WM_CLOSE; renderer/GPU/utility child processes sharing the same
+// executable name don't and will just no-op here, which is fine - closing
+// the main process takes the whole browser (and its prefs flush) down
+// with it in the normal way.
+fn request_graceful_close(pid: Pid) {
+    let _ = Command::new("taskkill")
+        .args(["/PID", &pid.to_string()])
+        .output();
+}
+
 // Kills every running process matching any of the given browser names
 // (as returned by unprotected_running_browsers/supported_browsers -
 // e.g. "Chrome", "Edge"), regardless of current extension state. This
 // is the low-level primitive; deciding WHICH names to pass in (e.g.
 // after a grace period) lives in lib.rs's guard loop, not here - this
 // module only knows how to detect and how to kill, not how long to wait.
+//
+// Tries a graceful close first (see request_graceful_close above) and
+// only falls back to a hard TerminateProcess-style kill for whatever's
+// still alive after a short wait - e.g. a browser with no window handler
+// listening, an unsaved-changes dialog holding it open, or a background
+// process that outlived its window. This still reliably closes the
+// browser (enforcement doesn't get weaker), it just gives Chrome's normal
+// exit path - and the pref flush that comes with it - a chance to run
+// first.
 pub fn kill_browsers_by_name(names: &[&'static str]) -> Vec<&'static str> {
     let mut sys = System::new_all();
     sys.refresh_processes();
@@ -150,15 +193,28 @@ pub fn kill_browsers_by_name(names: &[&'static str]) -> Vec<&'static str> {
 
         if pids.is_empty() { continue; }
 
+        for &pid in &pids {
+            request_graceful_close(pid);
+        }
+
+        // Give Chrome's normal shutdown path (and the pref flush that
+        // comes with it) a moment to actually happen before checking
+        // what's left.
+        std::thread::sleep(Duration::from_millis(1500));
+        sys.refresh_processes();
+
         let mut any_succeeded = false;
         for pid in pids {
-            if let Some(process) = sys.process(pid) {
-                let ok = process.kill();
-                if !ok {
-                    eprintln!("browser_guard: failed to kill {} (pid {pid})", target.name);
-                }
-                any_succeeded = any_succeeded || ok;
+            let Some(process) = sys.process(pid) else {
+                // Already gone - the graceful close worked.
+                any_succeeded = true;
+                continue;
+            };
+            let ok = process.kill();
+            if !ok {
+                eprintln!("browser_guard: failed to force-kill {} (pid {pid})", target.name);
             }
+            any_succeeded = any_succeeded || ok;
         }
         if any_succeeded {
             killed.push(target.name);
