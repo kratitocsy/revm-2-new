@@ -138,7 +138,7 @@ fn set_blocked_apps(
 }
 
 // Applies the 60s-grace rule to whatever browser_guard currently sees
-// as unprotected-and-running. Returns three things:
+// as unprotected-and-running. Returns four things:
 //   1. browsers that have been unprotected for >= EXTENSION_GRACE_SECS
 //      and should be closed THIS tick.
 //   2. the browser with the least time remaining in its grace window
@@ -148,15 +148,38 @@ fn set_blocked_apps(
 //      already-running countdown. This is what the on-screen "you have
 //      60 seconds" popup keys off of, so it fires once per disable
 //      event instead of once per 3s tick.
+//   4. browsers that had an active grace timer last tick and are now
+//      running WITH the extension protecting them again - i.e. actually
+//      re-enabled in time, not just closed some other way (which would
+//      also drop out of the grace tracker but isn't worth a "you're
+//      covered again" popup).
 fn apply_grace_period(
     tracker: &BrowserGraceTracker,
-) -> (Vec<&'static str>, Option<(&'static str, i64)>, Vec<&'static str>) {
+) -> (
+    Vec<&'static str>,
+    Option<(&'static str, i64)>,
+    Vec<&'static str>,
+    Vec<&'static str>,
+) {
     let unprotected = browser_guard::unprotected_running_browsers();
     let unprotected_set: std::collections::HashSet<&'static str> =
         unprotected.iter().copied().collect();
 
     let mut guard = tracker.0.lock().unwrap_or_else(|e| e.into_inner());
     let now = now_ts();
+
+    // Anything that had a grace timer running last tick but isn't in the
+    // unprotected list anymore either got the extension re-enabled in
+    // time, or was closed some other way (manually, or by us on a
+    // previous tick). Snapshot the candidates before retain() drops them,
+    // then narrow to "actually re-enabled" below via a fresh
+    // running+protected check - "no longer unprotected" alone doesn't
+    // distinguish the two.
+    let recovered_candidates: Vec<String> = guard.keys().cloned().collect();
+    let recovered_candidates: Vec<String> = recovered_candidates
+        .into_iter()
+        .filter(|name| !unprotected_set.contains(name.as_str()))
+        .collect();
 
     // Reset the timer for anything that's protected again (or not
     // running) - a browser that fixes itself gets a clean slate, not
@@ -183,8 +206,25 @@ fn apply_grace_period(
             soonest = Some((name, remaining));
         }
     }
+    drop(guard);
 
-    (to_close, soonest, newly_started)
+    let mut recovered = Vec::new();
+    if !recovered_candidates.is_empty() {
+        let statuses = browser_guard::debug_status();
+        for target in browser_guard::supported_browsers() {
+            if !recovered_candidates.iter().any(|n| n == target.name) {
+                continue;
+            }
+            let protected_now = statuses
+                .iter()
+                .any(|(name, running, ext_ok)| name == target.name && *running && *ext_ok);
+            if protected_now {
+                recovered.push(target.name);
+            }
+        }
+    }
+
+    (to_close, soonest, newly_started, recovered)
 }
 
 // Runs forever on its own async task: every 3s, if a session is active,
@@ -211,7 +251,7 @@ fn spawn_guard_loop(
 
             let mut closed: Vec<String> = Vec::new();
 
-            let (to_close, soonest_grace, newly_started) = apply_grace_period(&grace_tracker);
+            let (to_close, soonest_grace, newly_started, recovered) = apply_grace_period(&grace_tracker);
 
             // One popup per disable event, right when the countdown
             // starts - not once per 3s tick, and not silently buried
@@ -223,6 +263,17 @@ fn spawn_guard_loop(
                     &format!(
                         "{name}'s RevM2 extension is missing or disabled. Re-enable it within {EXTENSION_GRACE_SECS} seconds or {name} will be closed."
                     ),
+                );
+            }
+
+            // Confirms the re-enable actually landed - otherwise the only
+            // feedback is the countdown popup disappearing, which is easy
+            // to miss and doesn't say whether it worked.
+            for name in &recovered {
+                notify(
+                    &app,
+                    "RevM2 - Extension re-enabled",
+                    &format!("{name}'s RevM2 extension is back on - {name} is protected again."),
                 );
             }
 
