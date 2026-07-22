@@ -74,6 +74,159 @@ async function poll() {
   }
 }
 
+// --- Blocked apps panel ----------------------------------------------------
+//
+// Backend (app_guard.rs / lib.rs commands) has been ready for a while -
+// list_running_apps / get_blocked_apps / set_blocked_apps, plus
+// kill_blocked_apps() already running on every guard-loop tick whenever a
+// session is active. This wires an actual UI to it: the block list was
+// previously invisible and unconfigurable from the app itself.
+
+let blockedApps = []; // process names, e.g. "steam.exe" - authoritative local copy
+const RUNNING_APPS_REFRESH_MS = 8_000;
+
+function normalizeProcessName(name) {
+  return name.trim();
+}
+
+function isBlocked(name) {
+  const lower = name.toLowerCase();
+  return blockedApps.some((b) => b.toLowerCase() === lower);
+}
+
+async function loadBlockedApps() {
+  try {
+    blockedApps = await invoke("get_blocked_apps");
+  } catch {
+    blockedApps = [];
+  }
+  renderBlockedList();
+}
+
+async function saveBlockedApps() {
+  try {
+    await invoke("set_blocked_apps", { apps: blockedApps });
+  } catch (err) {
+    console.error("Failed to save blocked apps", err);
+  }
+}
+
+function renderBlockedList() {
+  const list = document.getElementById("blocked-list");
+  const emptyHint = document.getElementById("blocked-empty");
+  if (!list) return;
+
+  list.querySelectorAll(".blocked-chip").forEach((el) => el.remove());
+
+  if (blockedApps.length === 0) {
+    if (emptyHint) emptyHint.style.display = "block";
+    return;
+  }
+  if (emptyHint) emptyHint.style.display = "none";
+
+  blockedApps.forEach((name) => {
+    const chip = document.createElement("span");
+    chip.className = "blocked-chip";
+    chip.textContent = name;
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "chip-remove";
+    removeBtn.setAttribute("aria-label", `Stop blocking ${name}`);
+    removeBtn.textContent = "\u00d7";
+    removeBtn.onclick = async () => {
+      blockedApps = blockedApps.filter((b) => b.toLowerCase() !== name.toLowerCase());
+      await saveBlockedApps();
+      renderBlockedList();
+      populateRunningAppsSelect(); // it can be re-added now, so put it back in the picker
+    };
+
+    chip.appendChild(removeBtn);
+    list.appendChild(chip);
+  });
+}
+
+async function addAppToBlockList(rawName) {
+  const name = normalizeProcessName(rawName);
+  if (!name) return;
+  if (isBlocked(name)) return; // already there - nothing to do
+  blockedApps = [...blockedApps, name];
+  await saveBlockedApps();
+  renderBlockedList();
+  populateRunningAppsSelect();
+}
+
+let lastRunningApps = [];
+
+async function populateRunningAppsSelect() {
+  const select = document.getElementById("running-apps-select");
+  if (!select) return;
+
+  let apps;
+  try {
+    apps = await invoke("list_running_apps");
+  } catch (err) {
+    console.error("Failed to list running apps", err);
+    select.innerHTML = "<option value=''>Couldn't read running apps</option>";
+    return;
+  }
+  lastRunningApps = apps;
+
+  const selectable = apps.filter((a) => !isBlocked(a.name));
+  select.innerHTML = "";
+
+  if (selectable.length === 0) {
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = apps.length === 0 ? "No apps detected" : "All visible apps already blocked";
+    select.appendChild(opt);
+    return;
+  }
+
+  selectable.forEach((app) => {
+    const opt = document.createElement("option");
+    opt.value = app.name;
+    opt.textContent = app.name;
+    select.appendChild(opt);
+  });
+}
+
+function wireAppsPanel() {
+  document.getElementById("add-from-running-btn")?.addEventListener("click", async () => {
+    const select = document.getElementById("running-apps-select");
+    const name = select?.value;
+    if (!name) return;
+    await addAppToBlockList(name);
+  });
+
+  document.getElementById("refresh-running-btn")?.addEventListener("click", () => {
+    populateRunningAppsSelect();
+  });
+
+  const manualInput = document.getElementById("manual-app-input");
+  const addManual = async () => {
+    if (!manualInput) return;
+    const value = manualInput.value.trim();
+    if (!value) return;
+    await addAppToBlockList(value);
+    manualInput.value = "";
+  };
+  document.getElementById("add-manual-btn")?.addEventListener("click", addManual);
+  manualInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addManual();
+    }
+  });
+}
+
+async function initAppsPanel() {
+  wireAppsPanel();
+  await loadBlockedApps();
+  await populateRunningAppsSelect();
+  setInterval(populateRunningAppsSelect, RUNNING_APPS_REFRESH_MS);
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   const connectForm = document.getElementById("connect-form");
   const disconnectBtn = document.getElementById("disconnect-btn");
@@ -102,4 +255,5 @@ window.addEventListener("DOMContentLoaded", () => {
 
   poll();
   setInterval(poll, POLL_INTERVAL_MS);
+  initAppsPanel();
 });

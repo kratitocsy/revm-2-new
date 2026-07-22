@@ -16,6 +16,37 @@
         <button type="submit">Connect</button>
       </form>
       <button id="disconnect-btn" style="display:none">Disconnect</button>
+
+      <section class="apps-panel">
+        <h2>Blocked apps</h2>
+        <p class="hint">
+          Closed the instant a focus session starts, and re-closed on sight if
+          reopened mid-session. These are checked continuously, not just at
+          session start - the extension only reaches browsers, this is for
+          everything else (games, chat apps, etc).
+        </p>
+
+        <div class="blocked-list" id="blocked-list">
+          <p class="empty-hint" id="blocked-empty">No apps blocked yet.</p>
+        </div>
+
+        <div class="add-app-row">
+          <label class="field-label" for="running-apps-select">Running right now</label>
+          <div class="running-apps-row">
+            <select id="running-apps-select"><option value="">Loading...</option></select>
+            <button id="add-from-running-btn" type="button">+ Block</button>
+            <button id="refresh-running-btn" type="button" title="Refresh the running-apps list">&#8635;</button>
+          </div>
+
+          <label class="field-label" for="manual-app-input">
+            Or add by process name (works even if it's not open right now)
+          </label>
+          <div class="manual-app-row">
+            <input id="manual-app-input" placeholder="e.g. steam.exe" />
+            <button id="add-manual-btn" type="button">+ Block</button>
+          </div>
+        </div>
+      </section>
     </main>
   </body>
 </html>
