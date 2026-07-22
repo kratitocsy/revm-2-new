@@ -249,16 +249,36 @@ pub fn run() {
             // lock file shouldn't block an uninstall forever.
             write_session_lock(false);
 
+            let debug_item = MenuItem::with_id(app, "debug_status", "Show Debug Status", true, None::<&str>)?;
             let quit_item = MenuItem::with_id(app, "quit", "Quit RevM2", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&quit_item])?;
+            let menu = Menu::with_items(app, &[&debug_item, &quit_item])?;
+
+            let debug_session_active = session_active.clone();
+            let debug_blocked_apps = blocked_apps.clone();
 
             let _tray = TrayIconBuilder::with_id("main-tray")
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
                 .tooltip("RevM2 - No active session")
-                .on_menu_event(|app, event| {
-                    if event.id.as_ref() == "quit" {
-                        app.exit(0);
+                .on_menu_event(move |app, event| {
+                    match event.id.as_ref() {
+                        "quit" => app.exit(0),
+                        "debug_status" => {
+                            let active = debug_session_active.load(Ordering::SeqCst);
+                            let apps = debug_blocked_apps.lock().map(|g| g.0.clone()).unwrap_or_default();
+                            let browsers = browser_guard::debug_status();
+                            let lines: Vec<String> = browsers.iter()
+                                .map(|(name, running, ext_ok)| format!("{name}: running={running} extension_ok={ext_ok}"))
+                                .collect();
+                            let msg = format!(
+                                "session_active: {active}\\nblocked_apps: {:?}\\n\\n{}",
+                                apps, lines.join("\\n")
+                            );
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.eval(&format!("alert({})", serde_json::to_string(&msg).unwrap_or_default()));
+                            }
+                        }
+                        _ => {}
                     }
                 })
                 .build(app)?;
