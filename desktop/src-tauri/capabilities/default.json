@@ -14,6 +14,7 @@
     "core:default",
     "opener:default",
     "store:default",
+    "notification:default",
     "allow-greet",
     "allow-set-tray-status",
     "allow-set-session-active",

@@ -13,7 +13,22 @@ use std::time::Duration;
 use tauri::{AppHandle, Manager};
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::TrayIconBuilder;
+use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_store::StoreExt;
+
+// Fires a native OS notification (Windows toast / etc) - separate from
+// the tray tooltip, which only shows on hover and is easy to miss.
+// Errors are swallowed on purpose: a failed
+// notification shouldn't take down the guard loop, and there's nowhere
+// useful to surface the error to (no window may even be open).
+fn notify(app: &AppHandle, title: &str, body: &str) {
+    let _ = app
+        .notification()
+        .builder()
+        .title(title)
+        .body(body)
+        .show();
+}
 
 const BLOCKED_APPS_STORE: &str = "revm2-blocked-apps.json";
 const BLOCKED_APPS_KEY: &str = "blocked_apps";
@@ -123,13 +138,19 @@ fn set_blocked_apps(
 }
 
 // Applies the 60s-grace rule to whatever browser_guard currently sees
-// as unprotected-and-running, returning the subset that have been
-// unprotected for >= EXTENSION_GRACE_SECS and should be closed THIS
-// tick. Also returns, for UI purposes, the browser with the least time
-// remaining in its grace window (so the tray can show a countdown).
+// as unprotected-and-running. Returns three things:
+//   1. browsers that have been unprotected for >= EXTENSION_GRACE_SECS
+//      and should be closed THIS tick.
+//   2. the browser with the least time remaining in its grace window
+//      (for the tray tooltip countdown).
+//   3. browsers whose grace window STARTED this exact tick - i.e. the
+//      first time they were seen unprotected, not a repeat of an
+//      already-running countdown. This is what the on-screen "you have
+//      60 seconds" popup keys off of, so it fires once per disable
+//      event instead of once per 3s tick.
 fn apply_grace_period(
     tracker: &BrowserGraceTracker,
-) -> (Vec<&'static str>, Option<(&'static str, i64)>) {
+) -> (Vec<&'static str>, Option<(&'static str, i64)>, Vec<&'static str>) {
     let unprotected = browser_guard::unprotected_running_browsers();
     let unprotected_set: std::collections::HashSet<&'static str> =
         unprotected.iter().copied().collect();
@@ -144,11 +165,17 @@ fn apply_grace_period(
 
     let mut to_close = Vec::new();
     let mut soonest: Option<(&'static str, i64)> = None;
+    let mut newly_started = Vec::new();
 
     for name in unprotected {
+        let is_new = !guard.contains_key(name);
         let since = *guard.entry(name.to_string()).or_insert(now);
         let elapsed = now - since;
         let remaining = (EXTENSION_GRACE_SECS - elapsed).max(0);
+
+        if is_new {
+            newly_started.push(name);
+        }
 
         if elapsed >= EXTENSION_GRACE_SECS {
             to_close.push(name);
@@ -157,7 +184,7 @@ fn apply_grace_period(
         }
     }
 
-    (to_close, soonest)
+    (to_close, soonest, newly_started)
 }
 
 // Runs forever on its own async task: every 3s, if a session is active,
@@ -184,7 +211,21 @@ fn spawn_guard_loop(
 
             let mut closed: Vec<String> = Vec::new();
 
-            let (to_close, soonest_grace) = apply_grace_period(&grace_tracker);
+            let (to_close, soonest_grace, newly_started) = apply_grace_period(&grace_tracker);
+
+            // One popup per disable event, right when the countdown
+            // starts - not once per 3s tick, and not silently buried
+            // in a tooltip nobody's hovering over.
+            for name in &newly_started {
+                notify(
+                    &app,
+                    "RevM2 - Extension disabled",
+                    &format!(
+                        "{name}'s RevM2 extension is missing or disabled. Re-enable it within {EXTENSION_GRACE_SECS} seconds or {name} will be closed."
+                    ),
+                );
+            }
+
             if !to_close.is_empty() {
                 // Repetitive on purpose: this fires every 3s tick for
                 // as long as the browser stays unprotected and gets
@@ -193,6 +234,14 @@ fn spawn_guard_loop(
                 let killed = browser_guard::kill_browsers_by_name(&to_close);
                 if !killed.is_empty() {
                     eprintln!("browser_guard: grace expired, closed: {killed:?}");
+                    notify(
+                        &app,
+                        "RevM2 - Browser closed",
+                        &format!(
+                            "{} was closed because the RevM2 extension wasn't re-enabled in time.",
+                            killed.join(", ")
+                        ),
+                    );
                     closed.extend(killed.iter().map(|s| s.to_string()));
                 }
             }
@@ -228,6 +277,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
         .manage(SessionState(session_active.clone()))
         .manage(blocked_apps.clone())
         .setup(move |app| {
