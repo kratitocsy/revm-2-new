@@ -94,7 +94,7 @@ fn set_session_active(state: tauri::State<SessionState>, active: bool) -> Result
 }
 
 #[tauri::command]
-fn debug_browser_status(heartbeat: tauri::State<Arc<heartbeat::HeartbeatState>>) -> Result<Vec<(String, bool, bool)>, String> {
+fn debug_browser_status(heartbeat: tauri::State<Arc<heartbeat::HeartbeatState>>) -> Result<Vec<(String, bool, bool, String)>, String> {
     Ok(browser_guard::debug_status(&heartbeat))
 }
 
@@ -219,7 +219,7 @@ fn apply_grace_period(
             }
             let protected_now = statuses
                 .iter()
-                .any(|(name, running, ext_ok)| name == target.name && *running && *ext_ok);
+                .any(|(name, running, ext_ok, _reason)| name == target.name && *running && *ext_ok);
             if protected_now {
                 recovered.push(target.name);
             }
@@ -260,13 +260,28 @@ fn spawn_guard_loop(
             // starts - not once per 3s tick, and not silently buried
             // in a tooltip nobody's hovering over.
             for name in &newly_started {
-                notify(
-                    &app,
-                    "RevM2 - Extension disabled",
-                    &format!(
-                        "{name}'s RevM2 extension is missing or disabled. Re-enable it within {EXTENSION_GRACE_SECS} seconds or {name} will be closed."
-                    ),
-                );
+                let reason = browser_guard::supported_browsers()
+                    .into_iter()
+                    .find(|t| t.name == *name)
+                    .map(|t| browser_guard::protection_gap_reason(&t, &heartbeat_state))
+                    .unwrap_or("disabled");
+                if reason == "incognito" {
+                    notify(
+                        &app,
+                        "RevM2 - Incognito access not allowed",
+                        &format!(
+                            "{name}'s RevM2 extension doesn't have Incognito access. Go to chrome://extensions -> RevM2 -> Details -> turn on \"Allow in Incognito\" within {EXTENSION_GRACE_SECS} seconds or {name} will be closed."
+                        ),
+                    );
+                } else {
+                    notify(
+                        &app,
+                        "RevM2 - Extension disabled",
+                        &format!(
+                            "{name}'s RevM2 extension is missing or disabled. Re-enable it within {EXTENSION_GRACE_SECS} seconds or {name} will be closed."
+                        ),
+                    );
+                }
             }
 
             // Confirms the re-enable actually landed - otherwise the only
@@ -382,11 +397,11 @@ pub fn run() {
                             let apps = debug_blocked_apps.lock().map(|g| g.0.clone()).unwrap_or_default();
                             let browsers = browser_guard::debug_status(&debug_heartbeat);
                             let lines: Vec<String> = browsers.iter()
-                                .map(|(name, running, protected)| {
+                                .map(|(name, running, protected, reason)| {
                                     let hb_age = debug_heartbeat.seconds_since_last(name)
                                         .map(|s| format!("{s}s ago"))
                                         .unwrap_or_else(|| "never".to_string());
-                                    format!("{name}: running={running} protected={protected} last_heartbeat={hb_age}")
+                                    format!("{name}: running={running} protected={protected} reason={reason} last_heartbeat={hb_age}")
                                 })
                                 .collect();
                             let msg = format!(

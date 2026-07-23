@@ -58,14 +58,37 @@ pub fn supported_browsers() -> Vec<BrowserTarget> {
 }
 
 // Checks every profile folder (Default, Profile 1, Profile 2, ...) under a
-// browser's User Data directory for our extension being present AND
-// enabled (state == 1 in Chromium's Preferences JSON).
-fn extension_enabled_in_profile(prefs_path: &PathBuf) -> bool {
+// browser's User Data directory for our extension being present, enabled
+// (state == 1), AND permitted to run in Incognito windows (incognito ==
+// true) in Chromium's Preferences JSON.
+//
+// The incognito requirement isn't optional: an extension without explicit
+// "Allow in Incognito" access literally cannot run there at all - no
+// content scripts, no declarativeNetRequest rules, nothing. Chrome also
+// defaults every extension to incognito=false on install, so out of the
+// box, Incognito is a total blind spot for this entire blocking scheme -
+// the person can dodge every rule just by opening a private window,
+// without even touching the extension's enabled/disabled state. Treating
+// "enabled but not incognito-permitted" the same as "disabled" closes
+// that gap: the browser gets closed exactly like it would if the
+// extension were off, and the fix is the same one-time toggle either way
+// (chrome://extensions -> Details -> Allow in Incognito).
+fn extension_fully_permitted_in_profile(prefs_path: &PathBuf) -> bool {
     let Ok(content) = std::fs::read_to_string(prefs_path) else { return false };
     let Ok(json): Result<Value, _> = serde_json::from_str(&content) else { return false };
-    let state = json
-        .pointer(&format!("/extensions/settings/{EXTENSION_ID}/state"));
-    matches!(state.and_then(|v| v.as_i64()), Some(1))
+    let settings = json.pointer(&format!("/extensions/settings/{EXTENSION_ID}"));
+    let enabled = matches!(
+        settings.and_then(|v| v.get("state")).and_then(|v| v.as_i64()),
+        Some(1)
+    );
+    // Chrome omits the "incognito" key entirely when it's false (the
+    // default), so absence means "not allowed", not "unknown" - only an
+    // explicit `true` counts.
+    let incognito_allowed = matches!(
+        settings.and_then(|v| v.get("incognito")).and_then(|v| v.as_bool()),
+        Some(true)
+    );
+    enabled && incognito_allowed
 }
 
 pub fn is_extension_installed(target: &BrowserTarget) -> bool {
@@ -83,11 +106,68 @@ pub fn is_extension_installed(target: &BrowserTarget) -> bool {
         if name != "Default" && !name.starts_with("Profile ") { continue; }
 
         let prefs = path.join("Preferences");
-        if extension_enabled_in_profile(&prefs) {
+        if extension_fully_permitted_in_profile(&prefs) {
             return true;
         }
     }
     false
+}
+
+// Diagnostic-only: is the extension enabled in ANY profile, ignoring the
+// incognito requirement entirely. Used solely to pick notification
+// wording ("disabled" vs "incognito not allowed") - is_protected() above
+// is what actually decides whether a browser gets closed, this never
+// feeds into that decision.
+fn extension_enabled_ignoring_incognito(target: &BrowserTarget) -> bool {
+    let Some(user_data_dir) = (target.user_data_dir)() else { return false };
+    let Ok(entries) = std::fs::read_dir(&user_data_dir) else { return false };
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_dir() { continue; }
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if name != "Default" && !name.starts_with("Profile ") { continue; }
+
+        let prefs = path.join("Preferences");
+        let Ok(content) = std::fs::read_to_string(&prefs) else { continue };
+        let Ok(json): Result<Value, _> = serde_json::from_str(&content) else { continue };
+        let enabled = matches!(
+            json.pointer(&format!("/extensions/settings/{EXTENSION_ID}/state"))
+                .and_then(|v| v.as_i64()),
+            Some(1)
+        );
+        if enabled { return true; }
+    }
+    false
+}
+
+/// Which specific problem is making `target` unprotected right now -
+/// "disabled" (extension off or missing) or "incognito" (enabled, but
+/// without Incognito access) - purely to word the notification correctly.
+/// Prefers the heartbeat's own live incognito_allowed report when we have
+/// a fresh one, since that's more current than the disk read; falls back
+/// to the disk-only enabled check otherwise.
+pub fn protection_gap_reason(
+    target: &BrowserTarget,
+    heartbeat: &crate::heartbeat::HeartbeatState,
+) -> &'static str {
+    if heartbeat
+        .seconds_since_last(target.name)
+        .map(|age| age <= crate::heartbeat::HEARTBEAT_FRESHNESS_SECS)
+        .unwrap_or(false)
+    {
+        // A fresh heartbeat exists but is_protected() still returned
+        // false (that's the only way this function gets called) - the
+        // only way that combination happens is the heartbeat itself
+        // reported incognito_allowed: false.
+        return "incognito";
+    }
+    if extension_enabled_ignoring_incognito(target) {
+        "incognito"
+    } else {
+        "disabled"
+    }
 }
 
 /// Whether a browser process with the given name is currently running.
@@ -102,24 +182,30 @@ pub fn is_process_running(target: &BrowserTarget) -> bool {
     })
 }
 
-/// The combined protection check: disk state OR a recent heartbeat.
+/// The combined protection check: disk state OR a recent heartbeat -
+/// where "protected" now always means enabled AND incognito-permitted,
+/// on both sides of that OR.
 ///
-/// The disk read is checked first and is authoritative when it says
-/// "enabled" - no reason to second-guess it. It's only when the disk says
-/// "disabled/missing" that the heartbeat gets a say, on the theory that a
-/// heartbeat can only exist if the extension's background script is
-/// genuinely alive and running right now (impossible for a disabled
-/// extension), so it's trustworthy even when it disagrees with a stale or
-/// lagging disk write. See heartbeat.rs for the full rationale.
+/// The disk read is checked first and is authoritative when it says "fully
+/// permitted" - no reason to second-guess it. It's only when the disk says
+/// otherwise (disabled, missing, or enabled-but-no-incognito-access) that
+/// the heartbeat gets a say, on the theory that a heartbeat can only exist
+/// if the extension's background script is genuinely alive and running
+/// right now (impossible for a disabled extension), and its
+/// incognito_allowed field is a live chrome.management.getSelf() call at
+/// the moment it fired - not a disk read - so it's trustworthy even when
+/// it disagrees with a stale or lagging Preferences write. See
+/// heartbeat.rs for the full rationale.
 pub fn is_protected(target: &BrowserTarget, heartbeat: &crate::heartbeat::HeartbeatState) -> bool {
-    is_extension_installed(target) || heartbeat.is_fresh(target.name)
+    is_extension_installed(target) || heartbeat.is_fresh_and_permitted(target.name)
 }
 
 // Diagnostic snapshot - for each supported browser, is it currently
-// running, and is it protected (disk read OR a recent heartbeat - see
-// is_protected). Exposed via a Tauri command so it can be queried live
-// from DevTools without needing a rebuild each time.
-pub fn debug_status(heartbeat: &crate::heartbeat::HeartbeatState) -> Vec<(String, bool, bool)> {
+// running, is it protected (disk read OR a recent heartbeat - see
+// is_protected), and if not, why (only meaningful when running &&
+// !protected). Exposed via a Tauri command so it can be queried live
+// from DevTools/tray without needing a rebuild each time.
+pub fn debug_status(heartbeat: &crate::heartbeat::HeartbeatState) -> Vec<(String, bool, bool, String)> {
     let mut sys = System::new_all();
     sys.refresh_processes();
 
@@ -130,7 +216,12 @@ pub fn debug_status(heartbeat: &crate::heartbeat::HeartbeatState) -> Vec<(String
                 target.process_names.iter().any(|pn| pn.eq_ignore_ascii_case(p.name()))
             });
             let protected = is_protected(&target, heartbeat);
-            (target.name.to_string(), running, protected)
+            let reason = if running && !protected {
+                protection_gap_reason(&target, heartbeat).to_string()
+            } else {
+                "ok".to_string()
+            };
+            (target.name.to_string(), running, protected, reason)
         })
         .collect()
 }

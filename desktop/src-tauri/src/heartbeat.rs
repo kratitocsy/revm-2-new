@@ -44,11 +44,25 @@ struct HeartbeatBody {
     ua: Option<String>,
     #[serde(default)]
     brands: Option<Vec<String>>,
+    // chrome.management.getSelf().incognitoAccess, read live by the
+    // extension on every heartbeat - see background.js. This is a direct
+    // API call, not a disk read, so it's exactly as current as the
+    // person's actual chrome://extensions setting at the moment the
+    // heartbeat fired, no batching lag in either direction.
+    #[serde(default)]
+    incognito_allowed: Option<bool>,
 }
 
-/// Last-seen timestamp per resolved browser name (e.g. "Chrome", "Edge").
-/// Shared between the listener thread and the guard loop.
-pub struct HeartbeatState(Mutex<HashMap<&'static str, i64>>);
+#[derive(Clone, Copy)]
+struct Entry {
+    last_seen: i64,
+    incognito_allowed: bool,
+}
+
+/// Last-seen timestamp + last-reported incognito permission per resolved
+/// browser name (e.g. "Chrome", "Edge"). Shared between the listener
+/// thread and the guard loop.
+pub struct HeartbeatState(Mutex<HashMap<&'static str, Entry>>);
 
 impl HeartbeatState {
     pub fn new() -> Self {
@@ -60,19 +74,27 @@ impl HeartbeatState {
     /// just no data), which callers should treat as "no override available".
     pub fn seconds_since_last(&self, browser: &str) -> Option<i64> {
         let guard = self.0.lock().ok()?;
-        let ts = *guard.get(browser)?;
-        Some((crate::now_ts() - ts).max(0))
+        let e = guard.get(browser)?;
+        Some((crate::now_ts() - e.last_seen).max(0))
     }
 
-    pub fn is_fresh(&self, browser: &str) -> bool {
-        self.seconds_since_last(browser)
-            .map(|age| age <= HEARTBEAT_FRESHNESS_SECS)
-            .unwrap_or(false)
+    /// True only if the browser has a heartbeat within the freshness
+    /// window AND that heartbeat reported incognito access as granted.
+    /// This is the single check callers should use for "does the
+    /// heartbeat prove this browser is fully protected" - a fresh
+    /// heartbeat from an extension that isn't incognito-permitted is
+    /// proof of "enabled", not proof of "protected", and must not
+    /// override the disk read into a false positive.
+    pub fn is_fresh_and_permitted(&self, browser: &str) -> bool {
+        let Ok(guard) = self.0.lock() else { return false };
+        let Some(e) = guard.get(browser) else { return false };
+        let age = (crate::now_ts() - e.last_seen).max(0);
+        age <= HEARTBEAT_FRESHNESS_SECS && e.incognito_allowed
     }
 
-    fn record(&self, browser: &'static str) {
+    fn record(&self, browser: &'static str, incognito_allowed: bool) {
         if let Ok(mut guard) = self.0.lock() {
-            guard.insert(browser, crate::now_ts());
+            guard.insert(browser, Entry { last_seen: crate::now_ts(), incognito_allowed });
         }
     }
 }
@@ -126,9 +148,13 @@ fn handle_body(state: &HeartbeatState, body: &str) {
     let Ok(parsed) = serde_json::from_str::<HeartbeatBody>(body) else {
         return;
     };
+    // Chrome omits/undefines this if the extension's own
+    // chrome.management.getSelf() call ever fails - treat "unknown" the
+    // same as "not granted" rather than silently trusting it.
+    let incognito_allowed = parsed.incognito_allowed.unwrap_or(false);
 
     if let Some(name) = resolve_browser_name(parsed.ua.as_deref(), parsed.brands.as_deref()) {
-        state.record(name);
+        state.record(name, incognito_allowed);
         return;
     }
 
@@ -143,7 +169,7 @@ fn handle_body(state: &HeartbeatState, body: &str) {
         .map(|t| t.name)
         .collect();
     if running.len() == 1 {
-        state.record(running[0]);
+        state.record(running[0], incognito_allowed);
     }
 }
 
