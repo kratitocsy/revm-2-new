@@ -78,18 +78,27 @@ impl HeartbeatState {
         Some((crate::now_ts() - e.last_seen).max(0))
     }
 
-    /// True only if the browser has a heartbeat within the freshness
-    /// window AND that heartbeat reported incognito access as granted.
-    /// This is the single check callers should use for "does the
-    /// heartbeat prove this browser is fully protected" - a fresh
-    /// heartbeat from an extension that isn't incognito-permitted is
-    /// proof of "enabled", not proof of "protected", and must not
-    /// override the disk read into a false positive.
-    pub fn is_fresh_and_permitted(&self, browser: &str) -> bool {
-        let Ok(guard) = self.0.lock() else { return false };
-        let Some(e) = guard.get(browser) else { return false };
-        let age = (crate::now_ts() - e.last_seen).max(0);
-        age <= HEARTBEAT_FRESHNESS_SECS && e.incognito_allowed
+    /// True if the browser has a heartbeat within the freshness window,
+    /// regardless of what it reported for incognito. Pure liveness check.
+    pub fn is_fresh(&self, browser: &str) -> bool {
+        self.seconds_since_last(browser)
+            .map(|age| age <= HEARTBEAT_FRESHNESS_SECS)
+            .unwrap_or(false)
+    }
+
+    /// The most recently reported incognito_allowed value for this
+    /// browser, with NO freshness bound - `None` only when we've never
+    /// heard from it at all this run. Deliberately unbounded: this is a
+    /// live chrome.management.getSelf() API result at the moment it was
+    /// sent, not a value that can go stale the way a cached read might -
+    /// once we've learned it, it's more trustworthy than guessing at
+    /// Chromium's internal Preferences schema for the same information,
+    /// even if the heartbeat itself is old. (If the browser's heartbeat
+    /// has gone stale enough to matter, is_fresh()/is_protected()'s
+    /// liveness check already handles that separately.)
+    pub fn known_incognito_allowed(&self, browser: &str) -> Option<bool> {
+        let guard = self.0.lock().ok()?;
+        guard.get(browser).map(|e| e.incognito_allowed)
     }
 
     fn record(&self, browser: &'static str, incognito_allowed: bool) {

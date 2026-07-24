@@ -10,8 +10,22 @@
 use serde_json::Value;
 use std::path::PathBuf;
 use std::process::Command;
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 use std::time::Duration;
 use sysinfo::{Pid, System};
+
+// Passed via .creation_flags() to every Command we spawn here. Without
+// this, spawning a console-subsystem exe like taskkill.exe from a Tauri
+// app (a GUI-subsystem process) still pops a visible console window for
+// each call - and this runs once per chrome.exe PID (Chrome commonly has
+// dozens: main process, one per renderer tab, GPU, utility, extension
+// processes, ...), every time the guard loop tries to close an
+// unprotected browser. Without CREATE_NO_WINDOW that's a rapid flash of
+// console windows, potentially repeated every few seconds for as long as
+// enforcement keeps re-triggering.
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 // Computed once (see the conversation) from the fixed "key" in the
 // extension's manifest.json - deterministic no matter where it's unpacked.
@@ -143,30 +157,19 @@ fn extension_enabled_ignoring_incognito(target: &BrowserTarget) -> bool {
 }
 
 /// Which specific problem is making `target` unprotected right now -
-/// "disabled" (extension off or missing) or "incognito" (enabled, but
-/// without Incognito access) - purely to word the notification correctly.
-/// Prefers the heartbeat's own live incognito_allowed report when we have
-/// a fresh one, since that's more current than the disk read; falls back
-/// to the disk-only enabled check otherwise.
+/// "disabled" (extension off, missing, or not running at all) or
+/// "incognito" (alive, but not incognito-permitted) - purely to word the
+/// notification correctly. Mirrors is_protected()'s own alive/incognito
+/// split exactly, so this can never disagree with the actual decision.
 pub fn protection_gap_reason(
     target: &BrowserTarget,
     heartbeat: &crate::heartbeat::HeartbeatState,
 ) -> &'static str {
-    if heartbeat
-        .seconds_since_last(target.name)
-        .map(|age| age <= crate::heartbeat::HEARTBEAT_FRESHNESS_SECS)
-        .unwrap_or(false)
-    {
-        // A fresh heartbeat exists but is_protected() still returned
-        // false (that's the only way this function gets called) - the
-        // only way that combination happens is the heartbeat itself
-        // reported incognito_allowed: false.
-        return "incognito";
-    }
-    if extension_enabled_ignoring_incognito(target) {
-        "incognito"
-    } else {
+    let alive = extension_enabled_ignoring_incognito(target) || heartbeat.is_fresh(target.name);
+    if !alive {
         "disabled"
+    } else {
+        "incognito"
     }
 }
 
@@ -182,22 +185,36 @@ pub fn is_process_running(target: &BrowserTarget) -> bool {
     })
 }
 
-/// The combined protection check: disk state OR a recent heartbeat -
-/// where "protected" now always means enabled AND incognito-permitted,
-/// on both sides of that OR.
+/// The combined protection check: is the extension alive (disk OR a
+/// recent heartbeat), AND is it incognito-permitted.
 ///
-/// The disk read is checked first and is authoritative when it says "fully
-/// permitted" - no reason to second-guess it. It's only when the disk says
-/// otherwise (disabled, missing, or enabled-but-no-incognito-access) that
-/// the heartbeat gets a say, on the theory that a heartbeat can only exist
-/// if the extension's background script is genuinely alive and running
-/// right now (impossible for a disabled extension), and its
-/// incognito_allowed field is a live chrome.management.getSelf() call at
-/// the moment it fired - not a disk read - so it's trustworthy even when
-/// it disagrees with a stale or lagging Preferences write. See
-/// heartbeat.rs for the full rationale.
+/// "Alive": disk read (state == 1) OR a recent heartbeat - a heartbeat
+/// can only exist if the background script is genuinely running right
+/// now, impossible for a disabled extension, so it's trustworthy even
+/// when it disagrees with a stale/lagging Preferences write.
+///
+/// "Incognito-permitted": prefers the heartbeat's own live
+/// chrome.management.getSelf().incognitoAccess reading whenever we've
+/// ever received one this run, even a slightly old one - that's a real
+/// browser API result at the moment it fired, not a guess. The disk-based
+/// check (reading Chromium's Preferences JSON for an "incognito" key)
+/// only ever applies as a fallback for browsers we've never heard a
+/// heartbeat from at all - e.g. an extension build older than the
+/// heartbeat feature, or the extension's very first few seconds before
+/// its first heartbeat lands. That disk key is Claude's best
+/// understanding of Chromium's internal schema, unverified against a
+/// real Preferences file - if it turns out to be wrong, this ordering
+/// means it can only ever be too strict for a few seconds on startup,
+/// never persistently wrong once a heartbeat has actually arrived.
 pub fn is_protected(target: &BrowserTarget, heartbeat: &crate::heartbeat::HeartbeatState) -> bool {
-    is_extension_installed(target) || heartbeat.is_fresh_and_permitted(target.name)
+    let alive = extension_enabled_ignoring_incognito(target) || heartbeat.is_fresh(target.name);
+    if !alive {
+        return false;
+    }
+    match heartbeat.known_incognito_allowed(target.name) {
+        Some(allowed) => allowed,
+        None => is_extension_installed(target),
+    }
 }
 
 // Diagnostic snapshot - for each supported browser, is it currently
@@ -272,9 +289,11 @@ pub fn unprotected_running_browsers(heartbeat: &crate::heartbeat::HeartbeatState
 // the main process takes the whole browser (and its prefs flush) down
 // with it in the normal way.
 fn request_graceful_close(pid: Pid) {
-    let _ = Command::new("taskkill")
-        .args(["/PID", &pid.to_string()])
-        .output();
+    let mut cmd = Command::new("taskkill");
+    cmd.args(["/PID", &pid.to_string()]);
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+    let _ = cmd.output();
 }
 
 // Kills every running process matching any of the given browser names
