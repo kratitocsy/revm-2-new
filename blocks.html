@@ -29,6 +29,17 @@
 .yt-panel{margin-top:0.9rem;padding:0.9rem;background:var(--s1);border:1px solid var(--border);}
 .yt-panel-title{font-size:0.7rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text);margin-bottom:0.3rem;}
 .yt-panel-hint{font-size:0.72rem;color:var(--muted);margin-bottom:0.7rem;}
+.yt-suggest-box{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:20;background:var(--s1);border:1px solid var(--border2);max-height:280px;overflow-y:auto;box-shadow:0 8px 20px rgba(0,0,0,0.35);}
+.yt-suggest-item{display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.6rem;cursor:pointer;border-bottom:1px solid var(--border);}
+.yt-suggest-item:last-child{border-bottom:none;}
+.yt-suggest-item:hover,.yt-suggest-item.active{background:var(--gold-dim);}
+.yt-suggest-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--s2);}
+.yt-suggest-meta{min-width:0;flex:1;}
+.yt-suggest-title{font-size:0.78rem;color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.yt-suggest-sub{font-size:0.68rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.yt-suggest-status{padding:0.55rem 0.6rem;font-size:0.72rem;color:var(--muted);}
+.yt-suggest-fallback{padding:0.5rem 0.6rem;font-size:0.72rem;color:var(--muted);border-top:1px solid var(--border);cursor:pointer;}
+.yt-suggest-fallback:hover{color:var(--text);}
 .dur-opts{display:flex;flex-wrap:wrap;gap:0.5rem;}
 .dur-opt{padding:0.45rem 0.9rem;border:1px solid var(--border2);background:var(--s1);color:var(--muted);font-family:var(--font);font-size:0.75rem;font-weight:600;cursor:pointer;letter-spacing:0.03em;}
 .dur-opt:hover{border-color:var(--gold-border);color:var(--text);}
@@ -152,9 +163,13 @@
             <button type="button" class="mode-opt active" data-yt-mode="block" onclick="pickYtMode('block',this)">Block specific channels</button>
             <button type="button" class="mode-opt" data-yt-mode="allow" onclick="pickYtMode('allow',this)">Allow only these channels</button>
           </div>
-          <div class="site-add-row">
-            <input type="text" id="ytChannelInput" placeholder="@channelhandle or youtube.com/@channelhandle" onkeydown="if(event.key==='Enter'){event.preventDefault();addYtChannel();}">
+          <div class="site-add-row" style="position:relative;">
+            <input type="text" id="ytChannelInput" placeholder="Search a channel name, or paste @handle / youtube.com/@handle" autocomplete="off"
+              oninput="onYtChannelInput(this.value)"
+              onkeydown="onYtChannelKeydown(event)"
+              onblur="setTimeout(closeYtSuggest, 150)">
             <button class="btn btn-ghost btn-sm" onclick="addYtChannel()">Add</button>
+            <div id="ytSuggestBox" class="yt-suggest-box" style="display:none;"></div>
           </div>
           <div class="site-chips" id="ytChannelChips"></div>
         </div>
@@ -406,16 +421,137 @@ function renderYtChips(){
   const wrap=document.getElementById('ytChannelChips');
   wrap.innerHTML = pendingYtChannels.map((c,i)=>`<span class="site-chip">${escHtml(c.label)}<button onclick="removeYtChannel(${i})">✕</button></span>`).join('');
 }
+function pushYtChannel(id,label){
+  if(!id) return;
+  if(!pendingYtChannels.some(c=>c.id===id)) pendingYtChannels.push({ id, label });
+  renderYtChips();
+}
+// Manual/fallback path - used when the person pastes an exact @handle or
+// youtube.com URL, or when the resolver is unavailable. Free-typed *names*
+// still work via this path too, but land in youtube-guard.js's fuzzy
+// display-name fallback rather than a canonical ID - the suggestion
+// dropdown (see below) is what avoids that ambiguity when it's reachable.
 function addYtChannel(){
   const input=document.getElementById('ytChannelInput');
   const raw=input.value.trim();
   const id=normalizeChannelRef(raw);
   if(!id) return;
-  if(!pendingYtChannels.some(c=>c.id===id)) pendingYtChannels.push({ id, label: raw.startsWith('@')||id.startsWith('@') ? (id.startsWith('@')?id:'@'+id) : id });
+  pushYtChannel(id, raw.startsWith('@')||id.startsWith('@') ? (id.startsWith('@')?id:'@'+id) : id);
   input.value='';
-  renderYtChips();
+  closeYtSuggest();
 }
 function removeYtChannel(i){ pendingYtChannels.splice(i,1); renderYtChips(); }
+
+/* ── channel name → canonical ID resolution (autocomplete) ──
+   Resolves free text ("eduniti") to a real channel via the yt-resolve-channel
+   edge function *before* it's stored, so the entry is exact from the start
+   instead of relying on youtube-guard.js's loose display-name matching. */
+let ytSuggestTimer=null;
+let ytSuggestSeq=0; // guards against a slow older request overwriting a newer one
+let ytSuggestMatches=[];
+let ytSuggestActiveIndex=-1;
+
+function closeYtSuggest(){
+  const box=document.getElementById('ytSuggestBox');
+  box.style.display='none';
+  box.innerHTML='';
+  ytSuggestMatches=[];
+  ytSuggestActiveIndex=-1;
+}
+
+function onYtChannelInput(value){
+  clearTimeout(ytSuggestTimer);
+  const q=value.trim();
+  if(q.length<2 || q.startsWith('@') || q.startsWith('http') || q.includes('youtube.com')){
+    // Exact handles/URLs don't need resolving - the person already has the
+    // real identifier, so skip straight to the manual path.
+    closeYtSuggest();
+    return;
+  }
+  ytSuggestTimer=setTimeout(()=>runYtSuggest(q), 350); // debounce - avoid a request per keystroke
+}
+
+async function runYtSuggest(q){
+  const box=document.getElementById('ytSuggestBox');
+  const seq=++ytSuggestSeq;
+  box.style.display='block';
+  box.innerHTML='<div class="yt-suggest-status">Searching…</div>';
+  try{
+    const resp=await fetch(`${REVM2_CONFIG.SUPABASE_URL}/functions/v1/yt-resolve-channel?q=${encodeURIComponent(q)}`,{
+      headers:{ apikey: REVM2_CONFIG.SUPABASE_ANON, Authorization: `Bearer ${REVM2_CONFIG.SUPABASE_ANON}` }
+    });
+    if(seq!==ytSuggestSeq) return; // a newer keystroke already superseded this
+    if(!resp.ok) throw new Error('resolver_unavailable');
+    const data=await resp.json();
+    ytSuggestMatches=Array.isArray(data.matches)?data.matches:[];
+    ytSuggestActiveIndex=-1;
+    renderYtSuggestBox(q);
+  }catch(e){
+    if(seq!==ytSuggestSeq) return;
+    // Resolver down/unreachable - don't block the person, just point them
+    // at typing the exact handle instead (the pre-existing manual path).
+    box.innerHTML=`<div class="yt-suggest-status">Couldn't search channels right now.</div>
+      <div class="yt-suggest-fallback" onclick="closeYtSuggest()">Type the exact @handle instead, then hit Add</div>`;
+  }
+}
+
+function renderYtSuggestBox(q){
+  const box=document.getElementById('ytSuggestBox');
+  if(!ytSuggestMatches.length){
+    box.innerHTML=`<div class="yt-suggest-status">No channels found for "${escHtml(q)}".</div>
+      <div class="yt-suggest-fallback" onclick="closeYtSuggest()">Type the exact @handle instead, then hit Add</div>`;
+    return;
+  }
+  box.innerHTML=ytSuggestMatches.map((m,i)=>{
+    const idLine = m.handle ? m.handle : (m.channelId ? m.channelId : '');
+    return `<div class="yt-suggest-item${i===ytSuggestActiveIndex?' active':''}" data-i="${i}" onmousedown="selectYtSuggest(${i})">
+      ${m.thumbnail?`<img class="yt-suggest-avatar" src="${escHtml(m.thumbnail)}" alt="">`:'<div class="yt-suggest-avatar"></div>'}
+      <div class="yt-suggest-meta">
+        <div class="yt-suggest-title">${escHtml(m.title)}</div>
+        <div class="yt-suggest-sub">${escHtml(idLine)}${m.subscriberCountText?' · '+escHtml(m.subscriberCountText):''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectYtSuggest(i){
+  const m=ytSuggestMatches[i];
+  if(!m) return;
+  // Prefer the @handle as the stored id since that's what normalizeChannelRef()
+  // and the extension's page-matching both key on; fall back to the raw
+  // channelId for the (rare) channel that has no handle.
+  const id = m.handle ? m.handle.toLowerCase() : (m.channelId ? m.channelId.toLowerCase() : '');
+  const label = m.handle ? m.handle : m.title;
+  pushYtChannel(id, label);
+  const input=document.getElementById('ytChannelInput');
+  input.value='';
+  closeYtSuggest();
+  input.focus();
+}
+
+function onYtChannelKeydown(event){
+  if(event.key==='Enter'){
+    event.preventDefault();
+    if(ytSuggestActiveIndex>=0 && ytSuggestMatches[ytSuggestActiveIndex]){
+      selectYtSuggest(ytSuggestActiveIndex);
+    } else {
+      addYtChannel();
+    }
+    return;
+  }
+  if(!ytSuggestMatches.length) return;
+  if(event.key==='ArrowDown'){
+    event.preventDefault();
+    ytSuggestActiveIndex=Math.min(ytSuggestActiveIndex+1, ytSuggestMatches.length-1);
+    renderYtSuggestBox(document.getElementById('ytChannelInput').value.trim());
+  } else if(event.key==='ArrowUp'){
+    event.preventDefault();
+    ytSuggestActiveIndex=Math.max(ytSuggestActiveIndex-1, -1);
+    renderYtSuggestBox(document.getElementById('ytChannelInput').value.trim());
+  } else if(event.key==='Escape'){
+    closeYtSuggest();
+  }
+}
 function resetYtPanel(){
   pendingYtChannels=[]; pendingYtMode='block';
   renderYtChips();

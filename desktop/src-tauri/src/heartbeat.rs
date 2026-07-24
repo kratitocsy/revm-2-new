@@ -38,7 +38,15 @@ pub const HEARTBEAT_PORT: u16 = 47552;
 // genuinely-disabled extension still gets caught.
 pub const HEARTBEAT_FRESHNESS_SECS: i64 = 75;
 
+// background.js POSTs plain JS-convention camelCase keys (ua, brands,
+// incognitoAllowed). Without rename_all here, serde_json looks for a
+// literal "incognito_allowed" key, never finds it, and silently falls
+// back to None -> false on every heartbeat - meaning this field could
+// never actually report `true`, no matter what chrome.management.getSelf()
+// said extension-side. rename_all fixes the wire format to match what's
+// really being sent.
 #[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 struct HeartbeatBody {
     #[serde(default)]
     ua: Option<String>,
