@@ -87,9 +87,33 @@ pub struct SessionState(pub Arc<AtomicBool>);
 pub struct BrowserGraceTracker(pub Mutex<HashMap<String, i64>>);
 
 #[tauri::command]
-fn set_session_active(state: tauri::State<SessionState>, active: bool) -> Result<(), String> {
-    state.0.store(active, Ordering::SeqCst);
+fn set_session_active(
+    app: AppHandle,
+    state: tauri::State<SessionState>,
+    blocked_apps: tauri::State<app_guard::SharedBlockList>,
+    grace_tracker: tauri::State<Arc<BrowserGraceTracker>>,
+    heartbeat_state: tauri::State<Arc<heartbeat::HeartbeatState>>,
+    active: bool,
+) -> Result<(), String> {
+    let was_active = state.0.swap(active, Ordering::SeqCst);
     write_session_lock(active);
+
+    // "Always check for extension active or not whenever a block
+    // starts" - without this, a block that starts with the extension
+    // already disabled/incognito-blind has to wait for the periodic
+    // loop's next 3s tick to notice at all. Only fires on the
+    // false->true edge, not on every call (stopping a session, or a
+    // redundant start-while-already-active, shouldn't re-trigger it).
+    if active && !was_active {
+        let app = app.clone();
+        let blocked_apps = blocked_apps.inner().clone();
+        let grace_tracker = grace_tracker.inner().clone();
+        let heartbeat_state = heartbeat_state.inner().clone();
+        tauri::async_runtime::spawn(async move {
+            run_guard_tick(&app, &blocked_apps, &grace_tracker, &heartbeat_state).await;
+        });
+    }
+
     Ok(())
 }
 
@@ -232,6 +256,95 @@ fn apply_grace_period(
 // Runs forever on its own async task: every 3s, if a session is active,
 // applies the extension-grace-period check to browsers and the
 // immediate check to user-selected native apps.
+async fn run_guard_tick(
+    app: &AppHandle,
+    blocked_apps: &app_guard::SharedBlockList,
+    grace_tracker: &Arc<BrowserGraceTracker>,
+    heartbeat_state: &Arc<heartbeat::HeartbeatState>,
+) {
+    let mut closed: Vec<String> = Vec::new();
+
+    let (to_close, soonest_grace, newly_started, recovered) = apply_grace_period(grace_tracker, heartbeat_state);
+
+    // One popup per disable event, right when the countdown
+    // starts - not once per 3s tick, and not silently buried
+    // in a tooltip nobody's hovering over.
+    for name in &newly_started {
+        let reason = browser_guard::supported_browsers()
+            .into_iter()
+            .find(|t| t.name == *name)
+            .map(|t| browser_guard::protection_gap_reason(&t, heartbeat_state))
+            .unwrap_or("disabled");
+        if reason == "incognito" {
+            notify(
+                app,
+                "RevM2 - Incognito access not allowed",
+                &format!(
+                    "{name}'s RevM2 extension doesn't have Incognito access. Go to chrome://extensions -> RevM2 -> Details -> turn on \"Allow in Incognito\" within {EXTENSION_GRACE_SECS} seconds or {name} will be closed."
+                ),
+            );
+        } else {
+            notify(
+                app,
+                "RevM2 - Extension disabled",
+                &format!(
+                    "{name}'s RevM2 extension is missing or disabled. Re-enable it within {EXTENSION_GRACE_SECS} seconds or {name} will be closed."
+                ),
+            );
+        }
+    }
+
+    // Confirms the re-enable actually landed - otherwise the only
+    // feedback is the countdown popup disappearing, which is easy
+    // to miss and doesn't say whether it worked.
+    for name in &recovered {
+        notify(
+            app,
+            "RevM2 - Extension re-enabled",
+            &format!("{name}'s RevM2 extension is back on - {name} is protected again."),
+        );
+    }
+
+    if !to_close.is_empty() {
+        // Repetitive on purpose: this fires every 3s tick for
+        // as long as the browser stays unprotected and gets
+        // reopened, not just once. There's no "grace used up,
+        // now leave it alone" state.
+        let killed = browser_guard::kill_browsers_by_name(&to_close);
+        if !killed.is_empty() {
+            eprintln!("browser_guard: grace expired, closed: {killed:?}");
+            notify(
+                app,
+                "RevM2 - Browser closed",
+                &format!(
+                    "{} was closed because the RevM2 extension wasn't re-enabled in time.",
+                    killed.join(", ")
+                ),
+            );
+            closed.extend(killed.iter().map(|s| s.to_string()));
+        }
+    }
+
+    let blocked = blocked_apps
+        .lock()
+        .map(|guard| guard.clone())
+        .unwrap_or_default();
+    let killed_apps = app_guard::kill_blocked_apps(&blocked);
+    if !killed_apps.is_empty() {
+        eprintln!("app_guard: closed blocked apps: {killed_apps:?}");
+        closed.extend(killed_apps);
+    }
+
+    let status_text = if !closed.is_empty() {
+        format!("RevM2 - closed: {}", closed.join(", "))
+    } else if let Some((name, remaining)) = soonest_grace {
+        format!("RevM2 - {name} extension missing, {remaining}s until blocked")
+    } else {
+        "RevM2 - Session active, all protected".to_string()
+    };
+    let _ = set_tray_status(app.clone(), status_text);
+}
+
 fn spawn_guard_loop(
     app: AppHandle,
     session_active: Arc<AtomicBool>,
@@ -252,87 +365,7 @@ fn spawn_guard_loop(
                 continue;
             }
 
-            let mut closed: Vec<String> = Vec::new();
-
-            let (to_close, soonest_grace, newly_started, recovered) = apply_grace_period(&grace_tracker, &heartbeat_state);
-
-            // One popup per disable event, right when the countdown
-            // starts - not once per 3s tick, and not silently buried
-            // in a tooltip nobody's hovering over.
-            for name in &newly_started {
-                let reason = browser_guard::supported_browsers()
-                    .into_iter()
-                    .find(|t| t.name == *name)
-                    .map(|t| browser_guard::protection_gap_reason(&t, &heartbeat_state))
-                    .unwrap_or("disabled");
-                if reason == "incognito" {
-                    notify(
-                        &app,
-                        "RevM2 - Incognito access not allowed",
-                        &format!(
-                            "{name}'s RevM2 extension doesn't have Incognito access. Go to chrome://extensions -> RevM2 -> Details -> turn on \"Allow in Incognito\" within {EXTENSION_GRACE_SECS} seconds or {name} will be closed."
-                        ),
-                    );
-                } else {
-                    notify(
-                        &app,
-                        "RevM2 - Extension disabled",
-                        &format!(
-                            "{name}'s RevM2 extension is missing or disabled. Re-enable it within {EXTENSION_GRACE_SECS} seconds or {name} will be closed."
-                        ),
-                    );
-                }
-            }
-
-            // Confirms the re-enable actually landed - otherwise the only
-            // feedback is the countdown popup disappearing, which is easy
-            // to miss and doesn't say whether it worked.
-            for name in &recovered {
-                notify(
-                    &app,
-                    "RevM2 - Extension re-enabled",
-                    &format!("{name}'s RevM2 extension is back on - {name} is protected again."),
-                );
-            }
-
-            if !to_close.is_empty() {
-                // Repetitive on purpose: this fires every 3s tick for
-                // as long as the browser stays unprotected and gets
-                // reopened, not just once. There's no "grace used up,
-                // now leave it alone" state.
-                let killed = browser_guard::kill_browsers_by_name(&to_close);
-                if !killed.is_empty() {
-                    eprintln!("browser_guard: grace expired, closed: {killed:?}");
-                    notify(
-                        &app,
-                        "RevM2 - Browser closed",
-                        &format!(
-                            "{} was closed because the RevM2 extension wasn't re-enabled in time.",
-                            killed.join(", ")
-                        ),
-                    );
-                    closed.extend(killed.iter().map(|s| s.to_string()));
-                }
-            }
-
-            let blocked = blocked_apps
-                .lock()
-                .map(|guard| guard.clone())
-                .unwrap_or_default();
-            let killed_apps = app_guard::kill_blocked_apps(&blocked);
-            if !killed_apps.is_empty() {
-                eprintln!("app_guard: closed blocked apps: {killed_apps:?}");
-                closed.extend(killed_apps);
-            }
-
-            let status_text = if !closed.is_empty() {
-                format!("RevM2 - closed: {}", closed.join(", "))
-            } else if let Some((name, remaining)) = soonest_grace {
-                format!("RevM2 - {name} extension missing, {remaining}s until blocked")
-            } else {
-                "RevM2 - Session active, all protected".to_string()
-            };
-            let _ = set_tray_status(app.clone(), status_text);
+            run_guard_tick(&app, &blocked_apps, &grace_tracker, &heartbeat_state).await;
         }
     });
 }
@@ -358,6 +391,7 @@ pub fn run() {
         .manage(SessionState(session_active.clone()))
         .manage(blocked_apps.clone())
         .manage(heartbeat_state.clone())
+        .manage(grace_tracker.clone())
         .setup(move |app| {
             if let Ok(store) = app.store(BLOCKED_APPS_STORE) {
                 if let Some(apps) = store
