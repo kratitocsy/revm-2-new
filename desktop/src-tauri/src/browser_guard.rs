@@ -37,6 +37,9 @@ pub struct BrowserTarget {
     pub user_data_dir: fn() -> Option<PathBuf>,
 }
 
+// See read_extension_settings() below for which file on disk is actually
+// authoritative for an extension's enabled/incognito state (Secure
+// Preferences, not the plain Preferences file this module used to read).
 fn local_appdata() -> Option<PathBuf> {
     std::env::var_os("LOCALAPPDATA").map(PathBuf::from)
 }
@@ -71,10 +74,43 @@ pub fn supported_browsers() -> Vec<BrowserTarget> {
     ]
 }
 
+// Loads the "/extensions/settings/{EXTENSION_ID}" object for one profile
+// folder. Chrome has kept extension state (enabled/disabled) AND the
+// per-extension "incognito" permission flag in a file called
+// "Secure Preferences" since Chrome 37 - NOT in the plain "Preferences"
+// file - specifically as a tamper-resistance measure (each entry is
+// HMAC-signed against a machine-specific seed) so that outside tools can't
+// silently rewrite an extension's state by editing JSON on disk. Reading
+// only "Preferences" (what this used to do) means reading a file Chrome
+// no longer reliably keeps this data in: the state read back could be
+// stale, missing entirely, or - going by field reports - inconsistently
+// present depending on Chrome version/OS, none of which is something this
+// code can tell apart from "extension genuinely isn't there". That's
+// consistent with "I re-enabled it / turned on Allow in Incognito and it
+// still says blocked": the write Chrome actually makes lands in Secure
+// Preferences, and nothing here was ever looking there.
+//
+// "Preferences" is tried second, purely as a fallback for older/unusual
+// Chrome builds where Secure Preferences might be absent or not yet
+// populated - never as the primary source.
+fn read_extension_settings(profile_dir: &PathBuf) -> Option<Value> {
+    for filename in ["Secure Preferences", "Preferences"] {
+        let Ok(content) = std::fs::read_to_string(profile_dir.join(filename)) else { continue };
+        let Ok(json): Result<Value, _> = serde_json::from_str(&content) else { continue };
+        let settings = json
+            .pointer(&format!("/extensions/settings/{EXTENSION_ID}"))
+            .cloned();
+        if settings.is_some() {
+            return settings;
+        }
+    }
+    None
+}
+
 // Checks every profile folder (Default, Profile 1, Profile 2, ...) under a
 // browser's User Data directory for our extension being present, enabled
 // (state == 1), AND permitted to run in Incognito windows (incognito ==
-// true) in Chromium's Preferences JSON.
+// true).
 //
 // The incognito requirement isn't optional: an extension without explicit
 // "Allow in Incognito" access literally cannot run there at all - no
@@ -87,19 +123,17 @@ pub fn supported_browsers() -> Vec<BrowserTarget> {
 // that gap: the browser gets closed exactly like it would if the
 // extension were off, and the fix is the same one-time toggle either way
 // (chrome://extensions -> Details -> Allow in Incognito).
-fn extension_fully_permitted_in_profile(prefs_path: &PathBuf) -> bool {
-    let Ok(content) = std::fs::read_to_string(prefs_path) else { return false };
-    let Ok(json): Result<Value, _> = serde_json::from_str(&content) else { return false };
-    let settings = json.pointer(&format!("/extensions/settings/{EXTENSION_ID}"));
+fn extension_fully_permitted_in_profile(profile_dir: &PathBuf) -> bool {
+    let Some(settings) = read_extension_settings(profile_dir) else { return false };
     let enabled = matches!(
-        settings.and_then(|v| v.get("state")).and_then(|v| v.as_i64()),
+        settings.get("state").and_then(|v| v.as_i64()),
         Some(1)
     );
     // Chrome omits the "incognito" key entirely when it's false (the
     // default), so absence means "not allowed", not "unknown" - only an
     // explicit `true` counts.
     let incognito_allowed = matches!(
-        settings.and_then(|v| v.get("incognito")).and_then(|v| v.as_bool()),
+        settings.get("incognito").and_then(|v| v.as_bool()),
         Some(true)
     );
     enabled && incognito_allowed
@@ -119,8 +153,7 @@ pub fn is_extension_installed(target: &BrowserTarget) -> bool {
         // from unrelated folders.
         if name != "Default" && !name.starts_with("Profile ") { continue; }
 
-        let prefs = path.join("Preferences");
-        if extension_fully_permitted_in_profile(&prefs) {
+        if extension_fully_permitted_in_profile(&path) {
             return true;
         }
     }
@@ -143,14 +176,8 @@ fn extension_enabled_ignoring_incognito(target: &BrowserTarget) -> bool {
         let name = name.to_string_lossy();
         if name != "Default" && !name.starts_with("Profile ") { continue; }
 
-        let prefs = path.join("Preferences");
-        let Ok(content) = std::fs::read_to_string(&prefs) else { continue };
-        let Ok(json): Result<Value, _> = serde_json::from_str(&content) else { continue };
-        let enabled = matches!(
-            json.pointer(&format!("/extensions/settings/{EXTENSION_ID}/state"))
-                .and_then(|v| v.as_i64()),
-            Some(1)
-        );
+        let Some(settings) = read_extension_settings(&path) else { continue };
+        let enabled = matches!(settings.get("state").and_then(|v| v.as_i64()), Some(1));
         if enabled { return true; }
     }
     false
@@ -188,24 +215,25 @@ pub fn is_process_running(target: &BrowserTarget) -> bool {
 /// The combined protection check: is the extension alive (disk OR a
 /// recent heartbeat), AND is it incognito-permitted.
 ///
-/// "Alive": disk read (state == 1) OR a recent heartbeat - a heartbeat
-/// can only exist if the background script is genuinely running right
-/// now, impossible for a disabled extension, so it's trustworthy even
-/// when it disagrees with a stale/lagging Preferences write.
+/// "Alive": disk read (state == 1, checked in Secure Preferences first -
+/// see read_extension_settings - then Preferences as a fallback) OR a
+/// recent heartbeat - a heartbeat can only exist if the background script
+/// is genuinely running right now, impossible for a disabled extension,
+/// so it's trustworthy even when it disagrees with a stale/lagging
+/// Secure Preferences write (e.g. mid-batch, or the HMAC re-sign hasn't
+/// landed yet).
 ///
 /// "Incognito-permitted": prefers the heartbeat's own live
 /// chrome.management.getSelf().incognitoAccess reading whenever we've
 /// ever received one this run, even a slightly old one - that's a real
 /// browser API result at the moment it fired, not a guess. The disk-based
-/// check (reading Chromium's Preferences JSON for an "incognito" key)
-/// only ever applies as a fallback for browsers we've never heard a
-/// heartbeat from at all - e.g. an extension build older than the
-/// heartbeat feature, or the extension's very first few seconds before
-/// its first heartbeat lands. That disk key is Claude's best
-/// understanding of Chromium's internal schema, unverified against a
-/// real Preferences file - if it turns out to be wrong, this ordering
-/// means it can only ever be too strict for a few seconds on startup,
-/// never persistently wrong once a heartbeat has actually arrived.
+/// check (reading Secure Preferences, falling back to Preferences, for an
+/// "incognito" key) only ever applies as a fallback for browsers we've
+/// never heard a heartbeat from at all - e.g. an extension build older
+/// than the heartbeat feature, or the extension's very first few seconds
+/// before its first heartbeat lands. Even now that the disk read targets
+/// the right file, the heartbeat stays preferred: it's a live API result,
+/// not a JSON read racing Chrome's own write/HMAC-resign cycle.
 pub fn is_protected(target: &BrowserTarget, heartbeat: &crate::heartbeat::HeartbeatState) -> bool {
     let alive = extension_enabled_ignoring_incognito(target) || heartbeat.is_fresh(target.name);
     if !alive {
