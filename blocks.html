@@ -434,7 +434,7 @@ function pickYtMode(mode, btn){
   pendingYtMode = mode==='allow' ? 'allow' : 'block';
   document.querySelectorAll('#ytPanel .mode-opts [data-yt-mode]').forEach(b=>b.classList.toggle('active', b===btn));
   document.getElementById('ytPanelHint').textContent = pendingYtMode==='allow'
-    ? 'Only these channels stay reachable on YouTube — the home feed, search, Shorts, and every other channel get blocked.'
+    ? 'Only these channels stay reachable on YouTube — the home feed always works, search results are filtered down to just these channels, and every other channel gets blocked.'
     : 'These channels get blocked on YouTube — everything else (home feed, search, other channels) stays reachable.';
 }
 function renderYtChips(){
@@ -446,11 +446,14 @@ function pushYtChannel(id,label){
   if(!pendingYtChannels.some(c=>c.id===id)) pendingYtChannels.push({ id, label });
   renderYtChips();
 }
-// Manual/fallback path - used when the person pastes an exact @handle or
-// youtube.com URL, or when the resolver is unavailable. Free-typed *names*
-// still work via this path too, but land in youtube-guard.js's fuzzy
-// display-name fallback rather than a canonical ID - the suggestion
-// dropdown (see below) is what avoids that ambiguity when it's reachable.
+// Manual/fallback path - used for pasted youtube.com URLs (always, no
+// lookup needed), for an @handle/name when the resolver is down or found
+// no confirmed match, or if the person just hits "Add" without engaging
+// with the dropdown at all. Stores the raw typed text as both id and
+// label when there's nothing better to use - a plain typed name lands in
+// youtube-guard.js's fuzzy display-name fallback rather than a canonical
+// ID; the suggestion dropdown (see below) is what avoids that ambiguity
+// whenever it's reachable, for handles and names alike.
 function addYtChannel(){
   const input=document.getElementById('ytChannelInput');
   const raw=input.value.trim();
@@ -482,12 +485,21 @@ function closeYtSuggest(){
 function onYtChannelInput(value){
   clearTimeout(ytSuggestTimer);
   const q=value.trim();
-  if(q.length<2 || q.startsWith('@') || q.startsWith('http') || q.includes('youtube.com')){
-    // Exact handles/URLs don't need resolving - the person already has the
-    // real identifier, so skip straight to the manual path.
+  if(q.length<2 || q.startsWith('http') || q.includes('youtube.com')){
+    // Full URLs are already an exact, unambiguous identifier - nothing
+    // useful to resolve or show.
     closeYtSuggest();
     return;
   }
+  // @handles now DO still get resolved (previously skipped entirely,
+  // same as URLs) - typing the exact handle is the most common way
+  // people add a channel, and skipping resolution meant the real
+  // channel NAME never got learned; only the handle itself ended up
+  // stored as both id and label, which is exactly what broke search-page
+  // matching for a typed display name like "eduniti" later. Enter still
+  // can't silently substitute a different, similarly-named channel for
+  // an exact handle someone already had right - see runYtSuggest's
+  // exact-match highlighting and onYtChannelKeydown below.
   ytSuggestTimer=setTimeout(()=>runYtSuggest(q), 350); // debounce - avoid a request per keystroke
 }
 
@@ -504,7 +516,16 @@ async function runYtSuggest(q){
     if(!resp.ok) throw new Error('resolver_unavailable');
     const data=await resp.json();
     ytSuggestMatches=Array.isArray(data.matches)?data.matches:[];
-    ytSuggestActiveIndex=-1;
+    // If the typed text is an exact @handle and one of the results is
+    // that exact handle, pre-highlight it so Enter confirms it directly
+    // (via the "has an active index" branch in onYtChannelKeydown) -
+    // never falls through to "default to the top match", which would
+    // risk silently substituting a different, similarly-named channel
+    // for an identifier the person already had exactly right.
+    const typedHandle = q.startsWith('@') ? q.slice(1).toLowerCase() : null;
+    ytSuggestActiveIndex = typedHandle
+      ? ytSuggestMatches.findIndex((m) => m.handle && m.handle.replace(/^@/,'').toLowerCase() === typedHandle)
+      : -1;
     renderYtSuggestBox(q);
   }catch(e){
     if(seq!==ytSuggestSeq) return;
@@ -562,13 +583,19 @@ function onYtChannelKeydown(event){
     event.preventDefault();
     if(ytSuggestActiveIndex>=0 && ytSuggestMatches[ytSuggestActiveIndex]){
       selectYtSuggest(ytSuggestActiveIndex);
-    } else if(ytSuggestMatches.length){
+    } else if(ytSuggestMatches.length && !document.getElementById('ytChannelInput').value.trim().startsWith('@')){
       // Suggestions are visibly on screen but nobody arrow-keyed to one -
-      // that's the overwhelmingly common case (type, see the dropdown,
-      // hit Enter) and previously fell straight through to addYtChannel(),
-      // silently skipping resolution entirely and storing the raw typed
-      // text instead of the real handle. Default to the top match, same
-      // as clicking it.
+      // that's the overwhelmingly common case (type a NAME, see the
+      // dropdown, hit Enter) and previously fell straight through to
+      // addYtChannel(), silently skipping resolution entirely and
+      // storing the raw typed text instead of the real handle. Default
+      // to the top match, same as clicking it - a name search is
+      // inherently fuzzy, "closest match" is the whole point.
+      // Only for a name search, though: an exact @handle with nothing
+      // confirmed as a match (see runYtSuggest's exact-match
+      // pre-highlight) falls through to addYtChannel() instead, below -
+      // trusting an identifier the person already had exactly right
+      // beats guessing at a similarly-named channel from search results.
       selectYtSuggest(0);
     } else {
       addYtChannel();
