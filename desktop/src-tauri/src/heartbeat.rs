@@ -26,7 +26,6 @@
 
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::io::Read;
 use std::sync::{Arc, Mutex};
 
 pub const HEARTBEAT_PORT: u16 = 47552;
@@ -229,7 +228,7 @@ pub fn spawn_heartbeat_server(state: Arc<HeartbeatState>, bridge: Arc<crate::ses
             }
         };
 
-        for request in server.incoming_requests() {
+        for mut request in server.incoming_requests() {
             let state = state.clone();
             let bridge = bridge.clone();
             std::thread::spawn(move || {
