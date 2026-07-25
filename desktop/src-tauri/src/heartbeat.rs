@@ -190,11 +190,32 @@ fn handle_body(state: &HeartbeatState, body: &str) {
     }
 }
 
-/// Binds a tiny local HTTP server on 127.0.0.1 and processes heartbeat
-/// POSTs on its own OS thread for the lifetime of the app. Runs outside
-/// Tauri's IPC/webview entirely - the extension talks to this directly,
-/// same as it already talks to the RevM2 web API.
-pub fn spawn_heartbeat_server(state: Arc<HeartbeatState>) {
+// Pulls `since` off a "/session-events?since=123" request target. Missing
+// or unparseable defaults to 0, which just means "give me the current
+// state immediately" - the safe default for a client that's never
+// connected before.
+fn parse_since(url: &str) -> u64 {
+    url.split('?')
+        .nth(1)
+        .and_then(|qs| qs.split('&').find_map(|kv| kv.strip_prefix("since=")))
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0)
+}
+
+/// Binds a tiny local HTTP server on 127.0.0.1 and handles two routes for
+/// the lifetime of the app, entirely outside Tauri's IPC/webview - the
+/// extension talks to this directly, same as it already talks to the
+/// RevM2 web API:
+///   - POST /heartbeat        - existing "I'm alive" ping (see module docs)
+///   - GET  /session-events   - long-poll for an instant session start/end
+///     signal from the desktop app (see session_bridge.rs)
+///
+/// Each accepted connection is handed to its own thread. That's a
+/// deliberate change from the old single-loop version: a /session-events
+/// request can legitimately block for up to ~25s (see
+/// session_bridge::SessionEventBus::wait_for), and heartbeat POSTs need to
+/// keep landing without waiting behind that.
+pub fn spawn_heartbeat_server(state: Arc<HeartbeatState>, bridge: Arc<crate::session_bridge::SessionEventBus>) {
     std::thread::spawn(move || {
         let server = match tiny_http::Server::http(("127.0.0.1", HEARTBEAT_PORT)) {
             Ok(server) => server,
@@ -208,19 +229,52 @@ pub fn spawn_heartbeat_server(state: Arc<HeartbeatState>) {
             }
         };
 
-        for mut request in server.incoming_requests() {
-            if request.method() != &tiny_http::Method::Post {
-                let _ = request.respond(tiny_http::Response::empty(405));
-                continue;
-            }
+        for request in server.incoming_requests() {
+            let state = state.clone();
+            let bridge = bridge.clone();
+            std::thread::spawn(move || {
+                let url = request.url().to_string();
+                let path = url.split('?').next().unwrap_or("");
 
-            let mut body = String::new();
-            let _ = request.as_reader().read_to_string(&mut body);
-            handle_body(&state, &body);
+                if path == "/session-events" {
+                    if request.method() != &tiny_http::Method::Get {
+                        let _ = request.respond(tiny_http::Response::empty(405));
+                        return;
+                    }
+                    let since = parse_since(&url);
+                    match bridge.wait_for(since) {
+                        Some((seq, payload)) => {
+                            let mut body = payload;
+                            if let Some(obj) = body.as_object_mut() {
+                                obj.insert("seq".to_string(), serde_json::json!(seq));
+                            }
+                            let json = serde_json::to_string(&body).unwrap_or_else(|_| "{}".to_string());
+                            let header = tiny_http::Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..]).unwrap();
+                            let _ = request.respond(tiny_http::Response::from_string(json).with_header(header));
+                        }
+                        None => {
+                            // Timed out, nothing new - the extension's
+                            // long-poll loop reconnects immediately with
+                            // the same `since`, so this is silent and cheap.
+                            let _ = request.respond(tiny_http::Response::empty(204));
+                        }
+                    }
+                    return;
+                }
 
-            // 204: the extension doesn't need or read a response body,
-            // this is fire-and-forget from its side.
-            let _ = request.respond(tiny_http::Response::empty(204));
+                if request.method() != &tiny_http::Method::Post {
+                    let _ = request.respond(tiny_http::Response::empty(405));
+                    return;
+                }
+
+                let mut body = String::new();
+                let _ = request.as_reader().read_to_string(&mut body);
+                handle_body(&state, &body);
+
+                // 204: the extension doesn't need or read a response body,
+                // this is fire-and-forget from its side.
+                let _ = request.respond(tiny_http::Response::empty(204));
+            });
         }
     });
 }

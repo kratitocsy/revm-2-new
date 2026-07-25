@@ -1,6 +1,7 @@
 mod app_guard;
 mod browser_guard;
 mod heartbeat;
+mod session_bridge;
 
 #[tauri::command]
 fn greet(name: String) -> String {
@@ -120,6 +121,23 @@ fn set_session_active(
 #[tauri::command]
 fn debug_browser_status(heartbeat: tauri::State<Arc<heartbeat::HeartbeatState>>) -> Result<Vec<(String, bool, bool, String)>, String> {
     Ok(browser_guard::debug_status(&heartbeat))
+}
+
+// Called from blocks.html (only meaningful when running inside the
+// desktop webview - see isDesktopApp()) right alongside the existing
+// set_session_active invoke, and again on every loadActiveBlock() tick so
+// a change noticed by *that* poll (e.g. another device ending the session
+// via emergency unlock) also reaches the extension without waiting on its
+// own separate Edge Function poll. Safe to call redundantly with
+// unchanged state - see SessionEventBus::push.
+#[tauri::command]
+fn push_session_event(
+    bridge: tauri::State<Arc<session_bridge::SessionEventBus>>,
+    active: bool,
+    session: Option<serde_json::Value>,
+) -> Result<(), String> {
+    bridge.push(active, session.unwrap_or(serde_json::Value::Null));
+    Ok(())
 }
 
 // icon's tooltip always reflects the latest known state, even when the
@@ -376,13 +394,14 @@ pub fn run() {
     let blocked_apps: app_guard::SharedBlockList = Arc::new(Mutex::new(app_guard::BlockedApps::default()));
     let grace_tracker = Arc::new(BrowserGraceTracker(Mutex::new(HashMap::new())));
     let heartbeat_state = Arc::new(heartbeat::HeartbeatState::new());
+    let session_bridge = Arc::new(session_bridge::SessionEventBus::new());
 
     // Starts listening immediately, independent of session state - the
     // extension heartbeats regardless of whether a focus session is
     // active, so by the time a session actually starts we already have a
     // fresh signal instead of waiting on the first heartbeat after the
     // fact.
-    heartbeat::spawn_heartbeat_server(heartbeat_state.clone());
+    heartbeat::spawn_heartbeat_server(heartbeat_state.clone(), session_bridge.clone());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::new().build())
@@ -392,6 +411,7 @@ pub fn run() {
         .manage(blocked_apps.clone())
         .manage(heartbeat_state.clone())
         .manage(grace_tracker.clone())
+        .manage(session_bridge.clone())
         .setup(move |app| {
             if let Ok(store) = app.store(BLOCKED_APPS_STORE) {
                 if let Some(apps) = store
@@ -465,6 +485,7 @@ pub fn run() {
             greet,
             set_tray_status,
             set_session_active,
+            push_session_event,
             debug_browser_status,
             list_running_apps,
             get_blocked_apps,

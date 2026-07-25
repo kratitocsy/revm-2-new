@@ -623,6 +623,22 @@ async function syncBlockedAppsToDesktop(apps){
   catch(e){ console.error('RM2 desktop invoke error (set_blocked_apps):', e); }
 }
 
+// Relays the current session state to the desktop app's local bridge (see
+// desktop/src-tauri/src/session_bridge.rs) so the RevM2 browser extension
+// - which the desktop app's own webview is NOT, even when this page is
+// running inside it - learns about it within seconds over a local
+// long-poll instead of waiting on its own separate 35s Edge Function
+// poll. `session` should already be in the camelCase shape the extension
+// expects (blockName/sites/mode/youtubeRules/durationMinutes/unlimited),
+// same shape sent via RM2_START_SESSION below - pass null when active is
+// false. Safe to call on every loadActiveBlock() tick, not just real
+// transitions: the bridge itself dedupes on the Rust side.
+async function pushSessionEventToDesktop(active, session){
+  if(!isDesktopApp()) return;
+  try{ await window.__TAURI__.core.invoke('push_session_event', {active: !!active, session: session||null}); }
+  catch(e){ console.error('RM2 desktop invoke error (push_session_event):', e); }
+}
+
 /* ── duration picker ── */
 let pendingMinutes=0; // 0 = unlimited
 function pickDuration(mins, btn){
@@ -667,7 +683,9 @@ async function startBlock(){
   document.getElementById('blockName').value='';
   try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
   await syncBlockedAppsToDesktop(startedApps);
-  sendToExtension({ type:'RM2_START_SESSION', payload:{ blockName:name, sites:startedSites, durationMinutes: startedMinutes>0 ? startedMinutes : null, mode:startedMode, youtubeRules } });
+  const startedSessionPayload={ blockName:name, sites:startedSites, durationMinutes: startedMinutes>0 ? startedMinutes : null, mode:startedMode, youtubeRules };
+  sendToExtension({ type:'RM2_START_SESSION', payload:startedSessionPayload });
+  pushSessionEventToDesktop(true, startedSessionPayload);
   loadActiveBlock();
 }
 
@@ -708,7 +726,26 @@ async function loadActiveBlock(){
     startCard.style.display='block';
     if(activeTickHandle){ clearInterval(activeTickHandle); activeTickHandle=null; }
     syncBlockedAppsToDesktop([]);
+    pushSessionEventToDesktop(false, null);
     return;
+  }
+  // Relay whatever this poll just learned to the desktop bridge - covers
+  // a session started/ended somewhere OTHER than this exact tab (another
+  // device, the emergency-unlock webhook, etc.) reaching the extension
+  // within seconds via this machine's desktop app instead of waiting on
+  // the extension's own separate Edge Function poll. Harmless to call
+  // every tick - the bridge only wakes the extension on an actual change.
+  {
+    const remainingMinutes = (!data.unlimited && data.ends_at)
+      ? Math.max(1, Math.round((new Date(data.ends_at).getTime()-Date.now())/60000))
+      : null;
+    pushSessionEventToDesktop(true, {
+      blockName: data.block_name,
+      sites: data.sites,
+      durationMinutes: remainingMinutes,
+      mode: data.mode,
+      youtubeRules: data.youtube_rules || null,
+    });
   }
   startCard.style.display='none';
   card.style.display='block';
@@ -797,7 +834,9 @@ async function startPreset(id){
   }
   try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
   await syncBlockedAppsToDesktop(presetApps);
-  sendToExtension({ type:'RM2_START_SESSION', payload:{ blockName:preset.name, sites:preset.sites, durationMinutes: preset.duration_minutes || null, mode:presetMode, youtubeRules: preset.youtube_rules || null } });
+  const presetSessionPayload={ blockName:preset.name, sites:preset.sites, durationMinutes: preset.duration_minutes || null, mode:presetMode, youtubeRules: preset.youtube_rules || null };
+  sendToExtension({ type:'RM2_START_SESSION', payload:presetSessionPayload });
+  pushSessionEventToDesktop(true, presetSessionPayload);
   loadActiveBlock();
 }
 
