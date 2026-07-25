@@ -534,6 +534,14 @@ function onYtChannelKeydown(event){
     event.preventDefault();
     if(ytSuggestActiveIndex>=0 && ytSuggestMatches[ytSuggestActiveIndex]){
       selectYtSuggest(ytSuggestActiveIndex);
+    } else if(ytSuggestMatches.length){
+      // Suggestions are visibly on screen but nobody arrow-keyed to one -
+      // that's the overwhelmingly common case (type, see the dropdown,
+      // hit Enter) and previously fell straight through to addYtChannel(),
+      // silently skipping resolution entirely and storing the raw typed
+      // text instead of the real handle. Default to the top match, same
+      // as clicking it.
+      selectYtSuggest(0);
     } else {
       addYtChannel();
     }
