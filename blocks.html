@@ -225,6 +225,7 @@
       <div class="bl-card">
         <div class="bl-card-title">Connect the extension</div>
         <p class="empty-note" id="connectExplainer" style="margin-bottom:0.9rem;">One click — if the extension is installed we send it the token directly, no copy/paste.</p>
+        <p class="empty-note" style="margin-bottom:0.9rem;color:var(--warn);">⚠ Also required, separately from connecting: open <code>chrome://extensions</code> → RevM² → Details → turn on <strong>Allow in Incognito</strong>. Without it the desktop app can't run in a Private/Incognito window at all and will keep closing your browser, even during normal browsing.</p>
         <button class="btn btn-gold btn-sm" id="connectBtn" onclick="showTokenLabelPrompt()">+ Connect extension</button>
         <div id="newTokenBox" style="display:none;margin-top:0.9rem;">
           <p id="connectSuccess" class="empty-note" style="display:none;color:var(--gold);">Connected — the extension has the token, nothing else to do.</p>
@@ -310,6 +311,25 @@
                 </div>
               </div>
               <p class="ext-step-note">Three new buttons appear once Developer mode is on — click <strong>Load unpacked</strong>, then pick the unzipped <strong>revm2-extension</strong> folder from Step 1.</p>
+            </div>
+
+            <!-- STEP 5 -->
+            <div class="ext-step">
+              <div class="ext-step-head"><span class="ext-step-num">5</span><span class="ext-step-title">Turn on "Allow in Incognito"</span></div>
+              <div class="ext-mock">
+                <div class="ext-mock-row">
+                  <div class="ext-mock-toggle-wrap">
+                    <div class="ext-mock-toggle off"><div class="knob"></div></div>
+                    <span>Off</span>
+                  </div>
+                  <svg class="ext-mock-arrow" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--muted)" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                  <div class="ext-mock-toggle-wrap">
+                    <div class="ext-mock-toggle on"><div class="knob"></div></div>
+                    <span>On</span>
+                  </div>
+                </div>
+              </div>
+              <p class="ext-step-note"><strong>Required, not optional.</strong> On the RevM² card on this page, click <strong>Details</strong>, scroll down, and turn on <strong>Allow in Incognito</strong>. Without this, RevM² can't run in a Private/Incognito window at all, and the desktop app will keep closing your browser to force the point — even during completely normal, non-private browsing.</p>
             </div>
 
           </div>
@@ -521,7 +541,15 @@ function selectYtSuggest(i){
   // and the extension's page-matching both key on; fall back to the raw
   // channelId for the (rare) channel that has no handle.
   const id = m.handle ? m.handle.toLowerCase() : (m.channelId ? m.channelId.toLowerCase() : '');
-  const label = m.handle ? m.handle : m.title;
+  // label must be the actual channel NAME ("Eduniti"), not the handle -
+  // youtube-guard.js's loose word-match (search-query allowance,
+  // display-name fallback) matches against label, and a handle like
+  // "@mohitgoenk99" shares no words with what someone actually searches
+  // ("eduniti"). This used to prefer m.handle here, which meant almost
+  // every resolved channel (nearly all of them have a handle) got a label
+  // that could never match a name-based search - the results page itself
+  // got blocked before a listed channel's video could ever be reached.
+  const label = m.title || (m.handle ? m.handle : id);
   pushYtChannel(id, label);
   const input=document.getElementById('ytChannelInput');
   input.value='';
