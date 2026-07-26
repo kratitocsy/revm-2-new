@@ -328,10 +328,11 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
         </div>
 
         <div class="field" id="timerBlockField" style="max-width:280px;margin-bottom:0.75rem;">
-          <label>Block <span style="opacity:0.6;font-weight:400;">(optional — blocks sites/apps while this timer runs)</span></label>
+          <label>Block <span style="opacity:0.6;font-weight:400;">(required — choose a saved block to run while this timer runs)</span></label>
           <select id="timerBlockPreset" style="background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.6rem 0.85rem;font-family:var(--font);font-size:0.85rem;outline:none;width:100%;color-scheme:dark;">
-            <option value="">No blocking</option>
+            <option value="" disabled selected>Choose a block…</option>
           </select>
+          <div id="timerBlockStatus" style="font-size:0.72rem;margin-top:0.4rem;min-height:1.1em;color:var(--danger);"></div>
         </div>
 
         <div class="field" id="timerSubField" style="max-width:280px;margin-bottom:1.25rem;">
@@ -890,9 +891,35 @@ async function loadBlockPresetOptions(){
   const { data } = await sb.from('focus_lock_presets').select('*').eq('user_id', myUserId).order('created_at',{ascending:false});
   const sel=document.getElementById('timerBlockPreset');
   const prev=sel.value;
-  sel.innerHTML='<option value="">No blocking</option>' +
-    (data||[]).map(p=>`<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
-  if(prev && (data||[]).some(p=>p.id===prev)) sel.value=prev;
+  const presets=data||[];
+  if(!presets.length){
+    sel.innerHTML='<option value="">No saved blocks yet — create one on the Blocks page</option>';
+  } else {
+    sel.innerHTML='<option value="" disabled selected>Choose a block…</option>' +
+      presets.map(p=>`<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
+    if(prev && presets.some(p=>p.id===prev)) sel.value=prev;
+  }
+}
+
+// A block must be chosen before the timer is allowed to start. Returns
+// true only when a real saved preset is selected; false (with an inline
+// message) if nothing's chosen, or if the person has no saved blocks at
+// all yet — in which case the message points them to the Blocks page
+// rather than pretending there's something to pick.
+function requireBlockChoice(){
+  const sel=document.getElementById('timerBlockPreset');
+  const status=document.getElementById('timerBlockStatus');
+  const hasAnyPreset=[...sel.options].some(o=>o.value);
+  if(!hasAnyPreset){
+    status.textContent='Save a block on the Blocks page first, then come back to start the timer.';
+    return false;
+  }
+  if(!sel.value){
+    status.textContent='Choose a block before starting the timer.';
+    return false;
+  }
+  status.textContent='';
+  return true;
 }
 
 // Starts the selected preset's block (sites/YouTube/apps) alongside the
@@ -1017,6 +1044,7 @@ function toggleTimer(){
     document.getElementById('timerDisplay').classList.remove('running');
     logSession();
   } else {
+    if(!requireBlockChoice()) return;
     sessStart=Date.now();timerRunning=true;
     document.getElementById('timerStartBtn').textContent='⏸ Pause';
     document.getElementById('timerDisplay').classList.add('running');
@@ -1143,10 +1171,16 @@ async function subjectTimerToggle(sub){
   }
 
   if(timerRunning){
-    // Switching from a different subject — stop/log the old one first.
+    // Only stop/log the currently running subject once we know a new
+    // session is actually allowed to replace it — otherwise a missing
+    // block choice would kill the running timer with nothing to
+    // replace it.
+    if(!requireBlockChoice()) return;
     clearInterval(timerIv); timerRunning=false;
     document.getElementById('timerDisplay').classList.remove('running');
     logSession();
+  } else {
+    if(!requireBlockChoice()) return;
   }
 
   const subSel=document.getElementById('timerSub');
