@@ -238,6 +238,43 @@ fn parse_since(url: &str) -> u64 {
 /// request can legitimately block for up to ~25s (see
 /// session_bridge::SessionEventBus::wait_for), and heartbeat POSTs need to
 /// keep landing without waiting behind that.
+// CORS support for this local server.
+//
+// Extension background pages/offscreen documents with a matching
+// host_permission are documented to bypass CORS entirely for their own
+// fetch() calls - which is why this server historically never sent any
+// Access-Control-* headers at all. In practice that bypass doesn't
+// reliably apply to every single request: field reports (and a live
+// DevTools capture) show the exact same background.js, same toggle
+// state, alternating between a clean heartbeat and
+// "blocked by CORS policy: No 'Access-Control-Allow-Origin' header is
+// present" from one call to the next - most visible right after the
+// service worker (re)starts, before Chromium has fully settled which of
+// its exemptions apply to this instance yet. Rather than depend on that
+// internal timing, this server now answers CORS the same way any other
+// spec-compliant server would: explicit preflight handling plus the
+// header on every actual response. That makes it correct regardless of
+// whether the extension-side bypass is active for a given request.
+//
+// "*" (not the specific chrome-extension://<id> origin) is deliberate:
+// this server only ever binds to 127.0.0.1, is never reachable from
+// outside this machine, and doesn't rely on the caller's origin for any
+// access decision - the fixed extension ID isn't authoritative anyway
+// (see EXTENSION_ID's own doc comment in browser_guard.rs re: Edge
+// assigning its own ID), so there's nothing gained by trying to
+// allowlist a specific one here.
+fn cors_origin_header() -> tiny_http::Header {
+    tiny_http::Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap()
+}
+
+fn cors_preflight_response() -> tiny_http::Response<std::io::Empty> {
+    tiny_http::Response::empty(204)
+        .with_header(cors_origin_header())
+        .with_header(tiny_http::Header::from_bytes(&b"Access-Control-Allow-Methods"[..], &b"GET, POST, OPTIONS"[..]).unwrap())
+        .with_header(tiny_http::Header::from_bytes(&b"Access-Control-Allow-Headers"[..], &b"Content-Type"[..]).unwrap())
+        .with_header(tiny_http::Header::from_bytes(&b"Access-Control-Max-Age"[..], &b"86400"[..]).unwrap())
+}
+
 pub fn spawn_heartbeat_server(state: Arc<HeartbeatState>, bridge: Arc<crate::session_bridge::SessionEventBus>) {
     std::thread::spawn(move || {
         let server = match tiny_http::Server::http(("127.0.0.1", HEARTBEAT_PORT)) {
@@ -259,9 +296,17 @@ pub fn spawn_heartbeat_server(state: Arc<HeartbeatState>, bridge: Arc<crate::ses
                 let url = request.url().to_string();
                 let path = url.split('?').next().unwrap_or("");
 
+                // Every browser-issued CORS preflight is an OPTIONS request,
+                // regardless of which route it's for - answer it the same
+                // way everywhere rather than duplicating this per-path.
+                if request.method() == &tiny_http::Method::Options {
+                    let _ = request.respond(cors_preflight_response());
+                    return;
+                }
+
                 if path == "/session-events" {
                     if request.method() != &tiny_http::Method::Get {
-                        let _ = request.respond(tiny_http::Response::empty(405));
+                        let _ = request.respond(tiny_http::Response::empty(405).with_header(cors_origin_header()));
                         return;
                     }
                     let since = parse_since(&url);
@@ -273,20 +318,24 @@ pub fn spawn_heartbeat_server(state: Arc<HeartbeatState>, bridge: Arc<crate::ses
                             }
                             let json = serde_json::to_string(&body).unwrap_or_else(|_| "{}".to_string());
                             let header = tiny_http::Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..]).unwrap();
-                            let _ = request.respond(tiny_http::Response::from_string(json).with_header(header));
+                            let _ = request.respond(
+                                tiny_http::Response::from_string(json)
+                                    .with_header(header)
+                                    .with_header(cors_origin_header()),
+                            );
                         }
                         None => {
                             // Timed out, nothing new - the extension's
                             // long-poll loop reconnects immediately with
                             // the same `since`, so this is silent and cheap.
-                            let _ = request.respond(tiny_http::Response::empty(204));
+                            let _ = request.respond(tiny_http::Response::empty(204).with_header(cors_origin_header()));
                         }
                     }
                     return;
                 }
 
                 if request.method() != &tiny_http::Method::Post {
-                    let _ = request.respond(tiny_http::Response::empty(405));
+                    let _ = request.respond(tiny_http::Response::empty(405).with_header(cors_origin_header()));
                     return;
                 }
 
@@ -296,7 +345,7 @@ pub fn spawn_heartbeat_server(state: Arc<HeartbeatState>, bridge: Arc<crate::ses
 
                 // 204: the extension doesn't need or read a response body,
                 // this is fire-and-forget from its side.
-                let _ = request.respond(tiny_http::Response::empty(204));
+                let _ = request.respond(tiny_http::Response::empty(204).with_header(cors_origin_header()));
             });
         }
     });
