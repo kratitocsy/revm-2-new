@@ -94,6 +94,7 @@ fn set_session_active(
     blocked_apps: tauri::State<app_guard::SharedBlockList>,
     grace_tracker: tauri::State<Arc<BrowserGraceTracker>>,
     heartbeat_state: tauri::State<Arc<heartbeat::HeartbeatState>>,
+    quit_item: tauri::State<MenuItem<tauri::Wry>>,
     active: bool,
 ) -> Result<(), String> {
     let was_active = state.0.swap(active, Ordering::SeqCst);
@@ -109,6 +110,11 @@ fn set_session_active(
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.set_closable(!active);
     }
+
+    // Same reasoning for the tray's "Quit RevM2" item - the real gate is
+    // in the "quit" match arm in the tray's on_menu_event handler, this
+    // just keeps the visible state honest.
+    let _ = quit_item.set_enabled(!active);
 
     // "Always check for extension active or not whenever a block
     // starts" - without this, a block that starts with the extension
@@ -478,9 +484,14 @@ pub fn run() {
             let quit_item = MenuItem::with_id(app, "quit", "Quit RevM2", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&debug_item, &quit_item])?;
 
+            // Also managed as app state so set_session_active can grey it
+            // out/re-enable it as sessions start and stop - see there.
+            app.manage(quit_item.clone());
+
             let debug_session_active = session_active.clone();
             let debug_blocked_apps = blocked_apps.clone();
             let debug_heartbeat = heartbeat_state.clone();
+            let quit_session_active = session_active.clone();
 
             let _tray = TrayIconBuilder::with_id("main-tray")
                 .icon(app.default_window_icon().unwrap().clone())
@@ -488,7 +499,19 @@ pub fn run() {
                 .tooltip("RevM2 - No active session")
                 .on_menu_event(move |app, event| {
                     match event.id.as_ref() {
-                        "quit" => app.exit(0),
+                        "quit" => {
+                            // The menu item is greyed out while a session is
+                            // active (see set_session_active), but that's
+                            // just the visible cue - this is the real gate.
+                            // Belt-and-braces against anything that could
+                            // still fire the click (e.g. a stale enabled
+                            // state from a missed toggle).
+                            if quit_session_active.load(Ordering::SeqCst) {
+                                notify(app, "RevM2 - Can't quit", "A block is active. End it from the app to quit.");
+                                return;
+                            }
+                            app.exit(0);
+                        }
                         "debug_status" => {
                             let active = debug_session_active.load(Ordering::SeqCst);
                             let apps = debug_blocked_apps.lock().map(|g| g.0.clone()).unwrap_or_default();
