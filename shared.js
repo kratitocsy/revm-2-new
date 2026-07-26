@@ -171,6 +171,29 @@ async function pullTrackerFromSupabase(){
   }catch(e){ return null; }
 }
 
+/* Pull onboarding config (subjects/exam/track/dates) from Supabase.
+   Used when a device has no local revm2_config yet — a new browser, a new
+   device, or storage that got cleared — so an account that already
+   finished onboarding isn't sent through it again just because *this*
+   browser is blank. Returns null only when the account genuinely hasn't
+   onboarded yet (real new user). */
+async function pullConfigFromSupabase(){
+  try{
+    if(typeof sb === 'undefined') return null;
+    const {data:{session}} = await sb.auth.getSession();
+    if(!session) return null;
+    const {data} = await sb.from('user_profiles')
+      .select('subjects,exam,track,start_date,end_date,onboarded,explainer_seen')
+      .eq('id',session.user.id).single();
+    if(!data || !data.onboarded || !data.start_date) return null;
+    return {
+      subjects: data.subjects||[], exam: data.exam||null, track: data.track||null,
+      start_date: data.start_date, end_date: data.end_date,
+      onboarded: true, explainer_seen: data.explainer_seen!==false
+    };
+  }catch(e){ return null; }
+}
+
 /* ── EXAM SWITCHER ────────────────────────────────────────── */
 /* Click the sidebar track/exam labels to change your exam track.
    Auto-wires on any page that has #sTrack + #sExam in the DOM —

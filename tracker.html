@@ -517,7 +517,14 @@ async function init(){
   RevM2Notifications.init(sb, session.user.id);
   loadBlockPresetOptions();
   startBlockStatusPoller();
-  if(!cfg.start_date){window.location.href='onboarding.html';return;}
+  if(!cfg.start_date){
+    // Local storage has nothing (new device/browser, or cleared cache) —
+    // check whether this Google account already finished onboarding
+    // before sending them through it again.
+    const remoteCfg = await pullConfigFromSupabase();
+    if(remoteCfg){ cfg = remoteCfg; Store.set('revm2_config', cfg); }
+    else { window.location.href='onboarding.html'; return; }
+  }
   const synced = await pullTrackerFromSupabase();
   if(synced && synced.rows && synced.rows.length){ rows=synced.rows; slog=synced.slog||{}; }
   if(!rows.length) buildRows();
