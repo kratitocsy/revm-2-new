@@ -275,7 +275,7 @@ pub fn is_process_running(target: &BrowserTarget) -> bool {
 /// landed yet).
 ///
 /// "Incognito-permitted": prefers the heartbeat's own live
-/// chrome.management.getSelf().incognitoAccess reading whenever we've
+/// chrome.extension.isAllowedIncognitoAccess() reading whenever we've
 /// ever received one this run, even a slightly old one - that's a real
 /// browser API result at the moment it fired, not a guess. The disk-based
 /// check (reading Secure Preferences, falling back to Preferences, for an

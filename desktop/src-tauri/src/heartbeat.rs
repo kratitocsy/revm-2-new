@@ -41,7 +41,7 @@ pub const HEARTBEAT_FRESHNESS_SECS: i64 = 75;
 // incognitoAllowed). Without rename_all here, serde_json looks for a
 // literal "incognito_allowed" key, never finds it, and silently falls
 // back to None -> false on every heartbeat - meaning this field could
-// never actually report `true`, no matter what chrome.management.getSelf()
+// never actually report `true`, no matter what chrome.extension.isAllowedIncognitoAccess()
 // said extension-side. rename_all fixes the wire format to match what's
 // really being sent.
 #[derive(Deserialize, Default)]
@@ -51,7 +51,7 @@ struct HeartbeatBody {
     ua: Option<String>,
     #[serde(default)]
     brands: Option<Vec<String>>,
-    // chrome.management.getSelf().incognitoAccess, read live by the
+    // chrome.extension.isAllowedIncognitoAccess(), read live by the
     // extension on every heartbeat - see background.js. This is a direct
     // API call, not a disk read, so it's exactly as current as the
     // person's actual chrome://extensions setting at the moment the
@@ -111,7 +111,7 @@ impl HeartbeatState {
     /// The most recently reported incognito_allowed value for this
     /// browser, with NO freshness bound - `None` only when we've never
     /// heard from it at all this run. Deliberately unbounded: this is a
-    /// live chrome.management.getSelf() API result at the moment it was
+    /// live chrome.extension.isAllowedIncognitoAccess() API result at the moment it was
     /// sent, not a value that can go stale the way a cached read might -
     /// once we've learned it, it's more trustworthy than guessing at
     /// Chromium's internal Preferences schema for the same information,
@@ -187,7 +187,7 @@ fn handle_body(state: &HeartbeatState, body: &str) {
         return;
     };
     // Chrome omits/undefines this if the extension's own
-    // chrome.management.getSelf() call ever fails - treat "unknown" the
+    // chrome.extension.isAllowedIncognitoAccess() call ever fails - treat "unknown" the
     // same as "not granted" rather than silently trusting it.
     let incognito_allowed = parsed.incognito_allowed.unwrap_or(false);
     // Same "fail toward not granted" reasoning as incognito_allowed above.
