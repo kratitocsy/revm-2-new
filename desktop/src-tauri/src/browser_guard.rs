@@ -239,10 +239,16 @@ pub fn protection_gap_reason(
 ) -> &'static str {
     let alive = extension_enabled_ignoring_incognito(target) || heartbeat.is_fresh(target.name);
     if !alive {
-        "disabled"
-    } else {
-        "incognito"
+        return "disabled";
     }
+    let incognito_ok = match heartbeat.known_incognito_allowed(target.name) {
+        Some(allowed) => allowed,
+        None => is_extension_installed(target),
+    };
+    if !incognito_ok {
+        return "incognito";
+    }
+    "site_access"
 }
 
 /// Whether a browser process with the given name is currently running.
@@ -279,15 +285,31 @@ pub fn is_process_running(target: &BrowserTarget) -> bool {
 /// before its first heartbeat lands. Even now that the disk read targets
 /// the right file, the heartbeat stays preferred: it's a live API result,
 /// not a JSON read racing Chrome's own write/HMAC-resign cycle.
+///
+/// "Site-access-permitted": same reasoning and same fallback shape as
+/// incognito above, for Chrome's per-extension "Site access" control
+/// instead (On all sites / On specific sites / On click). This one has
+/// no verified disk-based fallback key at all (unlike incognito, where
+/// there's at least a plausible "incognito" field in Secure Preferences)
+/// - narrowing "None, never heard a heartbeat" any further than "assume
+/// whatever the general installed/enabled check already found" would be
+/// guessing at an unverified schema, so it deliberately falls back to the
+/// same is_extension_installed() check incognito uses, rather than
+/// inventing a disk key for something never confirmed to be there.
 pub fn is_protected(target: &BrowserTarget, heartbeat: &crate::heartbeat::HeartbeatState) -> bool {
     let alive = extension_enabled_ignoring_incognito(target) || heartbeat.is_fresh(target.name);
     if !alive {
         return false;
     }
-    match heartbeat.known_incognito_allowed(target.name) {
+    let incognito_ok = match heartbeat.known_incognito_allowed(target.name) {
         Some(allowed) => allowed,
         None => is_extension_installed(target),
-    }
+    };
+    let site_access_ok = match heartbeat.known_all_sites_access(target.name) {
+        Some(allowed) => allowed,
+        None => is_extension_installed(target),
+    };
+    incognito_ok && site_access_ok
 }
 
 // Diagnostic snapshot - for each supported browser, is it currently

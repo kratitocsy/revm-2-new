@@ -301,6 +301,14 @@ async fn run_guard_tick(
                     "{name}'s RevM2 extension doesn't have Incognito access. Go to chrome://extensions -> RevM2 -> Details -> turn on \"Allow in Incognito\" within {EXTENSION_GRACE_SECS} seconds or {name} will be closed."
                 ),
             );
+        } else if reason == "site_access" {
+            notify(
+                app,
+                "RevM2 - Site access restricted",
+                &format!(
+                    "{name}'s RevM2 extension's Site access is set to something other than \"On all sites\". Go to chrome://extensions -> RevM2 -> Details -> Site access -> \"On all sites\" within {EXTENSION_GRACE_SECS} seconds or {name} will be closed."
+                ),
+            );
         } else {
             notify(
                 app,

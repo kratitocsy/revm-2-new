@@ -58,12 +58,27 @@ struct HeartbeatBody {
     // heartbeat fired, no batching lag in either direction.
     #[serde(default)]
     incognito_allowed: Option<bool>,
+    // chrome.permissions.contains({origins: ["http://*/*","https://*/*"]}),
+    // read live by the extension on every heartbeat - see background.js.
+    // Reflects Chrome's per-extension "Site access" control
+    // (chrome://extensions -> Details -> On all sites / On specific sites
+    // / On click). Blocking is implemented with declarativeNetRequest
+    // "redirect" rules, which Chrome's own docs say require host
+    // permissions on the target site - unlike plain "block" rules. So
+    // narrowing Site access, or setting it to "On click", silently stops
+    // the redirect from firing on whatever site was left out, with the
+    // extension still showing Enabled and Incognito still showing
+    // Allowed. Same class of gap as incognito_allowed above, same fix
+    // shape: a live API result, not a disk read.
+    #[serde(default)]
+    all_sites_access: Option<bool>,
 }
 
 #[derive(Clone, Copy)]
 struct Entry {
     last_seen: i64,
     incognito_allowed: bool,
+    all_sites_access: bool,
 }
 
 /// Last-seen timestamp + last-reported incognito permission per resolved
@@ -108,9 +123,16 @@ impl HeartbeatState {
         guard.get(browser).map(|e| e.incognito_allowed)
     }
 
-    fn record(&self, browser: &'static str, incognito_allowed: bool) {
+    /// Same shape/reasoning as known_incognito_allowed above, for the
+    /// "Site access" (host permissions) live reading instead.
+    pub fn known_all_sites_access(&self, browser: &str) -> Option<bool> {
+        let guard = self.0.lock().ok()?;
+        guard.get(browser).map(|e| e.all_sites_access)
+    }
+
+    fn record(&self, browser: &'static str, incognito_allowed: bool, all_sites_access: bool) {
         if let Ok(mut guard) = self.0.lock() {
-            guard.insert(browser, Entry { last_seen: crate::now_ts(), incognito_allowed });
+            guard.insert(browser, Entry { last_seen: crate::now_ts(), incognito_allowed, all_sites_access });
         }
     }
 }
@@ -168,9 +190,11 @@ fn handle_body(state: &HeartbeatState, body: &str) {
     // chrome.management.getSelf() call ever fails - treat "unknown" the
     // same as "not granted" rather than silently trusting it.
     let incognito_allowed = parsed.incognito_allowed.unwrap_or(false);
+    // Same "fail toward not granted" reasoning as incognito_allowed above.
+    let all_sites_access = parsed.all_sites_access.unwrap_or(false);
 
     if let Some(name) = resolve_browser_name(parsed.ua.as_deref(), parsed.brands.as_deref()) {
-        state.record(name, incognito_allowed);
+        state.record(name, incognito_allowed, all_sites_access);
         return;
     }
 
@@ -185,7 +209,7 @@ fn handle_body(state: &HeartbeatState, body: &str) {
         .map(|t| t.name)
         .collect();
     if running.len() == 1 {
-        state.record(running[0], incognito_allowed);
+        state.record(running[0], incognito_allowed, all_sites_access);
     }
 }
 
