@@ -99,6 +99,17 @@ fn set_session_active(
     let was_active = state.0.swap(active, Ordering::SeqCst);
     write_session_lock(active);
 
+    // Hide the taskbar/title-bar close ("X") control while a block is
+    // active, so closing the window isn't a one-click way to dodge
+    // enforcement - the app still only enforces while its process is
+    // running (see browser_guard/app_guard), so letting someone just
+    // click X to make it go away would defeat the whole point. Runs on
+    // every call (not just the false->true edge) so it stays correct
+    // even if a call is ever missed or retried.
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.set_closable(!active);
+    }
+
     // "Always check for extension active or not whenever a block
     // starts" - without this, a block that starts with the extension
     // already disabled/incognito-blind has to wait for the periodic
