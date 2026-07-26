@@ -28,8 +28,22 @@ use sysinfo::{Pid, System};
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 // Computed once (see the conversation) from the fixed "key" in the
-// extension's manifest.json - deterministic no matter where it's unpacked.
+// extension's manifest.json - deterministic no matter where it's unpacked,
+// on Chrome. Edge does NOT honor the "key" field for sideloaded/unpacked
+// extensions the way Chrome does - it assigns its own ID (derived from the
+// extension's folder path) regardless of "key" being present. Confirmed
+// via Microsoft's own bug tracker (microsoft/MicrosoftEdge-Extensions#41)
+// and a 2024 Microsoft Q&A thread reporting the exact same thing. So this
+// constant is only ever correct for Chrome/Brave/Vivaldi/Opera (which do
+// honor "key" for unpacked extensions, being closer to stock Chromium
+// here) - never assume it matches what Edge actually assigned. See
+// read_extension_settings() below for how that's handled.
 pub const EXTENSION_ID: &str = "knofmgookchmjekaefloaljcamjlbnmp";
+
+// The extension's manifest "name" - stable across every browser regardless
+// of what ID that browser assigns it. Used as a fallback identifier for
+// browsers (Edge) that don't honor EXTENSION_ID above.
+const EXTENSION_NAME: &str = "RevM\u{b2} Focus Lock";
 
 pub struct BrowserTarget {
     pub name: &'static str,
@@ -74,9 +88,9 @@ pub fn supported_browsers() -> Vec<BrowserTarget> {
     ]
 }
 
-// Loads the "/extensions/settings/{EXTENSION_ID}" object for one profile
-// folder. Chrome has kept extension state (enabled/disabled) AND the
-// per-extension "incognito" permission flag in a file called
+// Loads the "/extensions/settings/{id}" object for our extension in one
+// profile folder. Chrome has kept extension state (enabled/disabled) AND
+// the per-extension "incognito" permission flag in a file called
 // "Secure Preferences" since Chrome 37 - NOT in the plain "Preferences"
 // file - specifically as a tamper-resistance measure (each entry is
 // HMAC-signed against a machine-specific seed) so that outside tools can't
@@ -93,15 +107,46 @@ pub fn supported_browsers() -> Vec<BrowserTarget> {
 // "Preferences" is tried second, purely as a fallback for older/unusual
 // Chrome builds where Secure Preferences might be absent or not yet
 // populated - never as the primary source.
+//
+// Within each file, EXTENSION_ID is tried first (fast, and correct for
+// Chrome/Brave/Vivaldi/Opera), but Edge assigns sideloaded extensions its
+// own ID regardless of the manifest's "key" field, so that direct lookup
+// always misses there - see the comment on EXTENSION_ID. As a fallback,
+// every entry under extensions.settings is scanned for one whose stored
+// manifest snapshot has our extension's name, which is stable no matter
+// what ID the browser assigned it.
+//
+// The "each entry carries a /manifest/name snapshot of manifest.json at
+// install time" structure is well attested in third-party browser-
+// forensics write-ups, but unverified here against a live Secure
+// Preferences file - if a given Chromium build doesn't store that
+// snapshot, this fallback just finds nothing and falls through to the
+// heartbeat, same as before this fix. If it turns out Edge's actual entry
+// is still not being found this way, the fastest way to confirm at all is
+// to open Edge's own Secure Preferences file and check what the extension
+// entry for RevM2 actually looks like there.
 fn read_extension_settings(profile_dir: &PathBuf) -> Option<Value> {
     for filename in ["Secure Preferences", "Preferences"] {
         let Ok(content) = std::fs::read_to_string(profile_dir.join(filename)) else { continue };
         let Ok(json): Result<Value, _> = serde_json::from_str(&content) else { continue };
-        let settings = json
+
+        if let Some(settings) = json
             .pointer(&format!("/extensions/settings/{EXTENSION_ID}"))
-            .cloned();
-        if settings.is_some() {
-            return settings;
+        {
+            return Some(settings.clone());
+        }
+
+        if let Some(all_settings) = json.pointer("/extensions/settings").and_then(|v| v.as_object()) {
+            for entry in all_settings.values() {
+                let name_matches = entry
+                    .pointer("/manifest/name")
+                    .and_then(|v| v.as_str())
+                    .map(|n| n == EXTENSION_NAME)
+                    .unwrap_or(false);
+                if name_matches {
+                    return Some(entry.clone());
+                }
+            }
         }
     }
     None
