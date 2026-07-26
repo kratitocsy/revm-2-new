@@ -404,6 +404,30 @@ pub fn run() {
     heartbeat::spawn_heartbeat_server(heartbeat_state.clone(), session_bridge.clone());
 
     tauri::Builder::default()
+        // Must be registered before any other plugin (tauri-plugin-single-
+        // instance's own requirement). Without this, launching the app a
+        // second time - e.g. from a Start Menu shortcut while it's already
+        // running quietly in the tray after auto-starting at login - spins
+        // up a second process. That second process tries to bind the same
+        // heartbeat port (127.0.0.1:47552) the first one already holds,
+        // fails silently (see heartbeat::spawn_heartbeat_server), and ends
+        // up running its own private, disconnected session-event bus that
+        // nothing is listening to. Any "Start"/"End" click in that second
+        // window then updates state nobody's watching, and the browser
+        // extension only ever finds out via its own slow ~35s background
+        // poll - which is exactly the "it takes a while to reach the
+        // extension unless I refresh the site in an actual browser tab"
+        // symptom (the direct browser-tab-to-extension path bypasses the
+        // desktop app, and its own poll, entirely). Focusing the existing
+        // window on a second launch, instead of starting a second process,
+        // closes that gap.
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
