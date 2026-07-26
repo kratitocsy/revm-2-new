@@ -34,6 +34,7 @@ fn notify(app: &AppHandle, title: &str, body: &str) {
 
 const BLOCKED_APPS_STORE: &str = "revm2-blocked-apps.json";
 const BLOCKED_APPS_KEY: &str = "blocked_apps";
+const BLOCKED_APPS_MODE_KEY: &str = "blocked_apps_mode"; // "blacklist" | "whitelist", see app_guard::AppMode
 
 // How long a browser can sit "extension not detected" before we start
 // closing it. Not zero, on purpose:
@@ -174,14 +175,24 @@ fn list_running_apps() -> Result<Vec<app_guard::RunningApp>, String> {
     Ok(app_guard::list_running_apps())
 }
 
+#[derive(serde::Serialize)]
+struct BlockedAppsInfo {
+    apps: Vec<String>,
+    mode: String, // "blacklist" | "whitelist"
+}
+
 #[tauri::command]
-fn get_blocked_apps(app: tauri::AppHandle) -> Result<Vec<String>, String> {
+fn get_blocked_apps(app: tauri::AppHandle) -> Result<BlockedAppsInfo, String> {
     let store = app.store(BLOCKED_APPS_STORE).map_err(|e| e.to_string())?;
     let apps = store
         .get(BLOCKED_APPS_KEY)
         .and_then(|v| serde_json::from_value::<Vec<String>>(v).ok())
         .unwrap_or_default();
-    Ok(apps)
+    let mode = store
+        .get(BLOCKED_APPS_MODE_KEY)
+        .and_then(|v| v.as_str().map(|s| s.to_string()))
+        .unwrap_or_else(|| "blacklist".to_string());
+    Ok(BlockedAppsInfo { apps, mode })
 }
 
 #[tauri::command]
@@ -189,11 +200,19 @@ fn set_blocked_apps(
     app: tauri::AppHandle,
     blocked: tauri::State<app_guard::SharedBlockList>,
     apps: Vec<String>,
+    mode: Option<String>,
 ) -> Result<(), String> {
+    let mode = app_guard::AppMode::from_str_lenient(mode.as_deref().unwrap_or("blacklist"));
+    let mode_str = match mode {
+        app_guard::AppMode::Whitelist => "whitelist",
+        app_guard::AppMode::Blacklist => "blacklist",
+    };
+
     let store = app.store(BLOCKED_APPS_STORE).map_err(|e| e.to_string())?;
     store.set(BLOCKED_APPS_KEY, serde_json::json!(apps.clone()));
+    store.set(BLOCKED_APPS_MODE_KEY, serde_json::json!(mode_str));
     store.save().map_err(|e| e.to_string())?;
-    *blocked.lock().map_err(|_| "lock poisoned".to_string())? = app_guard::BlockedApps(apps);
+    *blocked.lock().map_err(|_| "lock poisoned".to_string())? = app_guard::BlockedApps { apps, mode };
     Ok(())
 }
 
@@ -467,8 +486,12 @@ pub fn run() {
                     .get(BLOCKED_APPS_KEY)
                     .and_then(|v| serde_json::from_value::<Vec<String>>(v).ok())
                 {
+                    let mode = store
+                        .get(BLOCKED_APPS_MODE_KEY)
+                        .and_then(|v| v.as_str().map(|s| app_guard::AppMode::from_str_lenient(s)))
+                        .unwrap_or_default();
                     if let Ok(mut guard) = blocked_apps.lock() {
-                        *guard = app_guard::BlockedApps(apps);
+                        *guard = app_guard::BlockedApps { apps, mode };
                     }
                 }
             }
@@ -514,7 +537,9 @@ pub fn run() {
                         }
                         "debug_status" => {
                             let active = debug_session_active.load(Ordering::SeqCst);
-                            let apps = debug_blocked_apps.lock().map(|g| g.0.clone()).unwrap_or_default();
+                            let (apps, apps_mode) = debug_blocked_apps.lock()
+                                .map(|g| (g.apps.clone(), g.mode))
+                                .unwrap_or_default();
                             let browsers = browser_guard::debug_status(&debug_heartbeat);
                             let lines: Vec<String> = browsers.iter()
                                 .map(|(name, running, protected, reason)| {
@@ -525,7 +550,7 @@ pub fn run() {
                                 })
                                 .collect();
                             let msg = format!(
-                                "session_active: {active}\\nblocked_apps: {:?}\\n\\n{}",
+                                "session_active: {active}\\nblocked_apps ({apps_mode:?}): {:?}\\n\\n{}",
                                 apps, lines.join("\\n")
                             );
                             if let Some(window) = app.get_webview_window("main") {
