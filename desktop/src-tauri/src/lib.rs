@@ -49,7 +49,7 @@ fn set_native_closable(window: &tauri::WebviewWindow, closable: bool) {
         // moment right after closable=true re-adds WS_SYSMENU - matches
         // what set_closable already does, just belt-and-braces.
         let hmenu = GetSystemMenu(hwnd, 0);
-        if !hmenu.is_null() {
+        if hmenu != 0 {
             EnableMenuItem(
                 hmenu,
                 SC_CLOSE as u32,
@@ -63,7 +63,7 @@ fn set_native_closable(window: &tauri::WebviewWindow, closable: bool) {
         // unrelated redraw happens.
         SetWindowPos(
             hwnd,
-            std::ptr::null_mut(),
+            0,
             0,
             0,
             0,
@@ -503,7 +503,6 @@ pub fn run() {
     let grace_tracker = Arc::new(BrowserGraceTracker(Mutex::new(HashMap::new())));
     let heartbeat_state = Arc::new(heartbeat::HeartbeatState::new());
     let session_bridge = Arc::new(session_bridge::SessionEventBus::new());
-    let close_guard_session_active = session_active.clone();
     let exit_guard_session_active = session_active.clone();
 
     // Starts listening immediately, independent of session state - the
@@ -546,26 +545,6 @@ pub fn run() {
         .manage(heartbeat_state.clone())
         .manage(grace_tracker.clone())
         .manage(session_bridge.clone())
-        .on_window_event(move |window, event| {
-            // Blocks every path that tries to close *this window* while a
-            // session is active - the titlebar X, Alt+F4, right-click ->
-            // Close on the taskbar icon, and a stray `window.close()` JS
-            // call all funnel through CloseRequested before Tauri actually
-            // tears the window down, so this is the one place that
-            // actually has to hold regardless of how the close was
-            // triggered. set_closable(false) (see set_session_active)
-            // still runs alongside this to grey out the button so the UI
-            // is honest about it being unusable, but that flag alone
-            // isn't the enforcement - this is.
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                if window.label() == "main" && close_guard_session_active.load(Ordering::SeqCst) {
-                    api.prevent_close();
-                    let _ = window.unminimize();
-                    let _ = window.set_focus();
-                    notify(window.app_handle(), "RevM2 - Can't close", "A block is active. End it from the app first.");
-                }
-            }
-        })
         .setup(move |app| {
             if let Ok(store) = app.store(BLOCKED_APPS_STORE) {
                 if let Some(apps) = store
@@ -693,13 +672,14 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(move |_app_handle, event| {
-            // Belt-and-braces alongside on_window_event above: that one
-            // covers the main window specifically, this covers the
-            // process-level exit request in case anything else ever
-            // triggers one (e.g. all windows closing some other way).
-            // Can't do anything about a hard OS-level kill from Task
-            // Manager's "End task" - no user-space code can intercept
-            // that - but every graceful shutdown path goes through here.
+            // Belt-and-braces alongside the CloseRequested guard registered
+            // in setup() above: that one covers the main window
+            // specifically, this covers the process-level exit request in
+            // case anything else ever triggers one (e.g. all windows
+            // closing some other way). Can't do anything about a hard
+            // OS-level kill from Task Manager's "End task" - no user-space
+            // code can intercept that - but every graceful shutdown path
+            // goes through here.
             if let tauri::RunEvent::ExitRequested { api, .. } = event {
                 if exit_guard_session_active.load(Ordering::SeqCst) {
                     api.prevent_exit();
