@@ -132,6 +132,7 @@
         </div>
         <p class="empty-note" id="abStopEarlyNote" style="margin-top:0.6rem;">Stop early opens the same code-typing gate the extension shows on a blocked site — type it exactly to end the session, and it's marked unverified either way.</p>
         <p class="empty-note" id="abLockedNote" style="display:none;margin-top:0.6rem;">—</p>
+        <p class="empty-note" id="abPausedNote" style="display:none;margin-top:0.6rem;color:var(--gold);">—</p>
       </div>
 
       <!-- START A NEW BLOCK -->
@@ -876,6 +877,7 @@ async function loadActiveBlock(){
   const stopEarlyBtn=document.getElementById('abStopEarlyBtn');
   const stopEarlyNote=document.getElementById('abStopEarlyNote');
   const lockedNote=document.getElementById('abLockedNote');
+  const pausedNote=document.getElementById('abPausedNote');
   if(data.no_early_unlock){
     if(stopEarlyBtn) stopEarlyBtn.style.display='none';
     if(stopEarlyNote) stopEarlyNote.style.display='none';
@@ -889,12 +891,31 @@ async function loadActiveBlock(){
     if(stopEarlyNote) stopEarlyNote.style.display='';
     if(lockedNote) lockedNote.style.display='none';
   }
+  // Set by session-pause when the free code route is used on a blocked
+  // page (see blocked/unlock.js -> confirmUnlock). The extension already
+  // re-locks itself locally once this passes - this note is purely
+  // informational, so it just stops showing once the timestamp is in the
+  // past rather than trying to actively clear the column itself.
+  const pausedUntilMs = data.paused_until ? new Date(data.paused_until).getTime() : null;
+  function updatePausedNote(){
+    if(!pausedNote) return;
+    if(pausedUntilMs && pausedUntilMs > Date.now()){
+      pausedNote.style.display='block';
+      const resumeTxt = new Date(pausedUntilMs).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+      const remainMin = Math.max(1, Math.round((pausedUntilMs - Date.now())/60000));
+      pausedNote.textContent = `Paused via unlock code - resumes at ${resumeTxt} (~${remainMin}m).`;
+    } else {
+      pausedNote.style.display='none';
+    }
+  }
+  updatePausedNote();
   document.getElementById('abVerifiedPill').innerHTML = data.verified
     ? '<span class="verified-pill">✓ Verified</span>'
     : '<span class="unverified-pill">Unverified — unlocked early</span>';
 
   function tick(){
     const el=document.getElementById('abTimer');
+    updatePausedNote();
     if(!el) return;
     if(data.unlimited || !data.ends_at){
       const secs=Math.floor((Date.now()-new Date(data.started_at).getTime())/1000);

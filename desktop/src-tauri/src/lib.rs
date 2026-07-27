@@ -94,6 +94,15 @@ fn notify(app: &AppHandle, title: &str, body: &str) {
         .show();
 }
 
+// How long to suppress a repeat "Can't close" toast after firing one.
+// Windows can deliver CloseRequested more than once for what's really a
+// single user action (Alt+F4 held a beat too long, a stray double
+// WM_CLOSE, the taskbar "Close window" entry racing the title-bar X) -
+// without this, one close attempt could pop several toasts back to back,
+// which reads as the notification firing "on its own" on a schedule
+// rather than in response to something the person did.
+const CLOSE_NOTIFY_COOLDOWN_SECS: i64 = 5;
+
 const BLOCKED_APPS_STORE: &str = "revm2-blocked-apps.json";
 const BLOCKED_APPS_KEY: &str = "blocked_apps";
 const BLOCKED_APPS_MODE_KEY: &str = "blocked_apps_mode"; // "blacklist" | "whitelist", see app_guard::AppMode
@@ -503,6 +512,8 @@ pub fn run() {
     let grace_tracker = Arc::new(BrowserGraceTracker(Mutex::new(HashMap::new())));
     let heartbeat_state = Arc::new(heartbeat::HeartbeatState::new());
     let session_bridge = Arc::new(session_bridge::SessionEventBus::new());
+    // 0 = never notified yet; see CLOSE_NOTIFY_COOLDOWN_SECS above.
+    let last_close_notify_ts = Arc::new(std::sync::atomic::AtomicI64::new(0));
     let exit_guard_session_active = session_active.clone();
 
     // Starts listening immediately, independent of session state - the
@@ -643,15 +654,21 @@ pub fn run() {
             if let Some(window) = app.get_webview_window("main") {
                 let close_guard_session = session_active.clone();
                 let close_guard_app = app.handle().clone();
+                let close_guard_last_notify = last_close_notify_ts.clone();
                 window.on_window_event(move |event| {
                     if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                         if close_guard_session.load(Ordering::SeqCst) {
                             api.prevent_close();
-                            notify(
-                                &close_guard_app,
-                                "RevM2 - Can't close",
-                                "A block is active. End it from the app first.",
-                            );
+                            let now = now_ts();
+                            let last = close_guard_last_notify.load(Ordering::SeqCst);
+                            if now - last >= CLOSE_NOTIFY_COOLDOWN_SECS {
+                                close_guard_last_notify.store(now, Ordering::SeqCst);
+                                notify(
+                                    &close_guard_app,
+                                    "RevM2 - Can't close",
+                                    "A block is active. End it from the app first.",
+                                );
+                            }
                         }
                     }
                 });
