@@ -13,6 +13,68 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tauri::{AppHandle, Manager};
+
+// `WebviewWindow::set_closable` (called below in set_session_active) only
+// grays out the SC_CLOSE item in the title bar's system menu on Windows.
+// Explorer draws the taskbar thumbnail's own close ("X") button purely
+// based on whether the window has the WS_SYSMENU style at all - it does
+// NOT check whether that menu's close item is enabled/disabled. So
+// set_closable(false) alone leaves the X visible (though inert) on the
+// taskbar thumbnail preview. Actually removing WS_SYSMENU hides the X in
+// both places. Re-adding it on closable=true restores normal behavior.
+#[cfg(target_os = "windows")]
+fn set_native_closable(window: &tauri::WebviewWindow, closable: bool) {
+    use windows_sys::Win32::Foundation::HWND;
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        EnableMenuItem, GetSystemMenu, GetWindowLongPtrW, SetWindowLongPtrW, SetWindowPos,
+        GWL_STYLE, MF_BYCOMMAND, MF_ENABLED, MF_GRAYED, SC_CLOSE, SWP_FRAMECHANGED, SWP_NOMOVE,
+        SWP_NOSIZE, SWP_NOZORDER, WS_SYSMENU,
+    };
+
+    let Ok(hwnd) = window.hwnd() else { return };
+    let hwnd = hwnd.0 as HWND;
+
+    unsafe {
+        let style = GetWindowLongPtrW(hwnd, GWL_STYLE);
+        let new_style = if closable {
+            style | (WS_SYSMENU as isize)
+        } else {
+            style & !(WS_SYSMENU as isize)
+        };
+        if new_style != style {
+            SetWindowLongPtrW(hwnd, GWL_STYLE, new_style);
+        }
+
+        // Keep the menu item's own enabled state honest too, for the
+        // moment right after closable=true re-adds WS_SYSMENU - matches
+        // what set_closable already does, just belt-and-braces.
+        let hmenu = GetSystemMenu(hwnd, 0);
+        if !hmenu.is_null() {
+            EnableMenuItem(
+                hmenu,
+                SC_CLOSE as u32,
+                MF_BYCOMMAND | if closable { MF_ENABLED } else { MF_GRAYED },
+            );
+        }
+
+        // A GWL_STYLE change doesn't repaint the non-client area (title
+        // bar + taskbar thumbnail chrome) on its own - without
+        // SWP_FRAMECHANGED the stale X can keep showing until some
+        // unrelated redraw happens.
+        SetWindowPos(
+            hwnd,
+            std::ptr::null_mut(),
+            0,
+            0,
+            0,
+            0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED,
+        );
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn set_native_closable(_window: &tauri::WebviewWindow, _closable: bool) {}
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::TrayIconBuilder;
 use tauri_plugin_notification::NotificationExt;
@@ -110,6 +172,8 @@ fn set_session_active(
     // even if a call is ever missed or retried.
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.set_closable(!active);
+        #[cfg(target_os = "windows")]
+        set_native_closable(&window, !active);
     }
 
     // Same reasoning for the tray's "Quit RevM2" item - the real gate is
@@ -569,6 +633,28 @@ pub fn run() {
                 grace_tracker.clone(),
                 heartbeat_state.clone(),
             );
+
+            // Belt-and-braces alongside set_native_closable/set_closable
+            // above: those hide/grey the close affordance, but this is
+            // the real gate. Covers Alt+F4 and the taskbar icon's own
+            // right-click "Close window" entry, neither of which goes
+            // through the title-bar/thumbnail X at all.
+            if let Some(window) = app.get_webview_window("main") {
+                let close_guard_session = session_active.clone();
+                let close_guard_app = app.handle().clone();
+                window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        if close_guard_session.load(Ordering::SeqCst) {
+                            api.prevent_close();
+                            notify(
+                                &close_guard_app,
+                                "RevM2 - Can't close",
+                                "A block is active. End it from the app first.",
+                            );
+                        }
+                    }
+                });
+            }
 
             Ok(())
         })
