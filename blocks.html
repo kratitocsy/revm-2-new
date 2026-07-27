@@ -128,9 +128,10 @@
         <div class="active-block-sites" id="abSites">—</div>
         <div id="abVerifiedPill"></div>
         <div style="margin-top:0.9rem;display:flex;gap:0.6rem;">
-          <button class="btn btn-ghost btn-sm" onclick="stopActiveBlock()">Stop early</button>
+          <button class="btn btn-ghost btn-sm" id="abStopEarlyBtn" onclick="stopActiveBlock()">Stop early</button>
         </div>
-        <p class="empty-note" style="margin-top:0.6rem;">Stop early opens the same code-typing gate the extension shows on a blocked site — type it exactly to end the session, and it's marked unverified either way.</p>
+        <p class="empty-note" id="abStopEarlyNote" style="margin-top:0.6rem;">Stop early opens the same code-typing gate the extension shows on a blocked site — type it exactly to end the session, and it's marked unverified either way.</p>
+        <p class="empty-note" id="abLockedNote" style="display:none;margin-top:0.6rem;">—</p>
       </div>
 
       <!-- START A NEW BLOCK -->
@@ -211,6 +212,12 @@
             <span style="font-size:0.75rem;color:var(--muted);">minutes</span>
             <button class="btn btn-ghost btn-sm" onclick="useCustomDuration()">Use</button>
           </div>
+          <label style="display:flex;align-items:flex-start;gap:0.5rem;margin-top:0.8rem;cursor:pointer;" id="noEarlyUnlockRow">
+            <input type="checkbox" id="noEarlyUnlockChk" style="margin-top:0.2rem;" onchange="toggleNoEarlyUnlock(this.checked)">
+            <span style="font-size:0.8rem;color:var(--muted);line-height:1.5;">
+              Lock until time is up — no 150-char code, no emergency unlock, it just ends automatically. Needs a duration, not Unlimited.
+            </span>
+          </label>
         </div>
 
         <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
@@ -361,6 +368,7 @@ requireAuth().then(session=>{
   myUserId=session.user.id;
   logEvent('feature_used','blocks');
   initAppsPanel();
+  syncNoEarlyUnlockAvailability();
   loadActiveBlock();
   loadPresets();
   loadDevices();
@@ -723,16 +731,29 @@ async function pushSessionEventToDesktop(active, session){
 
 /* ── duration picker ── */
 let pendingMinutes=0; // 0 = unlimited
+let pendingNoEarlyUnlock=false;
+function toggleNoEarlyUnlock(checked){ pendingNoEarlyUnlock = !!checked; }
+function syncNoEarlyUnlockAvailability(){
+  const chk=document.getElementById('noEarlyUnlockChk');
+  const row=document.getElementById('noEarlyUnlockRow');
+  if(!chk) return;
+  const unlimited = pendingMinutes===0;
+  chk.disabled = unlimited;
+  if(unlimited && chk.checked){ chk.checked=false; pendingNoEarlyUnlock=false; }
+  if(row) row.style.opacity = unlimited ? '0.5' : '1';
+}
 function pickDuration(mins, btn){
   pendingMinutes=mins;
   document.querySelectorAll('#durOpts .dur-opt').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  syncNoEarlyUnlockAvailability();
 }
 function useCustomDuration(){
   const v=parseInt(document.getElementById('customMins').value,10);
   if(!v || v<1) return;
   pendingMinutes=v;
   document.querySelectorAll('#durOpts .dur-opt').forEach(b=>b.classList.remove('active'));
+  syncNoEarlyUnlockAvailability();
 }
 
 /* ── start / stop a block ── */
@@ -741,6 +762,7 @@ async function startBlock(){
   const name=document.getElementById('blockName').value.trim() || 'Block';
   if(!pendingSites.length){ alert(pendingMode==='whitelist' ? 'Add at least one site to allow.' : 'Add at least one site to block.'); return; }
   if(pendingAppMode==='whitelist' && !pendingApps.length){ alert('Add at least one app to allow, or switch back to "Block these apps" - otherwise no apps would be closed at all.'); return; }
+  if(pendingNoEarlyUnlock && pendingMinutes===0){ alert('Locking until time is up needs a duration - pick one instead of Unlimited.'); return; }
 
   const endsAt = pendingMinutes>0 ? new Date(Date.now()+pendingMinutes*60000).toISOString() : null;
   const youtubeRules = currentYoutubeRulesPayload();
@@ -754,6 +776,7 @@ async function startBlock(){
     apps_mode: pendingAppMode,
     ends_at: endsAt,
     unlimited: pendingMinutes===0,
+    no_early_unlock: pendingNoEarlyUnlock,
     source: 'web'
   });
   if(error){
@@ -762,12 +785,14 @@ async function startBlock(){
     else alert(error.message || 'Could not start block.');
     return;
   }
-  const startedSites=pendingSites, startedMinutes=pendingMinutes, startedMode=pendingMode, startedApps=pendingApps, startedAppMode=pendingAppMode;
+  const startedSites=pendingSites, startedMinutes=pendingMinutes, startedMode=pendingMode, startedApps=pendingApps, startedAppMode=pendingAppMode, startedNoEarlyUnlock=pendingNoEarlyUnlock;
   pendingSites=[]; renderSiteChips(); resetYtPanel(); resetAppsPanel();
   document.getElementById('blockName').value='';
+  pendingNoEarlyUnlock=false;
+  const noEarlyChk=document.getElementById('noEarlyUnlockChk'); if(noEarlyChk) noEarlyChk.checked=false;
   try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
   await syncBlockedAppsToDesktop(startedApps, startedAppMode);
-  const startedSessionPayload={ blockName:name, sites:startedSites, durationMinutes: startedMinutes>0 ? startedMinutes : null, mode:startedMode, youtubeRules };
+  const startedSessionPayload={ blockName:name, sites:startedSites, durationMinutes: startedMinutes>0 ? startedMinutes : null, mode:startedMode, youtubeRules, noEarlyUnlock: startedNoEarlyUnlock };
   sendToExtension({ type:'RM2_START_SESSION', payload:startedSessionPayload });
   pushSessionEventToDesktop(true, startedSessionPayload);
   loadActiveBlock();
@@ -789,6 +814,7 @@ async function stopActiveBlock(){
       no_active_session: "The extension doesn't see an active session to stop.",
       no_extension_api: "This needs the RevM2 browser extension installed and connected to stop a block early.",
       timeout: "Couldn't reach the extension - make sure it's installed and this tab isn't blocked.",
+      locked_no_early_unlock: "This block was started with early unlock turned off - it can't be stopped early, only wait it out.",
     };
     alert(reasons[result.reason] || "Couldn't open the unlock gate. Make sure the RevM2 extension is installed and connected.");
     return;
@@ -829,6 +855,7 @@ async function loadActiveBlock(){
       durationMinutes: remainingMinutes,
       mode: data.mode,
       youtubeRules: data.youtube_rules || null,
+      noEarlyUnlock: !!data.no_early_unlock,
     });
   }
   startCard.style.display='none';
@@ -846,6 +873,22 @@ async function loadActiveBlock(){
   }
   document.getElementById('abSites').textContent=sitesLine;
   syncBlockedAppsToDesktop(data.apps || [], data.apps_mode); // covers a block started elsewhere (another tab/device) reaching this desktop instance
+  const stopEarlyBtn=document.getElementById('abStopEarlyBtn');
+  const stopEarlyNote=document.getElementById('abStopEarlyNote');
+  const lockedNote=document.getElementById('abLockedNote');
+  if(data.no_early_unlock){
+    if(stopEarlyBtn) stopEarlyBtn.style.display='none';
+    if(stopEarlyNote) stopEarlyNote.style.display='none';
+    if(lockedNote){
+      lockedNote.style.display='block';
+      const endTxt = data.ends_at ? new Date(data.ends_at).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : 'it ends';
+      lockedNote.textContent = `Locked - no early exit. Ends automatically ${data.ends_at ? 'at '+endTxt : ''}.`;
+    }
+  } else {
+    if(stopEarlyBtn) stopEarlyBtn.style.display='';
+    if(stopEarlyNote) stopEarlyNote.style.display='';
+    if(lockedNote) lockedNote.style.display='none';
+  }
   document.getElementById('abVerifiedPill').innerHTML = data.verified
     ? '<span class="verified-pill">✓ Verified</span>'
     : '<span class="unverified-pill">Unverified — unlocked early</span>';
@@ -875,7 +918,7 @@ async function loadPresets(){
     <div class="preset-row">
       <div>
         <div class="preset-name">${escHtml(p.name)}</div>
-        <div class="preset-sites">${p.mode==='whitelist'?'Allow only':'Block'}: ${escHtml((p.sites||[]).join(', '))} · ${p.duration_minutes ? p.duration_minutes+'m' : 'unlimited'}${(p.apps&&p.apps.length) ? ` · ${p.apps.length} app${p.apps.length===1?'':'s'} ${p.apps_mode==='whitelist'?'allowed':'blocked'}` : ''}</div>
+        <div class="preset-sites">${p.mode==='whitelist'?'Allow only':'Block'}: ${escHtml((p.sites||[]).join(', '))} · ${p.duration_minutes ? p.duration_minutes+'m' : 'unlimited'}${(p.apps&&p.apps.length) ? ` · ${p.apps.length} app${p.apps.length===1?'':'s'} ${p.apps_mode==='whitelist'?'allowed':'blocked'}` : ''}${p.no_early_unlock ? ' · 🔒 locked' : ''}</div>
       </div>
       <div class="preset-actions">
         <button class="btn btn-gold btn-sm" onclick="startPreset('${p.id}')">Start</button>
@@ -890,15 +933,19 @@ async function saveAsPreset(){
   if(!name){ alert('Give it a name first.'); return; }
   if(!pendingSites.length){ alert('Add at least one site.'); return; }
   if(pendingAppMode==='whitelist' && !pendingApps.length){ alert('Add at least one app to allow, or switch back to "Block these apps" - otherwise no apps would be closed at all.'); return; }
+  if(pendingNoEarlyUnlock && pendingMinutes===0){ alert('Locking until time is up needs a duration - pick one instead of Unlimited.'); return; }
   await sb.from('focus_lock_presets').insert({
     user_id: myUserId, name, sites: pendingSites,
     mode: pendingMode, youtube_rules: currentYoutubeRulesPayload(),
     apps: pendingApps,
     apps_mode: pendingAppMode,
+    no_early_unlock: pendingNoEarlyUnlock,
     duration_minutes: pendingMinutes>0 ? pendingMinutes : null
   });
   pendingSites=[]; renderSiteChips(); resetYtPanel(); resetAppsPanel();
   document.getElementById('blockName').value='';
+  pendingNoEarlyUnlock=false;
+  const noEarlyChk=document.getElementById('noEarlyUnlockChk'); if(noEarlyChk) noEarlyChk.checked=false;
   loadPresets();
 }
 
@@ -913,11 +960,13 @@ async function startPreset(id){
     alert(`"${preset.name}" is set to allow only specific apps but has none saved - edit and re-save it with at least one app before starting.`);
     return;
   }
+  const presetNoEarlyUnlock = !!preset.no_early_unlock && !!preset.duration_minutes;
   const { error } = await sb.from('focus_lock_sessions').insert({
     user_id: myUserId, block_name: preset.name, sites: preset.sites,
     mode: presetMode, youtube_rules: preset.youtube_rules || null,
     apps: presetApps,
     apps_mode: presetAppMode,
+    no_early_unlock: presetNoEarlyUnlock,
     ends_at: endsAt, unlimited: !preset.duration_minutes, source: 'web'
   });
   if(error){
@@ -927,7 +976,7 @@ async function startPreset(id){
   }
   try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
   await syncBlockedAppsToDesktop(presetApps, presetAppMode);
-  const presetSessionPayload={ blockName:preset.name, sites:preset.sites, durationMinutes: preset.duration_minutes || null, mode:presetMode, youtubeRules: preset.youtube_rules || null };
+  const presetSessionPayload={ blockName:preset.name, sites:preset.sites, durationMinutes: preset.duration_minutes || null, mode:presetMode, youtubeRules: preset.youtube_rules || null, noEarlyUnlock: presetNoEarlyUnlock };
   sendToExtension({ type:'RM2_START_SESSION', payload:presetSessionPayload });
   pushSessionEventToDesktop(true, presetSessionPayload);
   loadActiveBlock();
