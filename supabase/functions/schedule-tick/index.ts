@@ -1,0 +1,197 @@
+// ===== Bundled for Supabase Dashboard deploy: schedule-tick =====
+// Called every minute by pg_cron (see the setup comment at the bottom of
+// supabase_migrations/0044_focus_lock_schedules.sql) - NOT called by the
+// extension, desktop app, or website directly. Runs as the service role,
+// so it can touch every user's rows in one pass instead of needing each
+// user's browser open at exactly the right minute.
+//
+// What it does, once per minute, per active schedule whose days_of_week
+// includes today (Asia/Kolkata, since that's this product's timezone -
+// see IST_OFFSET_MINUTES below):
+//   1. Find the slot (if any) that "now" falls inside.
+//   2. If that slot hasn't been started yet today (no focus_lock_schedule_
+//      runs row for (slot_id, today)) and the user has no other active
+//      session, start one from the slot's preset and record the run.
+//   3. If that slot HAS already run today and its session is still
+//      active but the slot's end_time has passed, end it.
+//
+// Idempotency matters here: if the person pays to unlock mid-slot, the
+// run row already exists for today, so re-running this a minute later
+// must NOT start a new session for the same slot/day. Only tomorrow (or
+// the next slot) gets a fresh run row.
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const IST_OFFSET_MINUTES = 5 * 60 + 30; // Asia/Kolkata is fixed UTC+5:30, no DST
+
+function admin() {
+  return createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+}
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+// Returns { dayOfWeek: 0-6 (0=Sun, matches JS Date#getDay()), hhmm: "HH:MM",
+// dateStr: "YYYY-MM-DD" } all in IST, derived from the real UTC clock
+// rather than trusting any client-supplied time.
+function nowInIst(): { dayOfWeek: number; hhmm: string; dateStr: string } {
+  const nowUtc = new Date();
+  const ist = new Date(nowUtc.getTime() + IST_OFFSET_MINUTES * 60_000);
+  const dayOfWeek = ist.getUTCDay();
+  const hh = String(ist.getUTCHours()).padStart(2, "0");
+  const mm = String(ist.getUTCMinutes()).padStart(2, "0");
+  const dateStr = ist.toISOString().slice(0, 10);
+  return { dayOfWeek, hhmm: `${hh}:${mm}`, dateStr };
+}
+
+// Converts an IST "HH:MM[:SS]" wall-clock time on dateStr into a UTC ISO
+// timestamp, so ends_at on focus_lock_sessions lines up with the real
+// slot end regardless of what timezone the reading server is in.
+function istWallClockToUtcIso(dateStr: string, hhmmss: string): string {
+  const [h, m, s] = hhmmss.split(":").map((n) => parseInt(n, 10));
+  const utcMs =
+    Date.parse(`${dateStr}T00:00:00.000Z`) +
+    ((h || 0) * 60 + (m || 0)) * 60_000 +
+    (s || 0) * 1000 -
+    IST_OFFSET_MINUTES * 60_000;
+  return new Date(utcMs).toISOString();
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null);
+
+  const db = admin();
+  const { dayOfWeek, hhmm, dateStr } = nowInIst();
+
+  const { data: schedules, error: schedErr } = await db
+    .from("focus_lock_schedules")
+    .select("id, user_id, days_of_week")
+    .eq("active", true)
+    .contains("days_of_week", [dayOfWeek]);
+
+  if (schedErr) return json({ error: schedErr.message }, 500);
+  if (!schedules?.length) return json({ ok: true, checked: 0 });
+
+  let started = 0;
+  let ended = 0;
+  const errors: string[] = [];
+
+  for (const schedule of schedules) {
+    try {
+      const { data: slots, error: slotErr } = await db
+        .from("focus_lock_schedule_slots")
+        .select("id, slot_order, preset_id, start_time, end_time")
+        .eq("schedule_id", schedule.id)
+        .order("slot_order", { ascending: true });
+      if (slotErr || !slots?.length) continue;
+
+      // "now" as HH:MM compares fine lexicographically against the time
+      // columns cast to text (both zero-padded "HH:MM:SS").
+      const currentSlot = slots.find(
+        (s: any) => hhmm >= s.start_time.slice(0, 5) && hhmm < s.end_time.slice(0, 5)
+      );
+
+      // ── End any slot whose window just closed ──
+      for (const slot of slots) {
+        if (currentSlot && slot.id === currentSlot.id) continue;
+        if (hhmm < slot.end_time.slice(0, 5)) continue; // not over yet
+        const { data: run } = await db
+          .from("focus_lock_schedule_runs")
+          .select("id, session_id, ended_at")
+          .eq("slot_id", slot.id)
+          .eq("run_date", dateStr)
+          .maybeSingle();
+        if (!run || run.ended_at || !run.session_id) continue;
+        const { data: session } = await db
+          .from("focus_lock_sessions")
+          .select("id, active")
+          .eq("id", run.session_id)
+          .maybeSingle();
+        if (session?.active) {
+          await db
+            .from("focus_lock_sessions")
+            .update({ active: false, verified: true })
+            .eq("id", session.id);
+          ended++;
+        }
+        await db
+          .from("focus_lock_schedule_runs")
+          .update({ ended_at: new Date().toISOString() })
+          .eq("id", run.id);
+      }
+
+      if (!currentSlot) continue;
+
+      // ── Start the current slot, unless already run today ──
+      const { data: existingRun } = await db
+        .from("focus_lock_schedule_runs")
+        .select("id")
+        .eq("slot_id", currentSlot.id)
+        .eq("run_date", dateStr)
+        .maybeSingle();
+      if (existingRun) continue; // already handled today, incl. paid-unlock case
+
+      // Don't stomp on a block the person started themselves (manual or a
+      // different schedule) - schedules only fill in when nothing's running.
+      const { data: activeSession } = await db
+        .from("focus_lock_sessions")
+        .select("id")
+        .eq("user_id", schedule.user_id)
+        .eq("active", true)
+        .maybeSingle();
+      if (activeSession) continue;
+
+      const { data: preset } = await db
+        .from("focus_lock_presets")
+        .select("*")
+        .eq("id", currentSlot.preset_id)
+        .maybeSingle();
+      if (!preset) continue;
+
+      const endsAtIso = istWallClockToUtcIso(dateStr, currentSlot.end_time);
+      const { data: newSession, error: insertErr } = await db
+        .from("focus_lock_sessions")
+        .insert({
+          user_id: schedule.user_id,
+          block_name: preset.name,
+          sites: preset.sites,
+          mode: preset.mode === "whitelist" ? "whitelist" : "blacklist",
+          youtube_rules: preset.youtube_rules || null,
+          apps: preset.apps || [],
+          apps_mode: preset.apps_mode === "whitelist" ? "whitelist" : "blacklist",
+          no_early_unlock: !!preset.no_early_unlock,
+          ends_at: endsAtIso,
+          unlimited: false,
+          source: "schedule",
+          schedule_id: schedule.id,
+          schedule_slot_id: currentSlot.id,
+        })
+        .select("id")
+        .single();
+      if (insertErr) {
+        errors.push(`schedule ${schedule.id}: ${insertErr.message}`);
+        continue;
+      }
+
+      await db.from("focus_lock_schedule_runs").insert({
+        schedule_id: schedule.id,
+        slot_id: currentSlot.id,
+        run_date: dateStr,
+        session_id: newSession.id,
+        started_at: new Date().toISOString(),
+      });
+      started++;
+    } catch (e) {
+      errors.push(`schedule ${schedule.id}: ${String((e as Error)?.message || e)}`);
+    }
+  }
+
+  return json({ ok: true, checked: schedules.length, started, ended, errors });
+});

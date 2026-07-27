@@ -233,6 +233,62 @@
         <div class="preset-list" id="presetList"><p class="empty-note">No saved blocks yet.</p></div>
       </div>
 
+      <!-- SCHEDULES: repeat a sequence of saved blocks automatically on
+           chosen days of the week, enforced server-side (schedule-tick
+           edge function via pg_cron) so it fires even with nothing open. -->
+      <div class="bl-card">
+        <div class="bl-card-title">Schedules</div>
+        <p class="empty-note" style="margin-bottom:0.9rem;">Chain your saved blocks into a repeating day plan — e.g. Physics 7-9am, a break, then Chemistry 9:30-11am — and pick which days it repeats on.</p>
+        <div class="preset-list" id="scheduleList"><p class="empty-note">No schedules yet.</p></div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:0.9rem;" onclick="openScheduleBuilder()">+ New schedule</button>
+      </div>
+
+      <!-- Schedule builder / editor modal -->
+      <div class="modal-overlay" id="scheduleModal">
+        <div class="modal" style="max-width:560px;max-height:85vh;overflow-y:auto;">
+          <h3 id="scheduleModalTitle">New schedule</h3>
+          <div class="bl-field">
+            <label>Name</label>
+            <input type="text" id="schName" placeholder="Weekday mornings">
+          </div>
+          <div class="bl-field">
+            <label>Repeats on</label>
+            <div class="mode-opts" id="schDayOpts"></div>
+          </div>
+          <div class="bl-field">
+            <label>Slots (in order)</label>
+            <div id="schSlots"></div>
+            <button type="button" class="btn btn-ghost btn-sm" style="margin-top:0.6rem;" onclick="addScheduleSlotRow()">+ Add slot</button>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeScheduleBuilder()">Cancel</button>
+            <button class="btn btn-gold" onclick="saveSchedule()">Save schedule</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit-lock gate: changing an existing schedule requires typing a
+           500-char randomized string exactly, same honesty rule as the
+           150-char focus-block unlock code but longer, to make casually
+           reshuffling your own schedule cost real, deliberate effort. -->
+      <div class="modal-overlay" id="scheduleGateModal">
+        <div class="modal" style="max-width:640px;max-height:85vh;overflow-y:auto;">
+          <h3>Type the code to edit this schedule</h3>
+          <p>This schedule is locked against casual changes. Type the 500-character string below exactly to unlock editing for this schedule.</p>
+          <div class="code-window" style="overflow:hidden;white-space:nowrap;font-family:monospace;background:var(--s2,#111);border:1px solid var(--border2);padding:0.8rem;margin-bottom:0.8rem;">
+            <span id="schGateCode" style="letter-spacing:1px;"></span>
+          </div>
+          <input type="range" id="schGateSlider" min="0" value="0" style="width:100%;margin-bottom:0.8rem;">
+          <input type="text" id="schGateInput" autocomplete="off" spellcheck="false" placeholder="Start typing the code above..." style="width:100%;font-family:monospace;">
+          <div class="progress-bar" style="position:static;height:4px;margin-top:0.6rem;"><div class="progress-fill" id="schGateProgress" style="width:0%;"></div></div>
+          <p class="empty-note" id="schGateStatus" style="margin-top:0.6rem;"></p>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeScheduleGate()">Cancel</button>
+            <button class="btn btn-gold" id="schGateUnlockBtn" disabled onclick="confirmScheduleGate()">Unlock editing</button>
+          </div>
+        </div>
+      </div>
+
       <!-- CONNECT EXTENSION -->
       <div class="bl-card">
         <div class="bl-card-title">Connect the extension</div>
@@ -372,6 +428,7 @@ requireAuth().then(session=>{
   syncNoEarlyUnlockAvailability();
   loadActiveBlock();
   loadPresets();
+  loadSchedules();
   loadDevices();
   autoConnectExtension(); // silent - no click needed if the extension is already installed
   setInterval(loadActiveBlock, 5000); // cheap poll - good enough for a status card, no realtime plumbing needed
@@ -1006,6 +1063,226 @@ async function startPreset(id){
 async function deletePreset(id){
   await sb.from('focus_lock_presets').delete().eq('id', id);
   loadPresets();
+}
+/* ── schedules ── */
+const SCHEDULE_DAY_LABELS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+let schedulePresetsCache=[]; // loaded fresh each time the builder opens
+let scheduleSlotSeq=0;
+let editingScheduleId=null; // null while creating a new schedule
+let scheduleUnlockedForEdit=new Set(); // schedule ids that passed the gate this page-load
+
+async function loadSchedules(){
+  if(!myUserId) return;
+  const { data: schedules } = await sb.from('focus_lock_schedules')
+    .select('*, focus_lock_schedule_slots(id, slot_order, preset_id, start_time, end_time, break_after_minutes)')
+    .eq('user_id', myUserId).order('created_at',{ascending:false});
+  const list=document.getElementById('scheduleList');
+  if(!schedules || !schedules.length){ list.innerHTML='<p class="empty-note">No schedules yet.</p>'; return; }
+
+  const { data: presets } = await sb.from('focus_lock_presets').select('id,name').eq('user_id', myUserId);
+  const presetNameById={}; (presets||[]).forEach(p=>presetNameById[p.id]=p.name);
+
+  list.innerHTML=schedules.map(s=>{
+    const slots=(s.focus_lock_schedule_slots||[]).slice().sort((a,b)=>a.slot_order-b.slot_order);
+    const days=(s.days_of_week||[]).slice().sort().map(d=>SCHEDULE_DAY_LABELS[d]).join(', ') || 'no days selected';
+    const slotSummary=slots.map(sl=>`${(presetNameById[sl.preset_id]||'Deleted block')} ${sl.start_time.slice(0,5)}\u2013${sl.end_time.slice(0,5)}`).join(' · ') || 'No slots';
+    return `
+    <div class="preset-row">
+      <div>
+        <div class="preset-name">${escHtml(s.name)} ${s.active?'':'<span style="color:var(--muted);">(paused)</span>'}</div>
+        <div class="preset-sites">${escHtml(days)}<br>${escHtml(slotSummary)}</div>
+      </div>
+      <div class="preset-actions">
+        <button class="btn btn-ghost btn-sm" onclick="toggleScheduleActive('${s.id}', ${!s.active})">${s.active?'Pause':'Resume'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="requestEditSchedule('${s.id}')">Edit</button>
+        <button class="btn btn-ghost btn-sm" onclick="requestDeleteSchedule('${s.id}')">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function toggleScheduleActive(id, active){
+  await sb.from('focus_lock_schedules').update({active}).eq('id', id);
+  loadSchedules();
+}
+
+async function requestDeleteSchedule(id){
+  if(scheduleUnlockedForEdit.has(id)){ await doDeleteSchedule(id); return; }
+  openScheduleGate(id, ()=>doDeleteSchedule(id));
+}
+async function doDeleteSchedule(id){
+  await sb.from('focus_lock_schedules').delete().eq('id', id);
+  loadSchedules();
+}
+function dayOptsHtml(selected){
+  return SCHEDULE_DAY_LABELS.map((label,i)=>
+    `<button type="button" class="mode-opt${(selected||[]).includes(i)?' active':''}" data-day="${i}" onclick="this.classList.toggle('active')">${label}</button>`
+  ).join('');
+}
+
+function slotRowHtml(seq, presets, slot){
+  const opts=presets.map(p=>`<option value="${p.id}" ${slot&&slot.preset_id===p.id?'selected':''}>${escHtml(p.name)}</option>`).join('');
+  return `
+  <div class="site-add-row" style="flex-wrap:wrap;gap:0.5rem;align-items:flex-end;margin-bottom:0.6rem;" id="schSlotRow${seq}">
+    <div style="flex:1;min-width:140px;">
+      <label style="font-size:0.7rem;color:var(--muted);">Block</label><br>
+      <select id="schSlotPreset${seq}" style="width:100%;">${opts||'<option value="">No saved blocks yet</option>'}</select>
+    </div>
+    <div>
+      <label style="font-size:0.7rem;color:var(--muted);">Start</label><br>
+      <input type="time" id="schSlotStart${seq}" value="${slot?slot.start_time.slice(0,5):''}">
+    </div>
+    <div>
+      <label style="font-size:0.7rem;color:var(--muted);">End</label><br>
+      <input type="time" id="schSlotEnd${seq}" value="${slot?slot.end_time.slice(0,5):''}">
+    </div>
+    <div>
+      <label style="font-size:0.7rem;color:var(--muted);">Break after (min)</label><br>
+      <input type="number" min="0" id="schSlotBreak${seq}" value="${slot?slot.break_after_minutes:0}" style="width:80px;">
+    </div>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('schSlotRow${seq}').remove()">Remove</button>
+  </div>`;
+}
+
+function addScheduleSlotRow(slot){
+  const seq=scheduleSlotSeq++;
+  document.getElementById('schSlots').insertAdjacentHTML('beforeend', slotRowHtml(seq, schedulePresetsCache, slot));
+}
+async function openScheduleBuilder(existing){
+  const { data: presets } = await sb.from('focus_lock_presets').select('id,name').eq('user_id', myUserId).order('name');
+  schedulePresetsCache=presets||[];
+  if(!schedulePresetsCache.length){ alert('Save at least one block first (see "Save as preset" above), then come back to schedule it.'); return; }
+
+  editingScheduleId=existing ? existing.id : null;
+  document.getElementById('scheduleModalTitle').textContent = existing ? 'Edit schedule' : 'New schedule';
+  document.getElementById('schName').value = existing ? existing.name : '';
+  document.getElementById('schDayOpts').innerHTML = dayOptsHtml(existing ? existing.days_of_week : []);
+  document.getElementById('schSlots').innerHTML='';
+  scheduleSlotSeq=0;
+  const slots=existing ? (existing.focus_lock_schedule_slots||[]).slice().sort((a,b)=>a.slot_order-b.slot_order) : [];
+  if(slots.length){ slots.forEach(s=>addScheduleSlotRow(s)); } else { addScheduleSlotRow(); }
+  document.getElementById('scheduleModal').classList.add('show');
+}
+function closeScheduleBuilder(){
+  document.getElementById('scheduleModal').classList.remove('show');
+  editingScheduleId=null;
+}
+
+async function requestEditSchedule(id){
+  const { data: existing } = await sb.from('focus_lock_schedules')
+    .select('*, focus_lock_schedule_slots(id, slot_order, preset_id, start_time, end_time, break_after_minutes)')
+    .eq('id', id).maybeSingle();
+  if(!existing) return;
+  if(scheduleUnlockedForEdit.has(id)){ openScheduleBuilder(existing); return; }
+  openScheduleGate(id, ()=>openScheduleBuilder(existing));
+}
+async function saveSchedule(){
+  if(!myUserId) return;
+  const name=document.getElementById('schName').value.trim();
+  if(!name){ alert('Give the schedule a name.'); return; }
+  const days=[...document.querySelectorAll('#schDayOpts .mode-opt.active')].map(b=>parseInt(b.dataset.day,10));
+  if(!days.length){ alert('Pick at least one day for it to repeat on.'); return; }
+
+  const slotRows=[...document.getElementById('schSlots').children];
+  if(!slotRows.length){ alert('Add at least one slot.'); return; }
+  const slots=[];
+  for(const row of slotRows){
+    const seq=row.id.replace('schSlotRow','');
+    const preset_id=document.getElementById(`schSlotPreset${seq}`).value;
+    const start_time=document.getElementById(`schSlotStart${seq}`).value;
+    const end_time=document.getElementById(`schSlotEnd${seq}`).value;
+    const break_after_minutes=parseInt(document.getElementById(`schSlotBreak${seq}`).value,10)||0;
+    if(!preset_id || !start_time || !end_time){ alert('Every slot needs a block, a start time, and an end time.'); return; }
+    if(end_time<=start_time){ alert("Each slot's end time must be after its start time."); return; }
+    slots.push({preset_id, start_time, end_time, break_after_minutes});
+  }
+  slots.sort((a,b)=>a.start_time.localeCompare(b.start_time));
+  for(let i=1;i<slots.length;i++){
+    if(slots[i].start_time < slots[i-1].end_time){ alert('Slots overlap - fix the times so each one starts after the previous one ends (plus its break, if any).'); return; }
+  }
+
+  if(editingScheduleId){
+    await sb.from('focus_lock_schedules').update({name, days_of_week:days}).eq('id', editingScheduleId);
+    await sb.from('focus_lock_schedule_slots').delete().eq('schedule_id', editingScheduleId);
+    await sb.from('focus_lock_schedule_slots').insert(slots.map((s,i)=>({schedule_id:editingScheduleId, slot_order:i, ...s})));
+  } else {
+    const { data: sched, error } = await sb.from('focus_lock_schedules')
+      .insert({user_id:myUserId, name, days_of_week:days}).select('id').single();
+    if(error){ alert(error.message); return; }
+    await sb.from('focus_lock_schedule_slots').insert(slots.map((s,i)=>({schedule_id:sched.id, slot_order:i, ...s})));
+  }
+  closeScheduleBuilder();
+  loadSchedules();
+}
+/* ── 500-char "ultra gibberish" edit-lock gate ──
+   Same honesty rule as the extension's 150-char focus-block unlock code
+   (blocked/unlock.js): must be typed exactly, no paste-and-hope. Longer
+   and drawn from a wider mixed charset than the 150-char one, since this
+   gate is a bigger deliberate-effort speed bump for changing a
+   *commitment* (your schedule) rather than ending a single block. */
+const SCHEDULE_GATE_LENGTH=500;
+const SCHEDULE_GATE_CHARSET=
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{};:,.<>/?~";
+let scheduleGateCode='';
+let scheduleGateOnSuccess=null;
+let scheduleGatePendingId=null;
+
+function generateScheduleGateCode(){
+  const bytes=new Uint32Array(SCHEDULE_GATE_LENGTH);
+  crypto.getRandomValues(bytes);
+  let out='';
+  for(let i=0;i<SCHEDULE_GATE_LENGTH;i++) out+=SCHEDULE_GATE_CHARSET[bytes[i]%SCHEDULE_GATE_CHARSET.length];
+  return out;
+}
+
+function openScheduleGate(scheduleId, onSuccess){
+  scheduleGatePendingId=scheduleId;
+  scheduleGateOnSuccess=onSuccess;
+  scheduleGateCode=generateScheduleGateCode();
+  document.getElementById('schGateCode').textContent=scheduleGateCode;
+  const input=document.getElementById('schGateInput');
+  input.value='';
+  document.getElementById('schGateProgress').style.width='0%';
+  document.getElementById('schGateStatus').textContent='';
+  document.getElementById('schGateUnlockBtn').disabled=true;
+  input.oninput=onScheduleGateInput;
+  document.getElementById('scheduleGateModal').classList.add('show');
+  input.focus();
+}
+function closeScheduleGate(){
+  document.getElementById('scheduleGateModal').classList.remove('show');
+  scheduleGateOnSuccess=null;
+  scheduleGatePendingId=null;
+}
+function onScheduleGateInput(){
+  const input=document.getElementById('schGateInput');
+  const typed=input.value;
+  document.getElementById('schGateProgress').style.width=`${Math.min(100,(typed.length/SCHEDULE_GATE_LENGTH)*100)}%`;
+  const matches = typed.length<=SCHEDULE_GATE_LENGTH && typed===scheduleGateCode.slice(0, typed.length);
+  const status=document.getElementById('schGateStatus');
+  const btn=document.getElementById('schGateUnlockBtn');
+  if(!matches){
+    status.textContent=`Character ${typed.length} didn't match — fix it before continuing.`;
+    btn.disabled=true;
+    return;
+  }
+  if(typed.length===SCHEDULE_GATE_LENGTH){
+    status.textContent='Matched — you can unlock editing now.';
+    btn.disabled=false;
+  } else {
+    status.textContent=`${typed.length} / ${SCHEDULE_GATE_LENGTH}`;
+    btn.disabled=true;
+  }
+}
+function confirmScheduleGate(){
+  const input=document.getElementById('schGateInput');
+  if(input.value!==scheduleGateCode) return; // shouldn't happen, button is gated already
+  if(scheduleGatePendingId) scheduleUnlockedForEdit.add(scheduleGatePendingId);
+  const cb=scheduleGateOnSuccess;
+  document.getElementById('scheduleGateModal').classList.remove('show');
+  scheduleGateOnSuccess=null;
+  scheduleGatePendingId=null;
+  if(cb) cb();
 }
 
 /* ── extension connection / sync tokens ── */
