@@ -141,6 +141,19 @@ fn kill_blacklisted(apps: &[String]) -> Vec<String> {
     let mut killed = std::collections::HashSet::new();
     for process in sys.processes().values() {
         let name = process.name(); // &str in sysinfo 0.30
+        let lower = name.to_lowercase();
+
+        // Same hard safety net as whitelist mode below - RevM2 itself and
+        // core OS/session processes are never killed, even if a name here
+        // ends up in the user's own blacklist (typo, bad preset, someone
+        // else editing the list, etc.). Whitelist mode already had this
+        // check; blacklist mode is the "kill only these named apps" path,
+        // so it's a much more direct way for revm2-desktop to end up
+        // self-terminating mid-session if it's ever missing here.
+        if NEVER_KILL_PREFIXES.iter().any(|p| lower.starts_with(p)) {
+            continue;
+        }
+
         let matches = apps.iter().any(|b| b.eq_ignore_ascii_case(name));
         if matches {
             let ok = process.kill();

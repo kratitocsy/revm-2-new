@@ -148,10 +148,33 @@ fn write_session_lock(active: bool) {
     }
 }
 
+// How long the app will keep enforcing a "session active" lock (close
+// disabled, quit disabled) without hearing ANY set_session_active call from
+// the web page. Normal operation calls this every 5s (see blocks.html's
+// loadActiveBlock poll), so going this long without one means the poll
+// itself has died - tab closed oddly, browser crashed, network down, a bug,
+// whatever - not that a real unlimited session is still running. Without
+// this, a dead poll leaves the app permanently unclosable with no recourse
+// but a Task Manager "End task", forever, even after the person genuinely
+// wants out and the website agrees there's nothing active. This is a
+// fail-safe of last resort, not the normal unlock path - the web poll
+// reaching set_session_active(false) is still what's supposed to happen
+// within 5-10s of a session actually ending.
+const WATCHDOG_TIMEOUT_SECS: i64 = 120;
+// How often the watchdog checks. Independent of the 3s guard-tick interval
+// since this isn't about enforcement, just detecting a stalled poll.
+const WATCHDOG_CHECK_INTERVAL_SECS: u64 = 15;
+
 // Shared flag: is a focus session currently active. Wrapped in Arc so the
 // background poller task can hold its own clone independent of Tauri's
 // managed-state lookup.
 pub struct SessionState(pub Arc<AtomicBool>);
+
+// Unix timestamp of the last time the web page successfully told us
+// (via set_session_active) what the real session state is - true or false,
+// either counts as "still in contact". The watchdog uses staleness of this,
+// not the session state itself, to decide the poll has died.
+pub struct LastSyncState(pub Arc<std::sync::atomic::AtomicI64>);
 
 // Per-browser-name -> unix timestamp of when it was FIRST seen running
 // without the extension, continuously. Reset to None the moment it's
@@ -167,10 +190,24 @@ fn set_session_active(
     grace_tracker: tauri::State<Arc<BrowserGraceTracker>>,
     heartbeat_state: tauri::State<Arc<heartbeat::HeartbeatState>>,
     quit_item: tauri::State<MenuItem<tauri::Wry>>,
+    last_sync: tauri::State<LastSyncState>,
     active: bool,
 ) -> Result<(), String> {
+    // Any call at all - true or false - proves the web page's poll is
+    // still alive and reaching us. This is what the watchdog checks for
+    // staleness, independent of whatever `active` value came in.
+    last_sync.0.store(now_ts(), Ordering::SeqCst);
+
     let was_active = state.0.swap(active, Ordering::SeqCst);
     write_session_lock(active);
+
+    // Session genuinely ending (the normal path, or the watchdog below) -
+    // put the tray back to its true idle state instead of leaving it
+    // showing stale "Session active..."/"closed: ..." text from the guard
+    // loop, which only updates the tooltip while a session is active.
+    if was_active && !active {
+        let _ = set_tray_status(app.clone(), "RevM2 - No active session".to_string());
+    }
 
     // Hide the taskbar/title-bar close ("X") control while a block is
     // active, so closing the window isn't a one-click way to dodge
@@ -480,6 +517,58 @@ async fn run_guard_tick(
     let _ = set_tray_status(app.clone(), status_text);
 }
 
+// Runs forever: every WATCHDOG_CHECK_INTERVAL_SECS, if we're currently
+// enforcing "session active" but haven't heard from the web page's poll
+// (in either direction) for WATCHDOG_TIMEOUT_SECS, treat that as a dead
+// poll rather than a real still-running session and release the lock
+// ourselves - restore closability, re-enable quit, clear the session
+// lock file, reset the tray. This does NOT touch the actual focus_lock_sessions
+// row in Supabase (this process has no way to know if that's stale too),
+// so the website may still show a block as active - it just means this
+// specific desktop app stops enforcing/blocking its own close until the
+// web page reconnects and syncs the real state again.
+fn spawn_watchdog_loop(
+    app: AppHandle,
+    session_active: Arc<AtomicBool>,
+    last_sync: Arc<std::sync::atomic::AtomicI64>,
+    quit_item: MenuItem<tauri::Wry>,
+) {
+    tauri::async_runtime::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(WATCHDOG_CHECK_INTERVAL_SECS));
+        loop {
+            interval.tick().await;
+            if !session_active.load(Ordering::SeqCst) {
+                continue;
+            }
+            let last = last_sync.load(Ordering::SeqCst);
+            let stale_for = now_ts() - last;
+            if stale_for < WATCHDOG_TIMEOUT_SECS {
+                continue;
+            }
+
+            eprintln!(
+                "watchdog: no set_session_active call in {stale_for}s (timeout {WATCHDOG_TIMEOUT_SECS}s) - releasing lock as a fail-safe"
+            );
+            session_active.store(false, Ordering::SeqCst);
+            write_session_lock(false);
+
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_closable(true);
+                #[cfg(target_os = "windows")]
+                set_native_closable(&window, true);
+            }
+            let _ = quit_item.set_enabled(true);
+            let _ = set_tray_status(app.clone(), "RevM2 - No active session".to_string());
+
+            notify(
+                &app,
+                "RevM2 - Block auto-released",
+                "Lost contact with your account for a couple of minutes, so the block was released as a safety measure. Open RevM2 in your browser to confirm your session actually ended.",
+            );
+        }
+    });
+}
+
 fn spawn_guard_loop(
     app: AppHandle,
     session_active: Arc<AtomicBool>,
@@ -512,6 +601,11 @@ pub fn run() {
     let grace_tracker = Arc::new(BrowserGraceTracker(Mutex::new(HashMap::new())));
     let heartbeat_state = Arc::new(heartbeat::HeartbeatState::new());
     let session_bridge = Arc::new(session_bridge::SessionEventBus::new());
+    // Seeded to "now" rather than 0/never - session_active also starts
+    // false, so the watchdog is a no-op until a session actually begins,
+    // but seeding it means a slow first poll after launch can never itself
+    // read as WATCHDOG_TIMEOUT_SECS of staleness.
+    let last_sync = Arc::new(std::sync::atomic::AtomicI64::new(now_ts()));
     // 0 = never notified yet; see CLOSE_NOTIFY_COOLDOWN_SECS above.
     let last_close_notify_ts = Arc::new(std::sync::atomic::AtomicI64::new(0));
     let exit_guard_session_active = session_active.clone();
@@ -556,6 +650,7 @@ pub fn run() {
         .manage(heartbeat_state.clone())
         .manage(grace_tracker.clone())
         .manage(session_bridge.clone())
+        .manage(LastSyncState(last_sync.clone()))
         .setup(move |app| {
             if let Ok(store) = app.store(BLOCKED_APPS_STORE) {
                 if let Some(apps) = store
@@ -644,6 +739,13 @@ pub fn run() {
                 blocked_apps.clone(),
                 grace_tracker.clone(),
                 heartbeat_state.clone(),
+            );
+
+            spawn_watchdog_loop(
+                app.handle().clone(),
+                session_active.clone(),
+                last_sync.clone(),
+                quit_item.clone(),
             );
 
             // Belt-and-braces alongside set_native_closable/set_closable
