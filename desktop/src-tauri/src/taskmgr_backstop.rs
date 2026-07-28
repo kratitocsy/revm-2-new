@@ -39,7 +39,8 @@ mod win {
     use std::process::Command;
     use std::time::{SystemTime, UNIX_EPOCH};
     use windows_sys::Win32::Foundation::{FILETIME, SYSTEMTIME};
-    use windows_sys::Win32::System::Time::{FileTimeToLocalFileTime, FileTimeToSystemTime};
+    use windows_sys::Win32::Storage::FileSystem::FileTimeToLocalFileTime;
+    use windows_sys::Win32::System::Time::FileTimeToSystemTime;
 
     // 100ns intervals between the FILETIME epoch (1601-01-01) and the
     // Unix epoch (1970-01-01) - a fixed, well-known constant.
