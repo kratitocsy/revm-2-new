@@ -64,6 +64,15 @@ const NEVER_KILL_PREFIXES: &[&str] = &[
     "textinputhost", "securityhealth", "systemsettings", "userinit",
     "logonui", "audiodg", "wmiprvse", "lsaiso", "spoolsv",
     "backgroundtaskhost", "wudfhost",
+    // Tauri on Windows renders through the WebView2 runtime, which spawns
+    // "msedgewebview2.exe" helper/renderer processes distinct from real
+    // Edge ("msedge.exe" - already skipped via browser_names below, but
+    // that list intentionally only contains real, user-facing browsers).
+    // Without this, whitelist app-mode killed RevM2's own UI process
+    // mid-session (it's neither in this list nor a recognized browser),
+    // leaving the window blank/dead and unable to ever report the
+    // session as over.
+    "msedgewebview2",
 ];
 
 /// A running process, for the "pick which apps to block" UI. We surface
@@ -85,7 +94,7 @@ pub fn list_running_apps() -> Vec<RunningApp> {
 
     let skip_prefixes = [
         "svchost", "system", "registry", "runtime", "dwm", "csrss", "wininit",
-        "smss", "lsass", "services", "conhost", "revm2-desktop",
+        "smss", "lsass", "services", "conhost", "revm2-desktop", "msedgewebview2",
     ];
 
     let mut seen = std::collections::HashSet::new();
