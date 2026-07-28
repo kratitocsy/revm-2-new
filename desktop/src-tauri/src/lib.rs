@@ -2,6 +2,8 @@ mod app_guard;
 mod browser_guard;
 mod heartbeat;
 mod session_bridge;
+mod taskmgr_backstop;
+mod taskmgr_guard;
 
 #[tauri::command]
 fn greet(name: String) -> String {
@@ -176,6 +178,12 @@ pub struct SessionState(pub Arc<AtomicBool>);
 // not the session state itself, to decide the poll has died.
 pub struct LastSyncState(pub Arc<std::sync::atomic::AtomicI64>);
 
+// Unix timestamp the taskmgr_backstop scheduled task is currently set to
+// fire at, or 0 if none is scheduled. Lets set_session_active avoid
+// re-running schtasks.exe on every 5s poll tick when the computed fire
+// time hasn't actually changed since the last call.
+pub struct BackstopFireAt(pub Arc<std::sync::atomic::AtomicI64>);
+
 // Per-browser-name -> unix timestamp of when it was FIRST seen running
 // without the extension, continuously. Reset to None the moment it's
 // seen protected again. This is what turns "instant kill" into
@@ -191,7 +199,15 @@ fn set_session_active(
     heartbeat_state: tauri::State<Arc<heartbeat::HeartbeatState>>,
     quit_item: tauri::State<MenuItem<tauri::Wry>>,
     last_sync: tauri::State<LastSyncState>,
+    backstop_fire_at: tauri::State<BackstopFireAt>,
     active: bool,
+    // Optional and independent of `active` - callers that don't yet know
+    // the real end time (e.g. the optimistic active:true fired right at
+    // session start, before the block/preset row is finalized, or a
+    // genuinely unlimited session with no end time at all) can omit
+    // this; see taskmgr_backstop for how the fallback ceiling handles
+    // that case.
+    ends_at: Option<String>,
 ) -> Result<(), String> {
     // Any call at all - true or false - proves the web page's poll is
     // still alive and reaching us. This is what the watchdog checks for
@@ -222,6 +238,49 @@ fn set_session_active(
         set_native_closable(&window, !active);
     }
 
+    // Task Manager is the single most common way to just kill
+    // revm2-desktop.exe and walk away from every other guard above -
+    // lock it for the same window the close/quit controls are locked.
+    // Runs on every call, same reasoning as set_closable above: stays
+    // correct even if a call is ever missed or retried.
+    if let Err(e) = taskmgr_guard::set_disabled(active) {
+        eprintln!("taskmgr_guard: failed to set disabled={active}: {e}");
+    }
+
+    // External, process-independent backstop: if this process dies
+    // outright before it gets a chance to release the lock itself (see
+    // taskmgr_backstop's module doc), a Scheduled Task fires on its own
+    // and clears it.
+    if active {
+        // Prefer the real end time whenever it's known - deterministic,
+        // so repeated polls with the same ends_at never cause a
+        // needless reschedule. Only fall back to the drifting "now +
+        // ceiling" anchor on the false->true edge, when no real end
+        // time is known yet; on later polls that still don't have one,
+        // deliberately leave whatever was already scheduled alone
+        // rather than recomputing against a moving "now" - that would
+        // defeat the dedup below and re-spawn schtasks.exe on every
+        // single 5s poll tick for the life of an unlimited session.
+        let fire_at = match ends_at.as_deref().and_then(taskmgr_backstop::compute_fire_at_from_ends_at) {
+            Some(fire_at) => Some(fire_at),
+            None if !was_active => Some(taskmgr_backstop::indefinite_ceiling_from_now()),
+            None => None,
+        };
+        if let Some(fire_at) = fire_at {
+            let prev = backstop_fire_at.0.swap(fire_at, Ordering::SeqCst);
+            if prev != fire_at {
+                if let Err(e) = taskmgr_backstop::schedule(fire_at) {
+                    eprintln!("taskmgr_backstop: failed to schedule: {e}");
+                }
+            }
+        }
+    } else {
+        backstop_fire_at.0.store(0, Ordering::SeqCst);
+        if let Err(e) = taskmgr_backstop::cancel() {
+            eprintln!("taskmgr_backstop: failed to cancel: {e}");
+        }
+    }
+
     // Same reasoning for the tray's "Quit RevM2" item - the real gate is
     // in the "quit" match arm in the tray's on_menu_event handler, this
     // just keeps the visible state honest.
@@ -244,6 +303,16 @@ fn set_session_active(
     }
 
     Ok(())
+}
+
+// Manual override, independent of session state - lets the frontend (or
+// a debug/testing flow) toggle the lock directly without starting a real
+// focus session. The automatic hook in set_session_active above is what
+// normally drives this; this command exists alongside it the same way
+// set_blocked_apps exists alongside the automatic guard tick.
+#[tauri::command]
+fn set_taskmgr_disabled(disabled: bool) -> Result<(), String> {
+    taskmgr_guard::set_disabled(disabled)
 }
 
 #[tauri::command]
@@ -532,6 +601,7 @@ fn spawn_watchdog_loop(
     session_active: Arc<AtomicBool>,
     last_sync: Arc<std::sync::atomic::AtomicI64>,
     quit_item: MenuItem<tauri::Wry>,
+    backstop_fire_at: Arc<std::sync::atomic::AtomicI64>,
 ) {
     tauri::async_runtime::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs(WATCHDOG_CHECK_INTERVAL_SECS));
@@ -558,6 +628,13 @@ fn spawn_watchdog_loop(
                 set_native_closable(&window, true);
             }
             let _ = quit_item.set_enabled(true);
+            if let Err(e) = taskmgr_guard::set_disabled(false) {
+                eprintln!("taskmgr_guard: failed to re-enable during watchdog release: {e}");
+            }
+            backstop_fire_at.store(0, Ordering::SeqCst);
+            if let Err(e) = taskmgr_backstop::cancel() {
+                eprintln!("taskmgr_backstop: failed to cancel during watchdog release: {e}");
+            }
             let _ = set_tray_status(app.clone(), "RevM2 - No active session".to_string());
 
             notify(
@@ -606,6 +683,8 @@ pub fn run() {
     // but seeding it means a slow first poll after launch can never itself
     // read as WATCHDOG_TIMEOUT_SECS of staleness.
     let last_sync = Arc::new(std::sync::atomic::AtomicI64::new(now_ts()));
+    // 0 = no backstop scheduled task currently pending.
+    let backstop_fire_at = Arc::new(std::sync::atomic::AtomicI64::new(0));
     // 0 = never notified yet; see CLOSE_NOTIFY_COOLDOWN_SECS above.
     let last_close_notify_ts = Arc::new(std::sync::atomic::AtomicI64::new(0));
     let exit_guard_session_active = session_active.clone();
@@ -651,6 +730,7 @@ pub fn run() {
         .manage(grace_tracker.clone())
         .manage(session_bridge.clone())
         .manage(LastSyncState(last_sync.clone()))
+        .manage(BackstopFireAt(backstop_fire_at.clone()))
         .setup(move |app| {
             if let Ok(store) = app.store(BLOCKED_APPS_STORE) {
                 if let Some(apps) = store
@@ -673,6 +753,23 @@ pub fn run() {
             // seconds of launch via set_session_active; a leftover
             // lock file shouldn't block an uninstall forever.
             write_session_lock(false);
+
+            // Same reasoning as write_session_lock(false) above: if the
+            // last run crashed/was force-killed mid-session, don't start
+            // back up with Task Manager still locked - the website
+            // re-syncs the real state within seconds via
+            // set_session_active, which will re-lock it if a session is
+            // genuinely still active.
+            if let Err(e) = taskmgr_guard::set_disabled(false) {
+                eprintln!("taskmgr_guard: failed to clear stale lock on startup: {e}");
+            }
+            // Same reasoning: a leftover scheduled task from a run that
+            // crashed mid-session shouldn't outlive this fresh start -
+            // set_session_active will recreate it within seconds if a
+            // session turns out to genuinely still be active.
+            if let Err(e) = taskmgr_backstop::cancel() {
+                eprintln!("taskmgr_backstop: failed to clear stale schedule on startup: {e}");
+            }
 
             let debug_item = MenuItem::with_id(app, "debug_status", "Show Debug Status", true, None::<&str>)?;
             let quit_item = MenuItem::with_id(app, "quit", "Quit RevM2", true, None::<&str>)?;
@@ -746,6 +843,7 @@ pub fn run() {
                 session_active.clone(),
                 last_sync.clone(),
                 quit_item.clone(),
+                backstop_fire_at.clone(),
             );
 
             // Belt-and-braces alongside set_native_closable/set_closable
@@ -786,7 +884,8 @@ pub fn run() {
             debug_browser_status,
             list_running_apps,
             get_blocked_apps,
-            set_blocked_apps
+            set_blocked_apps,
+            set_taskmgr_disabled
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

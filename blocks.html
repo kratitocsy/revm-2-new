@@ -848,7 +848,7 @@ async function startBlock(){
   document.getElementById('blockName').value='';
   pendingNoEarlyUnlock=false;
   const noEarlyChk=document.getElementById('noEarlyUnlockChk'); if(noEarlyChk) noEarlyChk.checked=false;
-  try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
+  try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true, endsAt}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
   await syncBlockedAppsToDesktop(startedApps, startedAppMode);
   const startedSessionPayload={ blockName:name, sites:startedSites, durationMinutes: startedMinutes>0 ? startedMinutes : null, mode:startedMode, youtubeRules, noEarlyUnlock: startedNoEarlyUnlock };
   sendToExtension({ type:'RM2_START_SESSION', payload:startedSessionPayload });
@@ -886,7 +886,7 @@ async function loadActiveBlock(){
   if(!myUserId) return;
   const { data } = await sb.from('focus_lock_sessions')
     .select('*').eq('user_id', myUserId).eq('active', true).maybeSingle();
-  try{ await window.__TAURI__.core.invoke('set_session_active', {active: !!data}); }catch(e){ console.error('RM2 desktop invoke error (poll):', e); }
+  try{ await window.__TAURI__.core.invoke('set_session_active', {active: !!data, endsAt: data?.ends_at || null}); }catch(e){ console.error('RM2 desktop invoke error (poll):', e); }
   const card=document.getElementById('activeBlockCard');
   const startCard=document.getElementById('startCard');
   if(!data){
@@ -1052,7 +1052,7 @@ async function startPreset(id){
     else alert(error.message);
     return;
   }
-  try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
+  try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true, endsAt}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
   await syncBlockedAppsToDesktop(presetApps, presetAppMode);
   const presetSessionPayload={ blockName:preset.name, sites:preset.sites, durationMinutes: preset.duration_minutes || null, mode:presetMode, youtubeRules: preset.youtube_rules || null, noEarlyUnlock: presetNoEarlyUnlock };
   sendToExtension({ type:'RM2_START_SESSION', payload:presetSessionPayload });

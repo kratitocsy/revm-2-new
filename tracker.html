@@ -967,9 +967,9 @@ async function startSelectedBlockPreset(){
 async function pollBlockStatusForDesktop(){
   if(!myUserId) return;
   const { data } = await sb.from('focus_lock_sessions')
-    .select('apps').eq('user_id', myUserId).eq('active', true).maybeSingle();
+    .select('apps, ends_at').eq('user_id', myUserId).eq('active', true).maybeSingle();
   if(isDesktopApp()){
-    try{ await window.__TAURI__.core.invoke('set_session_active', {active: !!data}); }
+    try{ await window.__TAURI__.core.invoke('set_session_active', {active: !!data, endsAt: data?.ends_at || null}); }
     catch(e){ console.error('RM2 desktop invoke error (poll):', e); }
     try{ await window.__TAURI__.core.invoke('set_blocked_apps', {apps: data?.apps || []}); }
     catch(e){ console.error('RM2 desktop invoke error (set_blocked_apps):', e); }
