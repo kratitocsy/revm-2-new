@@ -9,6 +9,9 @@ fn main() {
                 "list_running_apps",
                 "get_blocked_apps",
                 "set_blocked_apps",
+                "push_session_event",
+                "gate_protection_start",
+                "gate_protection_stop",
             ]),
         ),
     )

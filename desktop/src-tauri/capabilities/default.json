@@ -19,6 +19,7 @@
     "allow-set-tray-status",
     "allow-set-session-active",
     "allow-debug-browser-status",
+    "allow-push-session-event",
     "allow-list-running-apps",
     "allow-get-blocked-apps",
     "allow-set-blocked-apps",
