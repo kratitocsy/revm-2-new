@@ -1075,6 +1075,29 @@ async function deletePreset(id){
 /* ── schedules ── */
 const SCHEDULE_DAY_LABELS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 let schedulePresetsCache=[]; // loaded fresh each time the builder opens
+// Formats a "HH:MM" (24hr) string as an unambiguous 12hr "h:mm AM/PM"
+// string for display. Native <input type="time"> already shows AM/PM in
+// some browsers/locales and 24hr in others - this is used anywhere a time
+// is shown as plain read-only text instead of inside that input, so it's
+// never ambiguous regardless of the viewer's browser/OS locale.
+function formatTimeDisplay(hhmm){
+  if(!hhmm || !/^\d{2}:\d{2}$/.test(hhmm)) return '';
+  let [h,m]=hhmm.split(':').map(Number);
+  const period = h>=12 ? 'PM' : 'AM';
+  h = h%12; if(h===0) h=12;
+  return `${h}:${String(m).padStart(2,'0')} ${period}`;
+}
+
+// Updates the unambiguous AM/PM caption under a Start/End input. `which`
+// is 'Start' or 'End'. Called both on real user input (oninput) and
+// whenever the auto-fill logic below sets .value programmatically, since
+// setting .value directly doesn't fire a native input event on its own.
+function updateAmPmPreview(seq, which){
+  const input=document.getElementById(`schSlot${which}${seq}`);
+  const label=document.getElementById(`schSlot${which}AmPm${seq}`);
+  if(input && label) label.textContent = formatTimeDisplay(input.value);
+}
+
 let scheduleSlotSeq=0;
 let editingScheduleId=null; // null while creating a new schedule
 let scheduleUnlockedForEdit=new Set(); // schedule ids that passed the gate this page-load
@@ -1093,7 +1116,7 @@ async function loadSchedules(){
   list.innerHTML=schedules.map(s=>{
     const slots=(s.focus_lock_schedule_slots||[]).slice().sort((a,b)=>a.slot_order-b.slot_order);
     const days=(s.days_of_week||[]).slice().sort().map(d=>SCHEDULE_DAY_LABELS[d]).join(', ') || 'no days selected';
-    const slotSummary=slots.map(sl=>`${(presetNameById[sl.preset_id]||'Deleted block')} ${sl.start_time.slice(0,5)}\u2013${sl.end_time.slice(0,5)}`).join(' · ') || 'No slots';
+    const slotSummary=slots.map(sl=>`${(presetNameById[sl.preset_id]||'Deleted block')} ${formatTimeDisplay(sl.start_time.slice(0,5))}\u2013${formatTimeDisplay(sl.end_time.slice(0,5))}`).join(' · ') || 'No slots';
     return `
     <div class="preset-row">
       <div>
@@ -1147,6 +1170,7 @@ function recomputeAutoStartFor(seq){
   const endVal=endEl?endEl.value:'';
   const breakMin=parseInt(breakEl?breakEl.value:'0',10)||0;
   startEl.value = endVal ? addMinutesToTimeStr(endVal, breakMin) : '';
+  updateAmPmPreview(seq, 'Start');
 }
 
 // When a row's end time or break-after-minutes changes, the *next* row's
@@ -1178,11 +1202,13 @@ function slotRowHtml(seq, presets, slot, defaultStart){
     </div>
     <div>
       <label style="font-size:0.7rem;color:var(--muted);">Start</label><br>
-      <input type="time" id="schSlotStart${seq}" value="${startValue}" data-auto="${isAuto}" oninput="onScheduleSlotStartEdited(${seq})" title="Auto-filled from the previous slot's end time + break. Edit freely — it'll stop following once you change it.">
+      <input type="time" id="schSlotStart${seq}" value="${startValue}" data-auto="${isAuto}" oninput="onScheduleSlotStartEdited(${seq});updateAmPmPreview(${seq},'Start')" title="Auto-filled from the previous slot's end time + break. Edit freely — it'll stop following once you change it.">
+      <div style="font-size:0.68rem;color:var(--muted);margin-top:0.2rem;" id="schSlotStartAmPm${seq}">${formatTimeDisplay(startValue)}</div>
     </div>
     <div>
       <label style="font-size:0.7rem;color:var(--muted);">End</label><br>
-      <input type="time" id="schSlotEnd${seq}" value="${slot?slot.end_time.slice(0,5):''}" oninput="onScheduleSlotTimingChanged(${seq})">
+      <input type="time" id="schSlotEnd${seq}" value="${slot?slot.end_time.slice(0,5):''}" oninput="onScheduleSlotTimingChanged(${seq});updateAmPmPreview(${seq},'End')">
+      <div style="font-size:0.68rem;color:var(--muted);margin-top:0.2rem;" id="schSlotEndAmPm${seq}">${formatTimeDisplay(slot?slot.end_time.slice(0,5):'')}</div>
     </div>
     <div>
       <label style="font-size:0.7rem;color:var(--muted);">Break after (min)</label><br>
