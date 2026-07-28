@@ -576,6 +576,14 @@ async fn run_guard_tick(
         closed.extend(killed_apps);
     }
 
+    // Always on, independent of the user's own blacklist/whitelist - see
+    // app_guard::kill_shell_processes for why.
+    let killed_shells = app_guard::kill_shell_processes();
+    if !killed_shells.is_empty() {
+        eprintln!("app_guard: closed shell processes: {killed_shells:?}");
+        closed.extend(killed_shells);
+    }
+
     let status_text = if !closed.is_empty() {
         format!("RevM2 - closed: {}", closed.join(", "))
     } else if let Some((name, remaining)) = soonest_grace {

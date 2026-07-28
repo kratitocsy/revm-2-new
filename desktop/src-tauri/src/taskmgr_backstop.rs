@@ -1,7 +1,7 @@
 // External, process-independent backstop for taskmgr_guard: schedules a
 // one-shot Windows Scheduled Task that force-clears the DisableTaskMgr
-// registry value at a computed time, regardless of whether
-// revm2-desktop.exe is even alive to do it itself.
+// AND DisableCmd registry values at a computed time, regardless of
+// whether revm2-desktop.exe is even alive to do it itself.
 //
 // Why this exists: the watchdog in lib.rs and the startup cleanup both
 // only run *inside* the app's own process. If the process is killed
@@ -139,6 +139,10 @@ mod win {
     <Exec>
       <Command>reg.exe</Command>
       <Arguments>delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" /v DisableTaskMgr /f</Arguments>
+    </Exec>
+    <Exec>
+      <Command>reg.exe</Command>
+      <Arguments>delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" /v DisableCmd /f</Arguments>
     </Exec>
   </Actions>
 </Task>"#

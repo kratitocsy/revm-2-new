@@ -140,6 +140,53 @@ pub fn kill_blocked_apps(blocked: &BlockedApps) -> Vec<String> {
     }
 }
 
+/// Always-on, not user-configurable - unlike kill_blocked_apps above
+/// (which only touches what the user picked), this runs unconditionally
+/// on every guard tick while a session is active. Same reasoning as
+/// taskmgr_guard: a shell is one of the most direct ways to bypass every
+/// other layer here (taskkill the app, reg-delete the DisableTaskMgr/
+/// DisableCmd values, etc.), so it gets closed the moment it's seen
+/// running, same as an unprotected browser.
+///
+/// cmd.exe is ALSO registry-blocked from launching fresh (see
+/// taskmgr_guard's DisableCmd) - it's still killed here too, because that
+/// policy only stops NEW launches, not a command prompt that was already
+/// open before the session started.
+///
+/// Honest limitation, same as anywhere else in this codebase that kills
+/// on a timer: this runs on the same 3s cadence as everything else in
+/// run_guard_tick, so a single command that starts and finishes inside
+/// that window (a one-line `taskkill ...` and Enter) isn't stopped by
+/// this - only a shell left open/idle is guaranteed to get closed on the
+/// next tick.
+const ALWAYS_KILL_SHELL_PROCESSES: &[&str] = &[
+    "cmd.exe",
+    "powershell.exe",
+    "powershell_ise.exe",
+    "pwsh.exe",       // PowerShell 7+
+    "windowsterminal.exe",
+    "wt.exe",
+];
+
+pub fn kill_shell_processes() -> Vec<String> {
+    let mut sys = System::new_all();
+    sys.refresh_processes();
+
+    let mut killed = std::collections::HashSet::new();
+    for process in sys.processes().values() {
+        let name = process.name(); // &str in sysinfo 0.30
+        if ALWAYS_KILL_SHELL_PROCESSES.iter().any(|s| s.eq_ignore_ascii_case(name)) {
+            let ok = process.kill();
+            if ok {
+                killed.insert(name.to_string());
+            } else {
+                eprintln!("app_guard: failed to kill shell process {name} (pid {})", process.pid());
+            }
+        }
+    }
+    killed.into_iter().collect()
+}
+
 fn kill_blacklisted(apps: &[String]) -> Vec<String> {
     if apps.is_empty() {
         return Vec::new();

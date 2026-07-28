@@ -1,16 +1,26 @@
-// Disables/re-enables Task Manager for the current Windows user via the
-// same `DisableTaskMgr` policy value Group Policy and parental-control
-// software use. taskmgr.exe (and the Ctrl+Shift+Esc / Ctrl+Alt+Del ->
-// "Task Manager" launcher) checks this registry value itself at launch
-// time and refuses to open if it's set - no service, no process hook,
-// no admin rights required for the HKCU form used here.
+// Disables/re-enables Task Manager AND Command Prompt for the current
+// Windows user via the `DisableTaskMgr` and `DisableCMD` policy values -
+// the same ones Group Policy and parental-control software use.
+// taskmgr.exe and cmd.exe each check their own value at launch time and
+// refuse to open if it's set - no service, no process hook, no admin
+// rights required for the HKCU form used here.
 //
-// This does NOT stop someone from killing revm2-desktop.exe itself via
-// some other means (a different task manager, `taskkill` from a command
-// prompt, etc.) - it only closes the single most common bypass (opening
-// Task Manager and ending the process from there). It's one layer in the
-// same spirit as browser_guard/app_guard, not a complete anti-tamper
-// story on its own.
+// DisableCMD=2 (not 1) is used deliberately: 1 still allows batch file
+// (.bat/.cmd) processing, which would let someone route around the
+// interactive-prompt block with a one-line .bat double-click. 2 disables
+// both.
+//
+// PowerShell has no equivalent simple HKCU policy - blocking it outright
+// needs AppLocker/Software Restriction Policies, which need admin rights
+// at install time. See app_guard::kill_shell_processes for the
+// best-effort fallback (kills the process on the same 3s tick as
+// everything else) and its honest limitation: a single command that
+// completes before the next tick isn't stopped by this.
+//
+// None of this stops someone from killing revm2-desktop.exe itself via
+// some other means (Task Manager before this took effect, taskkill from
+// an already-open shell, etc.) - it closes the most common bypasses, not
+// a complete anti-tamper story. Same spirit as browser_guard/app_guard.
 
 #[cfg(target_os = "windows")]
 mod win {
@@ -21,18 +31,22 @@ mod win {
     };
 
     const SUBKEY: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System";
-    const VALUE_NAME: &str = "DisableTaskMgr";
+    const TASKMGR_VALUE: &str = "DisableTaskMgr";
+    const CMD_VALUE: &str = "DisableCmd";
+    // 2 = disable cmd.exe entirely, including .bat/.cmd batch processing
+    // (1 would still let a double-clicked .bat route around the
+    // interactive-prompt block).
+    const CMD_DISABLED_DATA: u32 = 2;
 
     fn wide(s: &str) -> Vec<u16> {
         s.encode_utf16().chain(std::iter::once(0)).collect()
     }
 
-    /// Sets or clears the policy. `disabled = true` blocks Task Manager
-    /// from opening; `disabled = false` removes the restriction (deletes
-    /// the value rather than writing 0, so we don't leave a stray policy
-    /// key behind for something else - e.g. an admin's actual Group
-    /// Policy - to have to fight with later).
-    pub fn set_disabled(disabled: bool) -> Result<(), String> {
+    /// Sets or clears a single DWORD policy value under SUBKEY.
+    /// `disabled = false` deletes the value rather than writing 0, so we
+    /// don't leave a stray policy key behind for something else - e.g.
+    /// an admin's actual Group Policy - to have to fight with later.
+    fn set_dword_policy(value_name: &str, enabled_data: u32, disabled: bool) -> Result<(), String> {
         let subkey_w = wide(SUBKEY);
         let mut hkey: HKEY = 0;
 
@@ -50,12 +64,12 @@ mod win {
             )
         };
         if status != ERROR_SUCCESS || hkey == 0 {
-            return Err(format!("RegCreateKeyExW failed: {status}"));
+            return Err(format!("RegCreateKeyExW failed for {value_name}: {status}"));
         }
 
-        let value_name_w = wide(VALUE_NAME);
+        let value_name_w = wide(value_name);
         let result = if disabled {
-            let data: u32 = 1;
+            let data: u32 = enabled_data;
             let status = unsafe {
                 RegSetValueExW(
                     hkey,
@@ -69,7 +83,7 @@ mod win {
             if status == ERROR_SUCCESS {
                 Ok(())
             } else {
-                Err(format!("RegSetValueExW failed: {status}"))
+                Err(format!("RegSetValueExW failed for {value_name}: {status}"))
             }
         } else {
             let status = unsafe { RegDeleteValueW(hkey, value_name_w.as_ptr()) };
@@ -79,7 +93,7 @@ mod win {
             if status == ERROR_SUCCESS || status == 2 {
                 Ok(())
             } else {
-                Err(format!("RegDeleteValueW failed: {status}"))
+                Err(format!("RegDeleteValueW failed for {value_name}: {status}"))
             }
         };
 
@@ -87,6 +101,21 @@ mod win {
             RegCloseKey(hkey);
         }
         result
+    }
+
+    /// Sets/clears both policies. Attempts both even if one fails, and
+    /// aggregates any errors, so a failure on one (e.g. some odd
+    /// permissions edge case on DisableCmd) doesn't silently skip the
+    /// other - maximizes actual protection coverage rather than
+    /// short-circuiting on the first error.
+    pub fn set_disabled(disabled: bool) -> Result<(), String> {
+        let taskmgr_result = set_dword_policy(TASKMGR_VALUE, 1, disabled);
+        let cmd_result = set_dword_policy(CMD_VALUE, CMD_DISABLED_DATA, disabled);
+        match (taskmgr_result, cmd_result) {
+            (Ok(()), Ok(())) => Ok(()),
+            (Err(e), Ok(())) | (Ok(()), Err(e)) => Err(e),
+            (Err(e1), Err(e2)) => Err(format!("{e1}; {e2}")),
+        }
     }
 }
 
