@@ -1,5 +1,9 @@
 /* RevM² Service Worker — Offline Support */
-const CACHE = 'revm2-v6'; // bumped: purges stale pre-cleanup caches (old floating-timer.js etc.) for every client
+const CACHE = 'revm2-v7'; // bumped: was v6. This bump alone purges every
+// existing client's stale cached HTML pages (see the fetch handler below
+// for why that staleness could happen in the first place) - existing
+// installs pick this up automatically next launch since we skipWaiting +
+// clients.claim below.
 const SHELL = [
   '/',
   '/index.html',
@@ -36,6 +40,37 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   if (e.request.url.includes('supabase.co')) return; // never cache API calls
+
+  // HTML page loads (actual navigations, e.g. opening blocks.html) always
+  // go network-first. This is an actively-developed product shipping new
+  // features regularly - cache-first on documents meant "I shipped it but
+  // it's not showing up" every single time, for every returning user,
+  // until someone thought to manually bump CACHE above. Network-first
+  // fixes that permanently: you always get the live page when online, and
+  // only fall back to whatever's cached if you're genuinely offline.
+  // Static assets (css/js/fonts/manifest) below keep cache-first, since
+  // those change far less often and benefit from the speed without this
+  // staleness risk.
+  const isNavigation = e.request.mode === 'navigate' ||
+    (e.request.headers.get('accept') || '').includes('text/html');
+
+  if (isNavigation) {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res && res.status === 200 && res.type === 'basic') {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      }).catch(() =>
+        caches.match(e.request).then(cached => cached || new Response(
+          '<h1>Offline</h1><p>This page isn\'t cached yet — reconnect and try again.</p>',
+          { status: 503, headers: { 'Content-Type': 'text/html' } }
+        ))
+      )
+    );
+    return;
+  }
 
   e.respondWith(
     caches.match(e.request).then(cached => {
