@@ -1124,7 +1124,7 @@ async function loadSchedules(){
         <div class="preset-sites">${escHtml(days)}<br>${escHtml(slotSummary)}</div>
       </div>
       <div class="preset-actions">
-        <button class="btn btn-ghost btn-sm" onclick="toggleScheduleActive('${s.id}', ${!s.active})">${s.active?'Pause':'Resume'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="requestToggleScheduleActive('${s.id}', ${!s.active})">${s.active?'Pause':'Resume'}</button>
         <button class="btn btn-ghost btn-sm" onclick="requestEditSchedule('${s.id}')">Edit</button>
         <button class="btn btn-ghost btn-sm" onclick="requestDeleteSchedule('${s.id}')">Remove</button>
       </div>
@@ -1135,6 +1135,10 @@ async function loadSchedules(){
 async function toggleScheduleActive(id, active){
   await sb.from('focus_lock_schedules').update({active}).eq('id', id);
   loadSchedules();
+}
+async function requestToggleScheduleActive(id, active){
+  if(scheduleUnlockedForEdit.has(id)){ await toggleScheduleActive(id, active); return; }
+  openScheduleGate(id, ()=>toggleScheduleActive(id, active));
 }
 
 async function requestDeleteSchedule(id){
