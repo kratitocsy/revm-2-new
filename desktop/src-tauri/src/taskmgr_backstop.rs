@@ -36,11 +36,22 @@ const BACKSTOP_INDEFINITE_CEILING_SECS: i64 = 24 * 60 * 60;
 mod win {
     use super::TASK_NAME;
     use std::io::Write;
+    use std::os::windows::process::CommandExt;
     use std::process::Command;
     use std::time::{SystemTime, UNIX_EPOCH};
     use windows_sys::Win32::Foundation::{FILETIME, SYSTEMTIME};
     use windows_sys::Win32::Storage::FileSystem::FileTimeToLocalFileTime;
     use windows_sys::Win32::System::Time::FileTimeToSystemTime;
+
+    // Same flag, same reason as browser_guard.rs's own copy of this
+    // constant: schtasks.exe is a console app, and spawning one from this
+    // GUI process without CREATE_NO_WINDOW pops a real (if brief) console
+    // window on screen. schedule()/cancel() both used to be missing this,
+    // which combined with cancel() firing on every 5s "no active session"
+    // poll tick (see lib.rs's set_session_active) made it flash constantly
+    // whenever nothing was even blocked - looked exactly like a
+    // command-prompt window randomly opening every few seconds.
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
 
     // 100ns intervals between the FILETIME epoch (1601-01-01) and the
     // Unix epoch (1970-01-01) - a fixed, well-known constant.
@@ -163,6 +174,7 @@ mod win {
             .args(["/create", "/tn", TASK_NAME, "/xml"])
             .arg(&xml_path)
             .arg("/f")
+            .creation_flags(CREATE_NO_WINDOW)
             .output()
             .map_err(|e| format!("failed to run schtasks /create: {e}"));
 
@@ -185,6 +197,7 @@ mod win {
     pub fn cancel() -> Result<(), String> {
         let output = Command::new("schtasks")
             .args(["/delete", "/tn", TASK_NAME, "/f"])
+            .creation_flags(CREATE_NO_WINDOW)
             .output()
             .map_err(|e| format!("failed to run schtasks /delete: {e}"))?;
 

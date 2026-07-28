@@ -19,38 +19,39 @@ use tauri::{AppHandle, Manager};
 
 // `WebviewWindow::set_closable` (called below in set_session_active) only
 // grays out the SC_CLOSE item in the title bar's system menu on Windows.
-// Explorer draws the taskbar thumbnail's own close ("X") button purely
-// based on whether the window has the WS_SYSMENU style at all - it does
-// NOT check whether that menu's close item is enabled/disabled. So
-// set_closable(false) alone leaves the X visible (though inert) on the
-// taskbar thumbnail preview. Actually removing WS_SYSMENU hides the X in
-// both places. Re-adding it on closable=true restores normal behavior.
+//
+// This used to also remove the WS_SYSMENU window style entirely, to hide
+// the X from the taskbar thumbnail preview too (Explorer draws that purely
+// from WS_SYSMENU's presence, not the menu item's enabled state). That was
+// a real bug, not just a cosmetic trade-off: Windows' non-client
+// caption-button rendering gates ALL THREE buttons (minimize, maximize,
+// close) on WS_SYSMENU being present, not just close - so for the entire
+// duration of every active session, maximize and minimize were also
+// getting disabled, with no way to tell from the outside that this was
+// "expected" rather than the app hanging or bugged. It also isn't even the
+// real enforcement: the CloseRequested -> api.prevent_close() handler
+// registered in run() below is what actually blocks closing, and it works
+// off the `session_active` flag directly, independent of window style. So
+// removing this trades a minor cosmetic gap (the taskbar thumbnail's X
+// stays visible, though clicking it still hits prevent_close() and does
+// nothing) for maximize/minimize never being incorrectly disabled again.
 #[cfg(target_os = "windows")]
 fn set_native_closable(window: &tauri::WebviewWindow, closable: bool) {
     use windows_sys::Win32::Foundation::HWND;
     use windows_sys::Win32::UI::WindowsAndMessaging::{
-        EnableMenuItem, GetSystemMenu, GetWindowLongPtrW, SetWindowLongPtrW, SetWindowPos,
-        GWL_STYLE, MF_BYCOMMAND, MF_ENABLED, MF_GRAYED, SC_CLOSE, SWP_FRAMECHANGED, SWP_NOMOVE,
-        SWP_NOSIZE, SWP_NOZORDER, WS_SYSMENU,
+        EnableMenuItem, GetSystemMenu, SetWindowPos,
+        MF_BYCOMMAND, MF_ENABLED, MF_GRAYED, SC_CLOSE, SWP_FRAMECHANGED, SWP_NOMOVE,
+        SWP_NOSIZE, SWP_NOZORDER,
     };
 
     let Ok(hwnd) = window.hwnd() else { return };
     let hwnd = hwnd.0 as HWND;
 
     unsafe {
-        let style = GetWindowLongPtrW(hwnd, GWL_STYLE);
-        let new_style = if closable {
-            style | (WS_SYSMENU as isize)
-        } else {
-            style & !(WS_SYSMENU as isize)
-        };
-        if new_style != style {
-            SetWindowLongPtrW(hwnd, GWL_STYLE, new_style);
-        }
-
-        // Keep the menu item's own enabled state honest too, for the
-        // moment right after closable=true re-adds WS_SYSMENU - matches
-        // what set_closable already does, just belt-and-braces.
+        // Keep the system menu's own close-item enabled state honest -
+        // this alone also grays the visible title-bar X on modern Windows,
+        // without touching WS_SYSMENU (and therefore without touching
+        // minimize/maximize at all).
         let hmenu = GetSystemMenu(hwnd, 0);
         if hmenu != 0 {
             EnableMenuItem(
@@ -60,10 +61,9 @@ fn set_native_closable(window: &tauri::WebviewWindow, closable: bool) {
             );
         }
 
-        // A GWL_STYLE change doesn't repaint the non-client area (title
-        // bar + taskbar thumbnail chrome) on its own - without
-        // SWP_FRAMECHANGED the stale X can keep showing until some
-        // unrelated redraw happens.
+        // Force a non-client repaint so the title bar reflects the new
+        // menu-item state immediately rather than waiting on some
+        // unrelated redraw.
         SetWindowPos(
             hwnd,
             0,
@@ -276,9 +276,19 @@ fn set_session_active(
             }
         }
     } else {
-        backstop_fire_at.0.store(0, Ordering::SeqCst);
-        if let Err(e) = taskmgr_backstop::cancel() {
-            eprintln!("taskmgr_backstop: failed to cancel: {e}");
+        // Dedup, same idea as schedule()'s compare-and-swap above: only
+        // actually spawn schtasks /delete if there was something to
+        // cancel. Without this, cancel() fired unconditionally on every
+        // single poll tick with active=false - which, since the frontend
+        // polls every 5s (see blocks.html/tracker.html's
+        // pollBlockStatusForDesktop) and most of the time there's no
+        // active session at all, meant spawning schtasks.exe every 5
+        // seconds forever during ordinary idle use.
+        let prev = backstop_fire_at.0.swap(0, Ordering::SeqCst);
+        if prev != 0 {
+            if let Err(e) = taskmgr_backstop::cancel() {
+                eprintln!("taskmgr_backstop: failed to cancel: {e}");
+            }
         }
     }
 
