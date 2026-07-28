@@ -38,6 +38,14 @@
 .yt-suggest-title{font-size:0.78rem;color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .yt-suggest-sub{font-size:0.68rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .yt-suggest-status{padding:0.55rem 0.6rem;font-size:0.72rem;color:var(--muted);}
+.sch-code-track{display:inline-block;white-space:nowrap;transition:transform 0.08s linear;}
+.sch-code-char{display:inline-block;width:1ch;color:var(--muted);}
+.sch-code-char.ok{color:var(--gold);}
+.sch-code-char.bad{color:var(--danger);}
+.sch-code-char.current{color:var(--text);text-decoration:underline;}
+#schGateSlider{-webkit-appearance:none;appearance:none;height:3px;background:var(--border2);outline:none;}
+#schGateSlider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:12px;height:12px;background:var(--gold);cursor:pointer;border-radius:50%;}
+#schGateSlider::-moz-range-thumb{width:12px;height:12px;background:var(--gold);cursor:pointer;border-radius:50%;border:none;}
 .yt-suggest-fallback{padding:0.5rem 0.6rem;font-size:0.72rem;color:var(--muted);border-top:1px solid var(--border);cursor:pointer;}
 .yt-suggest-fallback:hover{color:var(--text);}
 .dur-opts{display:flex;flex-wrap:wrap;gap:0.5rem;}
@@ -276,10 +284,10 @@
           <h3>Type the code to edit this schedule</h3>
           <p>This schedule is locked against casual changes. Type the 500-character string below exactly to unlock editing for this schedule.</p>
           <div class="code-window" style="overflow:hidden;white-space:nowrap;font-family:monospace;background:var(--s2,#111);border:1px solid var(--border2);padding:0.8rem;margin-bottom:0.8rem;">
-            <span id="schGateCode" style="letter-spacing:1px;"></span>
+            <div class="sch-code-track" id="schGateCode" aria-hidden="true"></div>
           </div>
           <input type="range" id="schGateSlider" min="0" value="0" style="width:100%;margin-bottom:0.8rem;">
-          <input type="text" id="schGateInput" autocomplete="off" spellcheck="false" placeholder="Start typing the code above..." style="width:100%;font-family:monospace;">
+          <input type="text" id="schGateInput" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Start typing the code above..." style="width:100%;font-family:monospace;">
           <div class="progress-bar" style="position:static;height:4px;margin-top:0.6rem;"><div class="progress-fill" id="schGateProgress" style="width:0%;"></div></div>
           <p class="empty-note" id="schGateStatus" style="margin-top:0.6rem;"></p>
           <div class="modal-footer">
@@ -1120,8 +1128,48 @@ function dayOptsHtml(selected){
   ).join('');
 }
 
-function slotRowHtml(seq, presets, slot){
+// Adds `minutesToAdd` (may be negative) to a "HH:MM" string, wrapping within
+// a single day. Returns '' for an empty/invalid input.
+function addMinutesToTimeStr(timeStr, minutesToAdd){
+  if(!timeStr || !/^\d{2}:\d{2}$/.test(timeStr)) return '';
+  const [h,m]=timeStr.split(':').map(Number);
+  let total=(h*60+m+minutesToAdd)%1440;
+  if(total<0) total+=1440;
+  return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+}
+
+// Recomputes an auto-filled start time from the row's own end time + break.
+function recomputeAutoStartFor(seq){
+  const startEl=document.getElementById(`schSlotStart${seq}`);
+  if(!startEl || startEl.dataset.auto!=='1') return; // user has taken manual control, leave it
+  const endEl=document.getElementById(`schSlotEnd${seq}`);
+  const breakEl=document.getElementById(`schSlotBreak${seq}`);
+  const endVal=endEl?endEl.value:'';
+  const breakMin=parseInt(breakEl?breakEl.value:'0',10)||0;
+  startEl.value = endVal ? addMinutesToTimeStr(endVal, breakMin) : '';
+}
+
+// When a row's end time or break-after-minutes changes, the *next* row's
+// start time (if still auto-filled) should follow along automatically.
+function onScheduleSlotTimingChanged(seq){
+  const row=document.getElementById(`schSlotRow${seq}`);
+  const next=row && row.nextElementSibling;
+  if(next && next.id && next.id.startsWith('schSlotRow')){
+    recomputeAutoStartFor(next.id.replace('schSlotRow',''));
+  }
+}
+
+// Once a user types into a start-time field themselves, it stops following
+// the previous slot's break automatically.
+function onScheduleSlotStartEdited(seq){
+  const startEl=document.getElementById(`schSlotStart${seq}`);
+  if(startEl) startEl.dataset.auto='0';
+}
+
+function slotRowHtml(seq, presets, slot, defaultStart){
   const opts=presets.map(p=>`<option value="${p.id}" ${slot&&slot.preset_id===p.id?'selected':''}>${escHtml(p.name)}</option>`).join('');
+  const startValue = slot ? slot.start_time.slice(0,5) : (defaultStart||'');
+  const isAuto = !slot && defaultStart ? '1' : '0';
   return `
   <div class="site-add-row" style="flex-wrap:wrap;gap:0.5rem;align-items:flex-end;margin-bottom:0.6rem;" id="schSlotRow${seq}">
     <div style="flex:1;min-width:140px;">
@@ -1130,15 +1178,15 @@ function slotRowHtml(seq, presets, slot){
     </div>
     <div>
       <label style="font-size:0.7rem;color:var(--muted);">Start</label><br>
-      <input type="time" id="schSlotStart${seq}" value="${slot?slot.start_time.slice(0,5):''}">
+      <input type="time" id="schSlotStart${seq}" value="${startValue}" data-auto="${isAuto}" oninput="onScheduleSlotStartEdited(${seq})" title="Auto-filled from the previous slot's end time + break. Edit freely — it'll stop following once you change it.">
     </div>
     <div>
       <label style="font-size:0.7rem;color:var(--muted);">End</label><br>
-      <input type="time" id="schSlotEnd${seq}" value="${slot?slot.end_time.slice(0,5):''}">
+      <input type="time" id="schSlotEnd${seq}" value="${slot?slot.end_time.slice(0,5):''}" oninput="onScheduleSlotTimingChanged(${seq})">
     </div>
     <div>
       <label style="font-size:0.7rem;color:var(--muted);">Break after (min)</label><br>
-      <input type="number" min="0" id="schSlotBreak${seq}" value="${slot?slot.break_after_minutes:0}" style="width:80px;">
+      <input type="number" min="0" id="schSlotBreak${seq}" value="${slot?slot.break_after_minutes:0}" style="width:80px;" oninput="onScheduleSlotTimingChanged(${seq})">
     </div>
     <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('schSlotRow${seq}').remove()">Remove</button>
   </div>`;
@@ -1146,7 +1194,18 @@ function slotRowHtml(seq, presets, slot){
 
 function addScheduleSlotRow(slot){
   const seq=scheduleSlotSeq++;
-  document.getElementById('schSlots').insertAdjacentHTML('beforeend', slotRowHtml(seq, schedulePresetsCache, slot));
+  let defaultStart='';
+  if(!slot){
+    const rows=[...document.getElementById('schSlots').children];
+    const lastRow=rows[rows.length-1];
+    if(lastRow){
+      const lastSeq=lastRow.id.replace('schSlotRow','');
+      const lastEnd=document.getElementById(`schSlotEnd${lastSeq}`)?.value;
+      const lastBreak=parseInt(document.getElementById(`schSlotBreak${lastSeq}`)?.value,10)||0;
+      if(lastEnd) defaultStart=addMinutesToTimeStr(lastEnd, lastBreak);
+    }
+  }
+  document.getElementById('schSlots').insertAdjacentHTML('beforeend', slotRowHtml(seq, schedulePresetsCache, slot, defaultStart));
 }
 async function openScheduleBuilder(existing){
   const { data: presets } = await sb.from('focus_lock_presets').select('id,name').eq('user_id', myUserId).order('name');
@@ -1223,9 +1282,16 @@ async function saveSchedule(){
 const SCHEDULE_GATE_LENGTH=500;
 const SCHEDULE_GATE_CHARSET=
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{};:,.<>/?~";
+// How many characters are visible in the scroll window at once - same idea
+// as the extension's 150-char unlock code, just applied to the longer
+// 500-char string, so it doesn't have to wrap into an unreadable block.
+const SCHEDULE_GATE_VISIBLE_CHARS=32;
 let scheduleGateCode='';
 let scheduleGateOnSuccess=null;
 let scheduleGatePendingId=null;
+let scheduleGateFollowTyping=true;
+let scheduleGateResumeFollowTimer=null;
+let scheduleGateListenersBound=false;
 
 function generateScheduleGateCode(){
   const bytes=new Uint32Array(SCHEDULE_GATE_LENGTH);
@@ -1235,29 +1301,175 @@ function generateScheduleGateCode(){
   return out;
 }
 
+function scrollScheduleGateWindow(startIndex){
+  const track=document.getElementById('schGateCode');
+  if(track) track.style.transform=`translateX(-${startIndex}ch)`;
+}
+
+function renderScheduleGateCode(){
+  scheduleGateCode=generateScheduleGateCode();
+  const track=document.getElementById('schGateCode');
+  const slider=document.getElementById('schGateSlider');
+  const input=document.getElementById('schGateInput');
+  if(track){
+    track.innerHTML='';
+    const frag=document.createDocumentFragment();
+    for(let i=0;i<scheduleGateCode.length;i++){
+      const span=document.createElement('span');
+      span.textContent=scheduleGateCode[i];
+      span.className='sch-code-char';
+      frag.appendChild(span);
+    }
+    track.appendChild(frag);
+  }
+  if(slider){
+    slider.max=String(Math.max(0, SCHEDULE_GATE_LENGTH-SCHEDULE_GATE_VISIBLE_CHARS));
+    slider.value='0';
+  }
+  scheduleGateFollowTyping=true;
+  scrollScheduleGateWindow(0);
+  if(input){ input.value=''; }
+  document.getElementById('schGateProgress').style.width='0%';
+  document.getElementById('schGateUnlockBtn').disabled=true;
+  clearScheduleGateHighlight();
+}
+
+function clearScheduleGateHighlight(){
+  const track=document.getElementById('schGateCode');
+  if(!track) return;
+  [...track.children].forEach(c=>c.classList.remove('ok','bad','current'));
+}
+
+function highlightScheduleGateAgainst(typed){
+  const track=document.getElementById('schGateCode');
+  if(!track) return;
+  const chars=track.children;
+  for(let i=0;i<chars.length;i++){
+    const span=chars[i];
+    span.classList.remove('ok','bad','current');
+    if(i<typed.length){
+      span.classList.add(typed[i]===scheduleGateCode[i] ? 'ok' : 'bad');
+    } else if(i===typed.length){
+      span.classList.add('current');
+    }
+  }
+}
+
+// Anything that smells like cheating - leaving the tab (covers most
+// screenshot tools, which pull focus to a system overlay first), copying
+// the code, or a screenshot key that doesn't shift focus (plain
+// PrintScreen) - throws the code away and starts over, exactly like the
+// extension's 150-char unlock screen.
+function regenerateScheduleGate(reason){
+  const status=document.getElementById('schGateStatus');
+  renderScheduleGateCode();
+  if(status) status.textContent=`Code reset (${reason}). Start again from the top.`;
+  const input=document.getElementById('schGateInput');
+  if(input) input.focus();
+}
+
+function bindScheduleGateAntiCheatListeners(){
+  if(scheduleGateListenersBound) return;
+  scheduleGateListenersBound=true;
+  const input=document.getElementById('schGateInput');
+  const modal=document.getElementById('scheduleGateModal');
+
+  ['paste','drop','contextmenu'].forEach(evt=>{
+    input.addEventListener(evt, e=>e.preventDefault());
+  });
+
+  ['copy','cut'].forEach(evt=>{
+    document.addEventListener(evt, e=>{
+      if(!modal.classList.contains('show')) return;
+      e.preventDefault();
+      regenerateScheduleGate('copy attempt detected');
+    });
+  });
+
+  // Losing focus on the tab/window resets the code - catches tab-switches,
+  // minimizing, alt-tabbing to another app, and most OS screenshot
+  // shortcuts (Win+Shift+S, Cmd+Shift+4), since those open a full-screen
+  // overlay that pulls focus away from the browser first.
+  document.addEventListener('visibilitychange', ()=>{
+    if(!modal.classList.contains('show')) return;
+    if(document.hidden) regenerateScheduleGate('left the tab');
+  });
+
+  // Plain PrintScreen doesn't shift focus (it just copies to clipboard
+  // silently), so it needs its own direct key capture rather than relying
+  // on visibilitychange.
+  window.addEventListener('keydown', e=>{
+    if(!modal.classList.contains('show')) return;
+    const isPrintScreen=e.key==='PrintScreen';
+    const isMacCapture=e.metaKey && e.shiftKey && ['3','4','5'].includes(e.key);
+    if(isPrintScreen || isMacCapture) regenerateScheduleGate('screenshot shortcut detected');
+  });
+
+  const slider=document.getElementById('schGateSlider');
+  if(slider){
+    slider.addEventListener('input', ()=>{
+      scheduleGateFollowTyping=false;
+      scrollScheduleGateWindow(Number(slider.value));
+      clearTimeout(scheduleGateResumeFollowTimer);
+      scheduleGateResumeFollowTimer=setTimeout(()=>{ scheduleGateFollowTyping=true; }, 2500);
+    });
+  }
+
+  // Native (OS-level) layer, only present when running inside the Tauri
+  // desktop app - see gate_guard.rs. Adds two things the browser-only
+  // listeners above can't: actual screenshot/screen-recording prevention
+  // on the app window (not just "detect and reset after the fact"), and
+  // GetForegroundWindow()-based focus watching that catches ANY app
+  // stealing focus, not just a browser-level tab/window change.
+  if(isDesktopApp()){
+    window.__TAURI__.event.listen('revm2://gate-focus-lost', (event)=>{
+      if(document.getElementById('scheduleGateModal').classList.contains('show')){
+        regenerateScheduleGate(event.payload || 'left the app window');
+      }
+    }).catch(()=>{});
+  }
+}
+
 function openScheduleGate(scheduleId, onSuccess){
   scheduleGatePendingId=scheduleId;
   scheduleGateOnSuccess=onSuccess;
-  scheduleGateCode=generateScheduleGateCode();
-  document.getElementById('schGateCode').textContent=scheduleGateCode;
-  const input=document.getElementById('schGateInput');
-  input.value='';
-  document.getElementById('schGateProgress').style.width='0%';
+  bindScheduleGateAntiCheatListeners();
+  renderScheduleGateCode();
   document.getElementById('schGateStatus').textContent='';
-  document.getElementById('schGateUnlockBtn').disabled=true;
+  const input=document.getElementById('schGateInput');
   input.oninput=onScheduleGateInput;
   document.getElementById('scheduleGateModal').classList.add('show');
   input.focus();
+  if(isDesktopApp()){
+    window.__TAURI__.core.invoke('gate_protection_start').catch(()=>{});
+  }
 }
 function closeScheduleGate(){
   document.getElementById('scheduleGateModal').classList.remove('show');
   scheduleGateOnSuccess=null;
   scheduleGatePendingId=null;
+  if(isDesktopApp()){
+    window.__TAURI__.core.invoke('gate_protection_stop').catch(()=>{});
+  }
 }
 function onScheduleGateInput(){
   const input=document.getElementById('schGateInput');
+  const slider=document.getElementById('schGateSlider');
   const typed=input.value;
+
+  highlightScheduleGateAgainst(typed);
   document.getElementById('schGateProgress').style.width=`${Math.min(100,(typed.length/SCHEDULE_GATE_LENGTH)*100)}%`;
+
+  // Keep the caret roughly centered in the visible window while typing,
+  // same as the extension's unlock screen. Dragging the slider by hand
+  // pauses this temporarily so a manual look-ahead doesn't snap back.
+  if(scheduleGateFollowTyping && slider){
+    const maxStart=Number(slider.max||0);
+    const start=Math.min(Math.max(0, typed.length-Math.floor(SCHEDULE_GATE_VISIBLE_CHARS/2)), maxStart);
+    slider.value=String(start);
+    scrollScheduleGateWindow(start);
+  }
+
   const matches = typed.length<=SCHEDULE_GATE_LENGTH && typed===scheduleGateCode.slice(0, typed.length);
   const status=document.getElementById('schGateStatus');
   const btn=document.getElementById('schGateUnlockBtn');
@@ -1282,6 +1494,9 @@ function confirmScheduleGate(){
   document.getElementById('scheduleGateModal').classList.remove('show');
   scheduleGateOnSuccess=null;
   scheduleGatePendingId=null;
+  if(isDesktopApp()){
+    window.__TAURI__.core.invoke('gate_protection_stop').catch(()=>{});
+  }
   if(cb) cb();
 }
 

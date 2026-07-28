@@ -275,7 +275,11 @@ fn cors_preflight_response() -> tiny_http::Response<std::io::Empty> {
         .with_header(tiny_http::Header::from_bytes(&b"Access-Control-Max-Age"[..], &b"86400"[..]).unwrap())
 }
 
-pub fn spawn_heartbeat_server(state: Arc<HeartbeatState>, bridge: Arc<crate::session_bridge::SessionEventBus>) {
+pub fn spawn_heartbeat_server(
+    state: Arc<HeartbeatState>,
+    bridge: Arc<crate::session_bridge::SessionEventBus>,
+    gate: Arc<crate::gate_guard::GateGuardState>,
+) {
     std::thread::spawn(move || {
         let server = match tiny_http::Server::http(("127.0.0.1", HEARTBEAT_PORT)) {
             Ok(server) => server,
@@ -292,6 +296,7 @@ pub fn spawn_heartbeat_server(state: Arc<HeartbeatState>, bridge: Arc<crate::ses
         for mut request in server.incoming_requests() {
             let state = state.clone();
             let bridge = bridge.clone();
+            let gate = gate.clone();
             std::thread::spawn(move || {
                 let url = request.url().to_string();
                 let path = url.split('?').next().unwrap_or("");
@@ -331,6 +336,61 @@ pub fn spawn_heartbeat_server(state: Arc<HeartbeatState>, bridge: Arc<crate::ses
                             let _ = request.respond(tiny_http::Response::empty(204).with_header(cors_origin_header()));
                         }
                     }
+                    return;
+                }
+
+                // Long-poll counterpart of /session-events, but for the
+                // extension's own 150-char unlock-code gate (see unlock.js
+                // and gate_guard.rs's module doc). unlock.js calls this
+                // alongside its own JS-level checks so a real OS-level
+                // focus-loss (any app stealing focus, not just a browser
+                // tab/window change) also resets the code, same as
+                // visibilitychange already does for browser-level changes.
+                if path == "/gate/status" {
+                    if request.method() != &tiny_http::Method::Get {
+                        let _ = request.respond(tiny_http::Response::empty(405).with_header(cors_origin_header()));
+                        return;
+                    }
+                    let since = parse_since(&url);
+                    match gate.browser_bus.wait_for(since) {
+                        Some((seq, reason)) => {
+                            let json = serde_json::to_string(&serde_json::json!({ "seq": seq, "reason": reason }))
+                                .unwrap_or_else(|_| "{}".to_string());
+                            let header = tiny_http::Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..]).unwrap();
+                            let _ = request.respond(
+                                tiny_http::Response::from_string(json)
+                                    .with_header(header)
+                                    .with_header(cors_origin_header()),
+                            );
+                        }
+                        None => {
+                            let _ = request.respond(tiny_http::Response::empty(204).with_header(cors_origin_header()));
+                        }
+                    }
+                    return;
+                }
+
+                // unlock.js POSTs here the moment its gate opens (right
+                // after the "Pause for a Cause" click reveals the code) and
+                // again the moment it closes (unlocked, or the tab/page is
+                // being torn down) - see gate_guard.rs's arm_browser/
+                // disarm_browser for what each does natively.
+                if path == "/gate/start" {
+                    if request.method() != &tiny_http::Method::Post {
+                        let _ = request.respond(tiny_http::Response::empty(405).with_header(cors_origin_header()));
+                        return;
+                    }
+                    gate.arm_browser();
+                    let _ = request.respond(tiny_http::Response::empty(204).with_header(cors_origin_header()));
+                    return;
+                }
+                if path == "/gate/stop" {
+                    if request.method() != &tiny_http::Method::Post {
+                        let _ = request.respond(tiny_http::Response::empty(405).with_header(cors_origin_header()));
+                        return;
+                    }
+                    gate.disarm_browser();
+                    let _ = request.respond(tiny_http::Response::empty(204).with_header(cors_origin_header()));
                     return;
                 }
 

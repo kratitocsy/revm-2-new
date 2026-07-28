@@ -1,5 +1,6 @@
 mod app_guard;
 mod browser_guard;
+mod gate_guard;
 mod heartbeat;
 mod session_bridge;
 mod taskmgr_backstop;
@@ -686,6 +687,7 @@ pub fn run() {
     let grace_tracker = Arc::new(BrowserGraceTracker(Mutex::new(HashMap::new())));
     let heartbeat_state = Arc::new(heartbeat::HeartbeatState::new());
     let session_bridge = Arc::new(session_bridge::SessionEventBus::new());
+    let gate_guard_state = Arc::new(gate_guard::GateGuardState::new());
     // Seeded to "now" rather than 0/never - session_active also starts
     // false, so the watchdog is a no-op until a session actually begins,
     // but seeding it means a slow first poll after launch can never itself
@@ -702,7 +704,7 @@ pub fn run() {
     // active, so by the time a session actually starts we already have a
     // fresh signal instead of waiting on the first heartbeat after the
     // fact.
-    heartbeat::spawn_heartbeat_server(heartbeat_state.clone(), session_bridge.clone());
+    heartbeat::spawn_heartbeat_server(heartbeat_state.clone(), session_bridge.clone(), gate_guard_state.clone());
 
     tauri::Builder::default()
         // Must be registered before any other plugin (tauri-plugin-single-
@@ -737,9 +739,12 @@ pub fn run() {
         .manage(heartbeat_state.clone())
         .manage(grace_tracker.clone())
         .manage(session_bridge.clone())
+        .manage(gate_guard_state.clone())
         .manage(LastSyncState(last_sync.clone()))
         .manage(BackstopFireAt(backstop_fire_at.clone()))
         .setup(move |app| {
+            gate_guard_state.spawn_watchers(app.handle().clone());
+
             if let Ok(store) = app.store(BLOCKED_APPS_STORE) {
                 if let Some(apps) = store
                     .get(BLOCKED_APPS_KEY)
@@ -893,7 +898,9 @@ pub fn run() {
             list_running_apps,
             get_blocked_apps,
             set_blocked_apps,
-            set_taskmgr_disabled
+            set_taskmgr_disabled,
+            gate_guard::gate_protection_start,
+            gate_guard::gate_protection_stop
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
