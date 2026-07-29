@@ -1208,9 +1208,22 @@ function stopAllSubjectTimers(){
    inside a group room) when this page loads, pick it back up instead
    of showing a stale "Start" button — keeps this page, the group
    Focus card, and RevMGrid all agreeing on the same session. */
-function resumeActiveSessionIfAny(){
-  const state=Store.get(FT_ACTIVE_KEY);
-  if(!state || state.paused_at) return;
+async function resumeActiveSessionIfAny(){
+  // A schedule can auto-start/stop this from schedule-tick with no browser
+  // open at all (see schedule-tick's study_sessions wiring), so the local
+  // cache alone would show a stale "Start" button if this device wasn't
+  // the one that started it. Check the server first, fall back to the
+  // local cache if that fails.
+  let state=null;
+  try{
+    const { data } = await sb.from('study_sessions')
+      .select('id,group_id,subject,started_at,paused_at')
+      .eq('user_id', myUserId).is('ended_at', null).maybeSingle();
+    if(data) state={id:data.id,group_id:data.group_id,subject:data.subject,started_at:data.started_at,paused_at:data.paused_at,accumPaused:0};
+  }catch(e){ console.warn('Could not check for a live remote session, falling back to local cache:', e); }
+  if(!state) state=Store.get(FT_ACTIVE_KEY);
+  if(!state || state.paused_at){ Store.del(FT_ACTIVE_KEY); return; }
+  Store.set(FT_ACTIVE_KEY, state);
   remoteSessionId=state.id;
   timerMode='unlimited';
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));

@@ -64,6 +64,32 @@ function istWallClockToUtcIso(dateStr: string, hhmmss: string): string {
   return new Date(utcMs).toISOString();
 }
 
+// Ends a schedule-driven study_sessions row the same way rpc_stop_study_session
+// does (total_seconds = elapsed - accumulated pause time). Only ever called
+// on rows this function itself started (schedule_slot_id is set), never a
+// manually-started one - see migration 0047.
+async function endStudySession(db: ReturnType<typeof createClient>, row: any) {
+  const now = new Date();
+  let extraPause = 0;
+  if (row.paused_at) {
+    extraPause = Math.max(0, Math.floor((now.getTime() - new Date(row.paused_at).getTime()) / 1000));
+  }
+  const accumPaused = (row.accumulated_paused_seconds || 0) + extraPause;
+  const totalSeconds = Math.max(
+    0,
+    Math.floor((now.getTime() - new Date(row.started_at).getTime()) / 1000) - accumPaused
+  );
+  await db
+    .from("study_sessions")
+    .update({
+      ended_at: now.toISOString(),
+      paused_at: null,
+      accumulated_paused_seconds: accumPaused,
+      total_seconds: totalSeconds,
+    })
+    .eq("id", row.id);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null);
 
@@ -149,6 +175,20 @@ Deno.serve(async (req) => {
           .from("focus_lock_schedule_runs")
           .update({ ended_at: new Date().toISOString() })
           .eq("id", run.id);
+
+        // Stop the study-timer session this slot itself started, if any -
+        // never touches a manually-started one (schedule_slot_id would be
+        // null for those). Covers both "slot ends into a break" and
+        // "slot ends, a differently-subjected slot starts" - the latter
+        // also gets a belt-and-suspenders check below in case timing
+        // lines up so the next slot is processed in the same tick.
+        const { data: linkedStudySession } = await db
+          .from("study_sessions")
+          .select("id, started_at, paused_at, accumulated_paused_seconds")
+          .eq("schedule_slot_id", slot.id)
+          .is("ended_at", null)
+          .maybeSingle();
+        if (linkedStudySession) await endStudySession(db, linkedStudySession);
       }
 
       if (!currentSlot) continue;
@@ -212,6 +252,44 @@ Deno.serve(async (req) => {
         started_at: new Date().toISOString(),
       });
       started++;
+
+      // ── Auto-start the study timer too, if this slot's subject is one
+      // of the person's actual onboarded subjects (not just any free text
+      // typed into the slot) ──
+      if (currentSlot.subject) {
+        const { data: profile } = await db
+          .from("user_profiles")
+          .select("subjects")
+          .eq("id", schedule.user_id)
+          .maybeSingle();
+        const known = (profile?.subjects || []).some(
+          (s: string) => s.trim().toLowerCase() === currentSlot.subject.trim().toLowerCase()
+        );
+        if (known) {
+          const { data: activeStudySession } = await db
+            .from("study_sessions")
+            .select("id, started_at, paused_at, accumulated_paused_seconds, schedule_slot_id")
+            .eq("user_id", schedule.user_id)
+            .is("ended_at", null)
+            .maybeSingle();
+          if (activeStudySession && activeStudySession.schedule_slot_id) {
+            // Leftover from a slot that ended and started in the same tick,
+            // or a stale schedule-driven row - safe to swap out.
+            await endStudySession(db, activeStudySession);
+          }
+          if (!activeStudySession || activeStudySession.schedule_slot_id) {
+            await db.from("study_sessions").insert({
+              user_id: schedule.user_id,
+              group_id: null,
+              subject: currentSlot.subject,
+              started_at: new Date().toISOString(),
+              schedule_slot_id: currentSlot.id,
+            });
+          }
+          // else: an active row exists with schedule_slot_id null - the
+          // person started it manually, so leave it running untouched.
+        }
+      }
     } catch (e) {
       errors.push(`schedule ${schedule.id}: ${String((e as Error)?.message || e)}`);
     }
