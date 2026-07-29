@@ -1,6 +1,6 @@
 // ===== Bundled for Supabase Dashboard deploy: schedule-tick =====
-// Called every minute by pg_cron (see the setup comment at the bottom of
-// supabase_migrations/0044_focus_lock_schedules.sql) - NOT called by the
+// Called every minute by an external scheduler (cron-job.org) hitting this
+// endpoint's URL directly with an x-cron-secret header - NOT called by the
 // extension, desktop app, or website directly. Runs as the service role,
 // so it can touch every user's rows in one pass instead of needing each
 // user's browser open at exactly the right minute.
@@ -67,6 +67,30 @@ function istWallClockToUtcIso(dateStr: string, hhmmss: string): string {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null);
 
+  // Auth: previously this function relied entirely on Supabase's platform
+  // JWT check, called only by pg_net with the service role key as Bearer.
+  // To let an external scheduler (cron-job.org) trigger this on Supabase's
+  // free tier instead of pg_cron, we need something that service is
+  // allowed to hold - NOT the service role key itself, which has full
+  // unrestricted database access and shouldn't leave Supabase.
+  // CRON_SECRET is a narrow, single-purpose secret: it can only ever
+  // trigger this one tick, nothing else. Set it with:
+  //   supabase secrets set CRON_SECRET=<a long random string>
+  // (or via Dashboard -> Edge Functions -> schedule-tick -> Secrets), and
+  // in the Dashboard's function Settings, turn OFF "Enforce JWT
+  // Verification" for schedule-tick so a plain header can reach this code
+  // at all - the check below is what actually protects it after that.
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  if (cronSecret) {
+    const provided = req.headers.get("x-cron-secret");
+    if (provided !== cronSecret) {
+      return json({ error: "unauthorized" }, 401);
+    }
+  }
+  // If CRON_SECRET isn't set at all, this falls through to relying on
+  // platform JWT verification alone (the original pg_net-only setup) -
+  // so nothing breaks for anyone who hasn't migrated yet.
+
   const db = admin();
   const { dayOfWeek, hhmm, dateStr } = nowInIst();
 
@@ -87,7 +111,7 @@ Deno.serve(async (req) => {
     try {
       const { data: slots, error: slotErr } = await db
         .from("focus_lock_schedule_slots")
-        .select("id, slot_order, preset_id, start_time, end_time")
+        .select("id, slot_order, preset_id, start_time, end_time, subject")
         .eq("schedule_id", schedule.id)
         .order("slot_order", { ascending: true });
       if (slotErr || !slots?.length) continue;
@@ -160,7 +184,7 @@ Deno.serve(async (req) => {
         .from("focus_lock_sessions")
         .insert({
           user_id: schedule.user_id,
-          block_name: preset.name,
+          block_name: currentSlot.subject || preset.name,
           sites: preset.sites,
           mode: preset.mode === "whitelist" ? "whitelist" : "blacklist",
           youtube_rules: preset.youtube_rules || null,

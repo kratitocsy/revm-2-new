@@ -276,6 +276,7 @@
             <label>Slots (in order)</label>
             <div id="schSlots"></div>
             <button type="button" class="btn btn-ghost btn-sm" style="margin-top:0.6rem;" onclick="addScheduleSlotRow()">+ Add slot</button>
+            <datalist id="schSubjectOptions"></datalist>
           </div>
           <div class="modal-footer">
             <button class="btn btn-ghost" onclick="closeScheduleBuilder()">Cancel</button>
@@ -1114,7 +1115,7 @@ let scheduleUnlockedForEdit=new Set(); // schedule ids that passed the gate this
 async function loadSchedules(){
   if(!myUserId) return;
   const { data: schedules } = await sb.from('focus_lock_schedules')
-    .select('*, focus_lock_schedule_slots(id, slot_order, preset_id, start_time, end_time, break_after_minutes)')
+    .select('*, focus_lock_schedule_slots(id, slot_order, preset_id, start_time, end_time, break_after_minutes, subject)')
     .eq('user_id', myUserId).order('created_at',{ascending:false});
   const list=document.getElementById('scheduleList');
   if(!schedules || !schedules.length){ list.innerHTML='<p class="empty-note">No schedules yet.</p>'; return; }
@@ -1126,7 +1127,7 @@ async function loadSchedules(){
   list.innerHTML=schedules.map(s=>{
     const slots=(s.focus_lock_schedule_slots||[]).slice().sort((a,b)=>a.slot_order-b.slot_order);
     const days=(s.days_of_week||[]).slice().sort().map(d=>SCHEDULE_DAY_LABELS[d]).join(', ') || 'no days selected';
-    const slotSummary=slots.map(sl=>`${(presetNameById[sl.preset_id]||'Deleted block')} ${formatTimeDisplay(sl.start_time.slice(0,5))}\u2013${formatTimeDisplay(sl.end_time.slice(0,5))}`).join(' · ') || 'No slots';
+    const slotSummary=slots.map(sl=>`${(sl.subject||presetNameById[sl.preset_id]||'Deleted block')} ${formatTimeDisplay(sl.start_time.slice(0,5))}\u2013${formatTimeDisplay(sl.end_time.slice(0,5))}`).join(' · ') || 'No slots';
     const overrideNote=s.overrides_schedule_id ? `<br><span style="color:var(--muted);">↳ overrides "${escHtml(scheduleNameById[s.overrides_schedule_id]||'a deleted schedule')}"</span>` : '';
     const overrideCountNote=(s.override_count||0)>0 ? `<br><span style="color:var(--muted);">overridden ${s.override_count}/2 times</span>` : '';
     return `
@@ -1216,6 +1217,10 @@ function slotRowHtml(seq, presets, slot, defaultStart){
       <label style="font-size:0.7rem;color:var(--muted);">Block</label><br>
       <select id="schSlotPreset${seq}" style="width:100%;">${opts||'<option value="">No saved blocks yet</option>'}</select>
     </div>
+    <div style="flex:1;min-width:120px;">
+      <label style="font-size:0.7rem;color:var(--muted);">Subject</label><br>
+      <input type="text" id="schSlotSubject${seq}" list="schSubjectOptions" value="${escHtml(slot&&slot.subject?slot.subject:'')}" placeholder="e.g. Physics" style="width:100%;">
+    </div>
     <div>
       <label style="font-size:0.7rem;color:var(--muted);">Start</label><br>
       <input type="time" id="schSlotStart${seq}" value="${startValue}" data-auto="${isAuto}" oninput="onScheduleSlotStartEdited(${seq});updateAmPmPreview(${seq},'Start')" title="Auto-filled from the previous slot's end time + break. Edit freely — it'll stop following once you change it.">
@@ -1259,6 +1264,7 @@ async function openScheduleBuilder(existing){
   document.getElementById('schName').value = existing ? existing.name : '';
   document.getElementById('schDayOpts').innerHTML = dayOptsHtml(existing ? existing.days_of_week : []);
   document.getElementById('schSlots').innerHTML='';
+  document.getElementById('schSubjectOptions').innerHTML = (cfg.subjects||[]).map(s=>`<option value="${escHtml(s)}">`).join('');
   scheduleSlotSeq=0;
   const overrideField=document.getElementById('schOverrideField');
   if(existing){
@@ -1285,7 +1291,7 @@ function closeScheduleBuilder(){
 
 async function requestEditSchedule(id){
   const { data: existing } = await sb.from('focus_lock_schedules')
-    .select('*, focus_lock_schedule_slots(id, slot_order, preset_id, start_time, end_time, break_after_minutes)')
+    .select('*, focus_lock_schedule_slots(id, slot_order, preset_id, start_time, end_time, break_after_minutes, subject)')
     .eq('id', id).maybeSingle();
   if(!existing) return;
   if(scheduleUnlockedForEdit.has(id)){ openScheduleBuilder(existing); return; }
@@ -1304,12 +1310,13 @@ async function saveSchedule(){
   for(const row of slotRows){
     const seq=row.id.replace('schSlotRow','');
     const preset_id=document.getElementById(`schSlotPreset${seq}`).value;
+    const subject=document.getElementById(`schSlotSubject${seq}`).value.trim();
     const start_time=document.getElementById(`schSlotStart${seq}`).value;
     const end_time=document.getElementById(`schSlotEnd${seq}`).value;
     const break_after_minutes=parseInt(document.getElementById(`schSlotBreak${seq}`).value,10)||0;
     if(!preset_id || !start_time || !end_time){ alert('Every slot needs a block, a start time, and an end time.'); return; }
     if(end_time<=start_time){ alert("Each slot's end time must be after its start time."); return; }
-    slots.push({preset_id, start_time, end_time, break_after_minutes});
+    slots.push({preset_id, subject: subject||null, start_time, end_time, break_after_minutes});
   }
   slots.sort((a,b)=>a.start_time.localeCompare(b.start_time));
   for(let i=1;i<slots.length;i++){
