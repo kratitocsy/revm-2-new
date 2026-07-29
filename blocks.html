@@ -269,7 +269,7 @@
               <option value="">Don't override anything — just add a new schedule</option>
             </select>
             <div style="font-size:0.7rem;color:var(--muted);margin-top:0.3rem;">
-              Overriding pauses the chosen schedule and uses up one of its 2 overrides. You'll need to pass its edit-lock gate, and this new schedule needs real study/work time — not mostly breaks — to qualify.
+              Overriding pauses the chosen schedule and uses up one of its 2 overrides. No edit-lock code needed — but this new schedule needs real study/work time (at least 2 blocks, 1.5+ hours total, breaks under 40%) to qualify.
             </div>
           </div>
           <div class="bl-field">
@@ -1342,7 +1342,7 @@ async function saveSchedule(){
     return;
   }
 
-  openScheduleGate(overrideTargetId, ()=>finishSaveSchedule(name, days, slots, overrideTargetId));
+  await finishSaveSchedule(name, days, slots, overrideTargetId);
 }
 
 // Block-vs-break "does this actually look like a schedule" check, required
