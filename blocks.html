@@ -263,6 +263,15 @@
             <label>Repeats on</label>
             <div class="mode-opts" id="schDayOpts"></div>
           </div>
+          <div class="bl-field" id="schOverrideField" style="display:none;">
+            <label>Override an existing schedule (optional)</label>
+            <select id="schOverrideTarget">
+              <option value="">Don't override anything — just add a new schedule</option>
+            </select>
+            <div style="font-size:0.7rem;color:var(--muted);margin-top:0.3rem;">
+              Overriding pauses the chosen schedule and uses up one of its 2 overrides. You'll need to pass its edit-lock gate, and this new schedule needs real study/work time — not mostly breaks — to qualify.
+            </div>
+          </div>
           <div class="bl-field">
             <label>Slots (in order)</label>
             <div id="schSlots"></div>
@@ -1112,16 +1121,19 @@ async function loadSchedules(){
 
   const { data: presets } = await sb.from('focus_lock_presets').select('id,name').eq('user_id', myUserId);
   const presetNameById={}; (presets||[]).forEach(p=>presetNameById[p.id]=p.name);
+  const scheduleNameById={}; schedules.forEach(s=>scheduleNameById[s.id]=s.name);
 
   list.innerHTML=schedules.map(s=>{
     const slots=(s.focus_lock_schedule_slots||[]).slice().sort((a,b)=>a.slot_order-b.slot_order);
     const days=(s.days_of_week||[]).slice().sort().map(d=>SCHEDULE_DAY_LABELS[d]).join(', ') || 'no days selected';
     const slotSummary=slots.map(sl=>`${(presetNameById[sl.preset_id]||'Deleted block')} ${formatTimeDisplay(sl.start_time.slice(0,5))}\u2013${formatTimeDisplay(sl.end_time.slice(0,5))}`).join(' · ') || 'No slots';
+    const overrideNote=s.overrides_schedule_id ? `<br><span style="color:var(--muted);">↳ overrides "${escHtml(scheduleNameById[s.overrides_schedule_id]||'a deleted schedule')}"</span>` : '';
+    const overrideCountNote=(s.override_count||0)>0 ? `<br><span style="color:var(--muted);">overridden ${s.override_count}/2 times</span>` : '';
     return `
     <div class="preset-row">
       <div>
         <div class="preset-name">${escHtml(s.name)} ${s.active?'':'<span style="color:var(--muted);">(paused)</span>'}</div>
-        <div class="preset-sites">${escHtml(days)}<br>${escHtml(slotSummary)}</div>
+        <div class="preset-sites">${escHtml(days)}<br>${escHtml(slotSummary)}${overrideNote}${overrideCountNote}</div>
       </div>
       <div class="preset-actions">
         <button class="btn btn-ghost btn-sm" onclick="requestToggleScheduleActive('${s.id}', ${!s.active})">${s.active?'Pause':'Resume'}</button>
@@ -1248,6 +1260,20 @@ async function openScheduleBuilder(existing){
   document.getElementById('schDayOpts').innerHTML = dayOptsHtml(existing ? existing.days_of_week : []);
   document.getElementById('schSlots').innerHTML='';
   scheduleSlotSeq=0;
+  const overrideField=document.getElementById('schOverrideField');
+  if(existing){
+    overrideField.style.display='none';
+  } else {
+    overrideField.style.display='';
+    const { data: candidates } = await sb.from('focus_lock_schedules')
+      .select('id,name,override_count').eq('user_id', myUserId).lt('override_count', 2).order('name');
+    const sel=document.getElementById('schOverrideTarget');
+    sel.innerHTML='<option value="">Don\'t override anything — just add a new schedule</option>' +
+      (candidates||[]).map(c=>{
+        const left=2-(c.override_count||0);
+        return `<option value="${c.id}">${escHtml(c.name)} (${left} override${left===1?'':'s'} left)</option>`;
+      }).join('');
+  }
   const slots=existing ? (existing.focus_lock_schedule_slots||[]).slice().sort((a,b)=>a.slot_order-b.slot_order) : [];
   if(slots.length){ slots.forEach(s=>addScheduleSlotRow(s)); } else { addScheduleSlotRow(); }
   document.getElementById('scheduleModal').classList.add('show');
@@ -1294,11 +1320,69 @@ async function saveSchedule(){
     await sb.from('focus_lock_schedules').update({name, days_of_week:days}).eq('id', editingScheduleId);
     await sb.from('focus_lock_schedule_slots').delete().eq('schedule_id', editingScheduleId);
     await sb.from('focus_lock_schedule_slots').insert(slots.map((s,i)=>({schedule_id:editingScheduleId, slot_order:i, ...s})));
+    closeScheduleBuilder();
+    loadSchedules();
+    return;
+  }
+
+  const overrideTargetId=document.getElementById('schOverrideTarget').value;
+  if(!overrideTargetId){
+    await finishSaveSchedule(name, days, slots, null);
+    return;
+  }
+
+  const legit=scheduleLooksLegit(slots);
+  if(!legit.ok){ alert(legit.reason); return; }
+
+  const { data: target } = await sb.from('focus_lock_schedules')
+    .select('override_count').eq('id', overrideTargetId).maybeSingle();
+  if(!target || target.override_count>=2){
+    alert('That schedule has already been overridden twice and can no longer be replaced.');
+    loadSchedules();
+    return;
+  }
+
+  if(scheduleUnlockedForEdit.has(overrideTargetId)){
+    await finishSaveSchedule(name, days, slots, overrideTargetId);
   } else {
-    const { data: sched, error } = await sb.from('focus_lock_schedules')
-      .insert({user_id:myUserId, name, days_of_week:days}).select('id').single();
-    if(error){ alert(error.message); return; }
-    await sb.from('focus_lock_schedule_slots').insert(slots.map((s,i)=>({schedule_id:sched.id, slot_order:i, ...s})));
+    openScheduleGate(overrideTargetId, ()=>finishSaveSchedule(name, days, slots, overrideTargetId));
+  }
+}
+
+// Block-vs-break "does this actually look like a schedule" check, required
+// before a new schedule is allowed to override an existing one - see
+// migration 0045 for the full rationale.
+function scheduleLooksLegit(slots){
+  if(slots.length<2){
+    return {ok:false, reason:"A schedule needs at least 2 blocks to override another one — a single block doesn't look like a real day plan."};
+  }
+  const timeDiffMin=(startStr,endStr)=>{
+    const [sh,sm]=startStr.split(':').map(Number);
+    const [eh,em]=endStr.split(':').map(Number);
+    return (eh*60+em)-(sh*60+sm);
+  };
+  let totalBlockMin=0;
+  for(const s of slots) totalBlockMin += timeDiffMin(s.start_time, s.end_time);
+  const spanMin=timeDiffMin(slots[0].start_time, slots[slots.length-1].end_time);
+  const breakMin=Math.max(0, spanMin-totalBlockMin);
+  const breakRatio=spanMin>0 ? breakMin/spanMin : 1;
+  if(totalBlockMin<90){
+    return {ok:false, reason:'Total study/work time across all blocks must be at least 1.5 hours to override an existing schedule.'};
+  }
+  if(breakRatio>0.4){
+    return {ok:false, reason:`Breaks make up ${Math.round(breakRatio*100)}% of this schedule's span — keep breaks under 40% so it reads as a real study plan, not mostly free time.`};
+  }
+  return {ok:true};
+}
+
+async function finishSaveSchedule(name, days, slots, overrideTargetId){
+  const { data: sched, error } = await sb.from('focus_lock_schedules')
+    .insert({user_id:myUserId, name, days_of_week:days, overrides_schedule_id: overrideTargetId||null}).select('id').single();
+  if(error){ alert(error.message); return; }
+  await sb.from('focus_lock_schedule_slots').insert(slots.map((s,i)=>({schedule_id:sched.id, slot_order:i, ...s})));
+  if(overrideTargetId){
+    const { data: target } = await sb.from('focus_lock_schedules').select('override_count').eq('id', overrideTargetId).maybeSingle();
+    await sb.from('focus_lock_schedules').update({active:false, override_count:(target?.override_count||0)+1}).eq('id', overrideTargetId);
   }
   closeScheduleBuilder();
   loadSchedules();
