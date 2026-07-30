@@ -351,6 +351,10 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
         <div class="subj-timer-wrap" id="subjectTimerWrap" style="display:none;">
           <div class="history-title">Tap a subject to start / switch — the clock above is your cumulative total today</div>
           <div class="subj-timer-list" id="subjectTimerList"></div>
+          <div style="display:flex;gap:0.4rem;margin-top:0.6rem;align-items:center;">
+            <input type="text" id="newSubjectInput" placeholder="Add a subject…" style="flex:1;" onkeydown="if(event.key==='Enter') addSubject()">
+            <button class="btn btn-ghost btn-sm" onclick="addSubject()">+ Add</button>
+          </div>
           <div style="display:flex;justify-content:center;margin-top:0.9rem;">
             <button class="btn btn-ghost btn-sm" onclick="stopAllSubjectTimers()">■ Stop</button>
           </div>
@@ -1135,6 +1139,26 @@ function renderSubjectTimerList(){
       <span class="subj-timer-time" id="subj-time-${slug}">${fmtClock(committed+liveExtra)}</span>
     </div>`;
   }).join('');
+}
+// Adds a subject to user_profiles.subjects (the same list onboarding sets
+// up) so it shows up here as its own timer row, and is available for
+// matching against schedule slot subjects in schedule-tick going forward.
+async function addSubject(){
+  const input=document.getElementById('newSubjectInput');
+  const val=input.value.trim();
+  if(!val) return;
+  const existing=cfg.subjects||[];
+  if(existing.some(s=>s.trim().toLowerCase()===val.toLowerCase())){
+    input.value='';
+    return;
+  }
+  const updated=[...existing, val];
+  const { error } = await sb.from('user_profiles').update({subjects: updated}).eq('id', myUserId);
+  if(error){ alert('Could not save that subject: '+error.message); return; }
+  cfg.subjects=updated;
+  Store.set('revm2_config', cfg);
+  input.value='';
+  renderSubjectTimerList();
 }
 function tickActiveSubjectRow(){
   if(!activeSubject) return;

@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
     try {
       const { data: slots, error: slotErr } = await db
         .from("focus_lock_schedule_slots")
-        .select("id, slot_order, preset_id, start_time, end_time, subject")
+        .select("id, slot_order, preset_id, start_time, end_time, subject, is_sleep")
         .eq("schedule_id", schedule.id)
         .order("slot_order", { ascending: true });
       if (slotErr || !slots?.length) continue;
@@ -212,18 +212,33 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (activeSession) continue;
 
-      const { data: preset } = await db
-        .from("focus_lock_presets")
-        .select("*")
-        .eq("id", currentSlot.preset_id)
-        .maybeSingle();
-      if (!preset) continue;
-
-      const endsAtIso = istWallClockToUtcIso(dateStr, currentSlot.end_time);
-      const { data: newSession, error: insertErr } = await db
-        .from("focus_lock_sessions")
-        .insert({
-          user_id: schedule.user_id,
+      let sessionParams: {
+        block_name: string; sites: any; mode: string; youtube_rules: any;
+        apps: any; apps_mode: string; no_early_unlock: boolean;
+      };
+      if (currentSlot.is_sleep) {
+        // Sleep slot: block everything, maximum anti-cheat, no preset
+        // needed. whitelist mode + an empty list means nothing is
+        // reachable/launchable except the exemptions the extension and
+        // desktop app already carve out for RevM2 itself (see
+        // background.js's allowHosts and app_guard.rs).
+        sessionParams = {
+          block_name: "😴 Sleep",
+          sites: [],
+          mode: "whitelist",
+          youtube_rules: null,
+          apps: [],
+          apps_mode: "whitelist",
+          no_early_unlock: true,
+        };
+      } else {
+        const { data: preset } = await db
+          .from("focus_lock_presets")
+          .select("*")
+          .eq("id", currentSlot.preset_id)
+          .maybeSingle();
+        if (!preset) continue;
+        sessionParams = {
           block_name: currentSlot.subject || preset.name,
           sites: preset.sites,
           mode: preset.mode === "whitelist" ? "whitelist" : "blacklist",
@@ -231,6 +246,15 @@ Deno.serve(async (req) => {
           apps: preset.apps || [],
           apps_mode: preset.apps_mode === "whitelist" ? "whitelist" : "blacklist",
           no_early_unlock: !!preset.no_early_unlock,
+        };
+      }
+
+      const endsAtIso = istWallClockToUtcIso(dateStr, currentSlot.end_time);
+      const { data: newSession, error: insertErr } = await db
+        .from("focus_lock_sessions")
+        .insert({
+          user_id: schedule.user_id,
+          ...sessionParams,
           ends_at: endsAtIso,
           unlimited: false,
           source: "schedule",

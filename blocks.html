@@ -1110,12 +1110,13 @@ function updateAmPmPreview(seq, which){
 
 let scheduleSlotSeq=0;
 let editingScheduleId=null; // null while creating a new schedule
+let originalScheduleSlotsById={}; // id -> {start_time,end_time,is_sleep} as loaded, for gating sleep-slot edits
 let scheduleUnlockedForEdit=new Set(); // schedule ids that passed the gate this page-load
 
 async function loadSchedules(){
   if(!myUserId) return;
   const { data: schedules } = await sb.from('focus_lock_schedules')
-    .select('*, focus_lock_schedule_slots(id, slot_order, preset_id, start_time, end_time, break_after_minutes, subject)')
+    .select('*, focus_lock_schedule_slots(id, slot_order, preset_id, start_time, end_time, break_after_minutes, subject, is_sleep)')
     .eq('user_id', myUserId).order('created_at',{ascending:false});
   const list=document.getElementById('scheduleList');
   if(!schedules || !schedules.length){ list.innerHTML='<p class="empty-note">No schedules yet.</p>'; return; }
@@ -1127,7 +1128,7 @@ async function loadSchedules(){
   list.innerHTML=schedules.map(s=>{
     const slots=(s.focus_lock_schedule_slots||[]).slice().sort((a,b)=>a.slot_order-b.slot_order);
     const days=(s.days_of_week||[]).slice().sort().map(d=>SCHEDULE_DAY_LABELS[d]).join(', ') || 'no days selected';
-    const slotSummary=slots.map(sl=>`${(sl.subject||presetNameById[sl.preset_id]||'Deleted block')} ${formatTimeDisplay(sl.start_time.slice(0,5))}\u2013${formatTimeDisplay(sl.end_time.slice(0,5))}`).join(' · ') || 'No slots';
+    const slotSummary=slots.map(sl=>`${sl.is_sleep?'😴 Sleep':(sl.subject||presetNameById[sl.preset_id]||'Deleted block')} ${formatTimeDisplay(sl.start_time.slice(0,5))}\u2013${formatTimeDisplay(sl.end_time.slice(0,5))}`).join(' · ') || 'No slots';
     const overrideNote=s.overrides_schedule_id ? `<br><span style="color:var(--muted);">↳ overrides "${escHtml(scheduleNameById[s.overrides_schedule_id]||'a deleted schedule')}"</span>` : '';
     const overrideCountNote=(s.override_count||0)>0 ? `<br><span style="color:var(--muted);">overridden ${s.override_count}/2 times</span>` : '';
     return `
@@ -1211,15 +1212,22 @@ function slotRowHtml(seq, presets, slot, defaultStart){
   const opts=presets.map(p=>`<option value="${p.id}" ${slot&&slot.preset_id===p.id?'selected':''}>${escHtml(p.name)}</option>`).join('');
   const startValue = slot ? slot.start_time.slice(0,5) : (defaultStart||'');
   const isAuto = !slot && defaultStart ? '1' : '0';
+  const isSleep = !!(slot && slot.is_sleep);
   return `
-  <div class="site-add-row" style="flex-wrap:wrap;gap:0.5rem;align-items:flex-end;margin-bottom:0.6rem;" id="schSlotRow${seq}">
-    <div style="flex:1;min-width:140px;">
-      <label style="font-size:0.7rem;color:var(--muted);">Block</label><br>
-      <select id="schSlotPreset${seq}" style="width:100%;">${opts||'<option value="">No saved blocks yet</option>'}</select>
+  <div class="site-add-row" style="flex-wrap:wrap;gap:0.5rem;align-items:flex-end;margin-bottom:0.6rem;" id="schSlotRow${seq}" data-orig-id="${slot?slot.id:''}">
+    <div style="min-width:110px;">
+      <label style="font-size:0.7rem;color:var(--muted);">&nbsp;</label><br>
+      <label style="display:flex;align-items:center;gap:0.35rem;white-space:nowrap;">
+        <input type="checkbox" id="schSlotSleep${seq}" ${isSleep?'checked':''} onchange="toggleSleepSlotFields(${seq})"> 😴 Sleep
+      </label>
     </div>
-    <div style="flex:1;min-width:120px;">
+    <div style="flex:1;min-width:140px;" id="schSlotPresetWrap${seq}">
+      <label style="font-size:0.7rem;color:var(--muted);">Block</label><br>
+      <select id="schSlotPreset${seq}" style="width:100%;" ${isSleep?'disabled':''}>${opts||'<option value="">No saved blocks yet</option>'}</select>
+    </div>
+    <div style="flex:1;min-width:120px;" id="schSlotSubjectWrap${seq}">
       <label style="font-size:0.7rem;color:var(--muted);">Subject</label><br>
-      <input type="text" id="schSlotSubject${seq}" list="schSubjectOptions" value="${escHtml(slot&&slot.subject?slot.subject:'')}" placeholder="e.g. Physics" style="width:100%;">
+      <input type="text" id="schSlotSubject${seq}" list="schSubjectOptions" value="${escHtml(slot&&slot.subject?slot.subject:'')}" placeholder="e.g. Physics" style="width:100%;" ${isSleep?'disabled':''}>
     </div>
     <div>
       <label style="font-size:0.7rem;color:var(--muted);">Start</label><br>
@@ -1235,8 +1243,24 @@ function slotRowHtml(seq, presets, slot, defaultStart){
       <label style="font-size:0.7rem;color:var(--muted);">Break after (min)</label><br>
       <input type="number" min="0" id="schSlotBreak${seq}" value="${slot?slot.break_after_minutes:0}" style="width:80px;" oninput="onScheduleSlotTimingChanged(${seq})">
     </div>
-    <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('schSlotRow${seq}').remove()">Remove</button>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="requestRemoveSlotRow(${seq})">Remove</button>
   </div>`;
+}
+
+function toggleSleepSlotFields(seq){
+  const isSleep=document.getElementById(`schSlotSleep${seq}`).checked;
+  document.getElementById(`schSlotPreset${seq}`).disabled=isSleep;
+  document.getElementById(`schSlotSubject${seq}`).disabled=isSleep;
+}
+
+function requestRemoveSlotRow(seq){
+  const row=document.getElementById(`schSlotRow${seq}`);
+  const orig=originalScheduleSlotsById[row.dataset.origId];
+  if(orig && orig.is_sleep){
+    openScheduleGate(null, ()=>row.remove(), 250);
+  } else {
+    row.remove();
+  }
 }
 
 function addScheduleSlotRow(slot){
@@ -1281,6 +1305,8 @@ async function openScheduleBuilder(existing){
       }).join('');
   }
   const slots=existing ? (existing.focus_lock_schedule_slots||[]).slice().sort((a,b)=>a.slot_order-b.slot_order) : [];
+  originalScheduleSlotsById={};
+  slots.forEach(s=>{ originalScheduleSlotsById[s.id]={start_time:s.start_time.slice(0,5), end_time:s.end_time.slice(0,5), is_sleep:!!s.is_sleep}; });
   if(slots.length){ slots.forEach(s=>addScheduleSlotRow(s)); } else { addScheduleSlotRow(); }
   document.getElementById('scheduleModal').classList.add('show');
 }
@@ -1291,7 +1317,7 @@ function closeScheduleBuilder(){
 
 async function requestEditSchedule(id){
   const { data: existing } = await sb.from('focus_lock_schedules')
-    .select('*, focus_lock_schedule_slots(id, slot_order, preset_id, start_time, end_time, break_after_minutes, subject)')
+    .select('*, focus_lock_schedule_slots(id, slot_order, preset_id, start_time, end_time, break_after_minutes, subject, is_sleep)')
     .eq('id', id).maybeSingle();
   if(!existing) return;
   if(scheduleUnlockedForEdit.has(id)){ openScheduleBuilder(existing); return; }
@@ -1309,36 +1335,54 @@ async function saveSchedule(){
   const slots=[];
   for(const row of slotRows){
     const seq=row.id.replace('schSlotRow','');
-    const preset_id=document.getElementById(`schSlotPreset${seq}`).value;
-    const subject=document.getElementById(`schSlotSubject${seq}`).value.trim();
+    const is_sleep=document.getElementById(`schSlotSleep${seq}`).checked;
+    const preset_id=is_sleep ? null : document.getElementById(`schSlotPreset${seq}`).value;
+    const subject=is_sleep ? null : (document.getElementById(`schSlotSubject${seq}`).value.trim()||null);
     const start_time=document.getElementById(`schSlotStart${seq}`).value;
     const end_time=document.getElementById(`schSlotEnd${seq}`).value;
     const break_after_minutes=parseInt(document.getElementById(`schSlotBreak${seq}`).value,10)||0;
-    if(!preset_id || !start_time || !end_time){ alert('Every slot needs a block, a start time, and an end time.'); return; }
+    if(!is_sleep && !preset_id){ alert('Every non-sleep slot needs a block.'); return; }
+    if(!start_time || !end_time){ alert('Every slot needs a start time and an end time.'); return; }
     if(end_time<=start_time){ alert("Each slot's end time must be after its start time."); return; }
-    slots.push({preset_id, subject: subject||null, start_time, end_time, break_after_minutes});
+    slots.push({preset_id, subject, start_time, end_time, break_after_minutes, is_sleep, _origId: row.dataset.origId||null});
   }
   slots.sort((a,b)=>a.start_time.localeCompare(b.start_time));
   for(let i=1;i<slots.length;i++){
     if(slots[i].start_time < slots[i-1].end_time){ alert('Slots overlap - fix the times so each one starts after the previous one ends (plus its break, if any).'); return; }
   }
+  const cleanSlots=slots.map(({_origId, ...rest})=>rest);
 
   if(editingScheduleId){
-    await sb.from('focus_lock_schedules').update({name, days_of_week:days}).eq('id', editingScheduleId);
-    await sb.from('focus_lock_schedule_slots').delete().eq('schedule_id', editingScheduleId);
-    await sb.from('focus_lock_schedule_slots').insert(slots.map((s,i)=>({schedule_id:editingScheduleId, slot_order:i, ...s})));
-    closeScheduleBuilder();
-    loadSchedules();
+    let sleepChanged=false;
+    const currentByOrigId={};
+    slots.forEach(s=>{ if(s._origId) currentByOrigId[s._origId]=s; });
+    for(const [origId, orig] of Object.entries(originalScheduleSlotsById)){
+      if(!orig.is_sleep) continue;
+      const cur=currentByOrigId[origId];
+      if(!cur || !cur.is_sleep || cur.start_time!==orig.start_time || cur.end_time!==orig.end_time){ sleepChanged=true; break; }
+    }
+    const doSave=async ()=>{
+      await sb.from('focus_lock_schedules').update({name, days_of_week:days}).eq('id', editingScheduleId);
+      await sb.from('focus_lock_schedule_slots').delete().eq('schedule_id', editingScheduleId);
+      await sb.from('focus_lock_schedule_slots').insert(cleanSlots.map((s,i)=>({schedule_id:editingScheduleId, slot_order:i, ...s})));
+      closeScheduleBuilder();
+      loadSchedules();
+    };
+    if(sleepChanged){
+      openScheduleGate(null, doSave, 250);
+    } else {
+      await doSave();
+    }
     return;
   }
 
   const overrideTargetId=document.getElementById('schOverrideTarget').value;
   if(!overrideTargetId){
-    await finishSaveSchedule(name, days, slots, null);
+    await finishSaveSchedule(name, days, cleanSlots, null);
     return;
   }
 
-  const legit=scheduleLooksLegit(slots);
+  const legit=scheduleLooksLegit(cleanSlots);
   if(!legit.ok){ alert(legit.reason); return; }
 
   const { data: target } = await sb.from('focus_lock_schedules')
@@ -1349,7 +1393,7 @@ async function saveSchedule(){
     return;
   }
 
-  await finishSaveSchedule(name, days, slots, overrideTargetId);
+  await finishSaveSchedule(name, days, cleanSlots, overrideTargetId);
 }
 
 // Block-vs-break "does this actually look like a schedule" check, required
@@ -1365,7 +1409,7 @@ function scheduleLooksLegit(slots){
     return (eh*60+em)-(sh*60+sm);
   };
   let totalBlockMin=0;
-  for(const s of slots) totalBlockMin += timeDiffMin(s.start_time, s.end_time);
+  for(const s of slots) if(!s.is_sleep) totalBlockMin += timeDiffMin(s.start_time, s.end_time);
   const spanMin=timeDiffMin(slots[0].start_time, slots[slots.length-1].end_time);
   const breakMin=Math.max(0, spanMin-totalBlockMin);
   const breakRatio=spanMin>0 ? breakMin/spanMin : 1;
@@ -1396,7 +1440,7 @@ async function finishSaveSchedule(name, days, slots, overrideTargetId){
    and drawn from a wider mixed charset than the 150-char one, since this
    gate is a bigger deliberate-effort speed bump for changing a
    *commitment* (your schedule) rather than ending a single block. */
-const SCHEDULE_GATE_LENGTH=500;
+let scheduleGateLength=500; // default 500 for whole-schedule edits, 250 for a single sleep slot (see openScheduleGate)
 const SCHEDULE_GATE_CHARSET=
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{};:,.<>/?~";
 // How many characters are visible in the scroll window at once - same idea
@@ -1411,10 +1455,10 @@ let scheduleGateResumeFollowTimer=null;
 let scheduleGateListenersBound=false;
 
 function generateScheduleGateCode(){
-  const bytes=new Uint32Array(SCHEDULE_GATE_LENGTH);
+  const bytes=new Uint32Array(scheduleGateLength);
   crypto.getRandomValues(bytes);
   let out='';
-  for(let i=0;i<SCHEDULE_GATE_LENGTH;i++) out+=SCHEDULE_GATE_CHARSET[bytes[i]%SCHEDULE_GATE_CHARSET.length];
+  for(let i=0;i<scheduleGateLength;i++) out+=SCHEDULE_GATE_CHARSET[bytes[i]%SCHEDULE_GATE_CHARSET.length];
   return out;
 }
 
@@ -1440,7 +1484,7 @@ function renderScheduleGateCode(){
     track.appendChild(frag);
   }
   if(slider){
-    slider.max=String(Math.max(0, SCHEDULE_GATE_LENGTH-SCHEDULE_GATE_VISIBLE_CHARS));
+    slider.max=String(Math.max(0, scheduleGateLength-SCHEDULE_GATE_VISIBLE_CHARS));
     slider.value='0';
   }
   scheduleGateFollowTyping=true;
@@ -1547,7 +1591,8 @@ function bindScheduleGateAntiCheatListeners(){
   }
 }
 
-function openScheduleGate(scheduleId, onSuccess){
+function openScheduleGate(scheduleId, onSuccess, length){
+  scheduleGateLength=length||500;
   scheduleGatePendingId=scheduleId;
   scheduleGateOnSuccess=onSuccess;
   bindScheduleGateAntiCheatListeners();
@@ -1575,7 +1620,7 @@ function onScheduleGateInput(){
   const typed=input.value;
 
   highlightScheduleGateAgainst(typed);
-  document.getElementById('schGateProgress').style.width=`${Math.min(100,(typed.length/SCHEDULE_GATE_LENGTH)*100)}%`;
+  document.getElementById('schGateProgress').style.width=`${Math.min(100,(typed.length/scheduleGateLength)*100)}%`;
 
   // Keep the caret roughly centered in the visible window while typing,
   // same as the extension's unlock screen. Dragging the slider by hand
@@ -1587,7 +1632,7 @@ function onScheduleGateInput(){
     scrollScheduleGateWindow(start);
   }
 
-  const matches = typed.length<=SCHEDULE_GATE_LENGTH && typed===scheduleGateCode.slice(0, typed.length);
+  const matches = typed.length<=scheduleGateLength && typed===scheduleGateCode.slice(0, typed.length);
   const status=document.getElementById('schGateStatus');
   const btn=document.getElementById('schGateUnlockBtn');
   if(!matches){
@@ -1595,18 +1640,18 @@ function onScheduleGateInput(){
     btn.disabled=true;
     return;
   }
-  if(typed.length===SCHEDULE_GATE_LENGTH){
+  if(typed.length===scheduleGateLength){
     status.textContent='Matched — you can unlock editing now.';
     btn.disabled=false;
   } else {
-    status.textContent=`${typed.length} / ${SCHEDULE_GATE_LENGTH}`;
+    status.textContent=`${typed.length} / ${scheduleGateLength}`;
     btn.disabled=true;
   }
 }
 function confirmScheduleGate(){
   const input=document.getElementById('schGateInput');
   if(input.value!==scheduleGateCode) return; // shouldn't happen, button is gated already
-  if(scheduleGatePendingId) scheduleUnlockedForEdit.add(scheduleGatePendingId);
+  if(scheduleGatePendingId && scheduleGateLength===500) scheduleUnlockedForEdit.add(scheduleGatePendingId);
   const cb=scheduleGateOnSuccess;
   document.getElementById('scheduleGateModal').classList.remove('show');
   scheduleGateOnSuccess=null;
