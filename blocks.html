@@ -253,7 +253,12 @@
         <div class="bl-card-title">Schedules</div>
         <p class="empty-note" style="margin-bottom:0.9rem;">Chain your saved blocks into a repeating day plan — e.g. Physics 7-9am, a break, then Chemistry 9:30-11am — and pick which days it repeats on.</p>
         <div class="preset-list" id="scheduleList"><p class="empty-note">No schedules yet.</p></div>
-        <button class="btn btn-ghost btn-sm" style="margin-top:0.9rem;" onclick="openScheduleBuilder()">+ New schedule</button>
+        <div style="display:flex;flex-wrap:wrap;gap:0.6rem;align-items:center;margin-top:0.9rem;">
+          <button class="btn btn-ghost btn-sm" onclick="openScheduleBuilder()">+ New schedule</button>
+          <button class="btn btn-ghost btn-sm" id="ocrScanBtn" onclick="document.getElementById('ocrFileInput').click()">📷 Scan from screenshot</button>
+          <input type="file" id="ocrFileInput" accept="image/*" style="display:none;" onchange="handleScheduleScreenshot(event)">
+        </div>
+        <p class="empty-note" id="ocrStatus" style="margin-top:0.6rem;display:none;"></p>
       </div>
 
       <!-- Schedule builder / editor modal -->
@@ -440,6 +445,7 @@
 <script src="floating-timer.js"></script>
 <script>document.addEventListener("DOMContentLoaded", initFloatingTimer);</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
 const sb=window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL,REVM2_CONFIG.SUPABASE_ANON);
 let myUserId=null;
@@ -1332,7 +1338,13 @@ function onScheduleSlotStartEdited(seq){
 }
 
 function slotRowHtml(seq, presets, slot, defaultStart){
-  const opts=presets.map(p=>`<option value="${p.id}" ${slot&&slot.preset_id===p.id?'selected':''}>${escHtml(p.name)}</option>`).join('');
+  // Placeholder keeps the select unset until the user deliberately picks a
+  // block - without this, browsers silently pre-select the first <option>,
+  // which would mean OCR-detected slots (and normal new slots) could end up
+  // saved against the wrong block if the user doesn't touch the dropdown.
+  const needsPlaceholder = !slot || !slot.preset_id;
+  const placeholderOpt = needsPlaceholder ? `<option value="" disabled ${!slot||!slot.preset_id?'selected':''}>-- choose a block --</option>` : '';
+  const opts=placeholderOpt + presets.map(p=>`<option value="${p.id}" ${slot&&slot.preset_id===p.id?'selected':''}>${escHtml(p.name)}</option>`).join('');
   const startValue = slot ? slot.start_time.slice(0,5) : (defaultStart||'');
   const isAuto = !slot && defaultStart ? '1' : '0';
   const isSleep = !!(slot && slot.is_sleep);
@@ -1557,6 +1569,190 @@ async function finishSaveSchedule(name, days, slots, overrideTargetId){
   closeScheduleBuilder();
   loadSchedules();
 }
+/* ── screenshot → schedule (OCR) ──
+   Reads a timetable screenshot client-side with Tesseract.js, extracts
+   (subject/sleep, start_time, end_time) per row, and opens the existing
+   schedule builder pre-filled with those slots. Deliberately does NOT try
+   to pick a Block for any slot - that stays a manual choice per row via
+   the placeholder option added in slotRowHtml above. Day-of-week toggles
+   also stay manual (screenshots are usually a single day's plan, and
+   guessing repeat days wrongly is worse than just asking).
+
+   Tested against a real timetable screenshot during development. Two
+   real problems showed up and are handled below:
+   1. Most timetables only put AM/PM on the very first row ("6:00 AM
+      Wake up") and drop it for every row after ("6:00-6:30", "1:00-2:30"
+      for 1pm etc). resolveOcrTime() tracks a running "minutes since
+      midnight" pointer through the whole document and rolls a bare hour
+      forward into the afternoon/evening if taking it literally would
+      move backwards in time versus everything already read.
+   2. Raw OCR on a small/dark screenshot misreads characters (e.g. "7:15"
+      as "7A5"). Upscaling the image 2x and using PSM 6 (uniform block of
+      text) before recognition fixed this in testing. */
+
+const OCR_TIME_RE = /\b(\d{1,2})[:.](\d{2})\s*([AaPp]\.?\s?[Mm]\.?)?\b/g;
+
+function ocrMinutesToTimeStr(total){
+  total=((total%1440)+1440)%1440;
+  return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+}
+
+// Resolves one OCR'd time token into minutes-since-midnight. `prevMinutes`
+// is the running clock position from everything read so far in the
+// document (in reading order) - explicit AM/PM is always trusted as-is;
+// when it's missing, the literal digits are used unless that would go
+// backwards vs. prevMinutes, in which case it's rolled into PM.
+function resolveOcrTime(hh, mm, meridiem, prevMinutes){
+  let h=parseInt(hh,10), m=parseInt(mm,10);
+  if(isNaN(h)||isNaN(m)||m>59) return null;
+  if(meridiem){
+    const isPM=/p/i.test(meridiem);
+    let h24=h%12; if(isPM) h24+=12;
+    return h24*60+m;
+  }
+  const literal=h*60+m;
+  if(literal<prevMinutes){
+    if(h===12){
+      // "12:00" with no AM/PM is the one case the h%12 bump trick can't
+      // handle (12%12=0, so "bumping by 12h" is a no-op and would wrongly
+      // keep returning noon). If we're already well past noon, a bare
+      // "12:00" appearing next almost always means midnight, i.e. the
+      // day rolling over - so return the wrapped value instead.
+      return 1440+m;
+    }
+    if(h<=11){
+      const bumped=(h+12)*60+m;
+      if(bumped>literal) return bumped;
+    }
+  }
+  return literal;
+}
+
+// Parses the full OCR'd document text into an ordered list of slots.
+// Runs top-to-bottom so the running-clock rollover logic above has
+// continuity across rows, not just within a single line.
+function parseScheduleText(text){
+  const lines=(text||'').split('\n').map(l=>l.trim()).filter(Boolean);
+  let running=0;
+  const slots=[];
+  for(const line of lines){
+    const matches=[...line.matchAll(OCR_TIME_RE)];
+    if(!matches.length) continue;
+    const resolved=matches.map(m=>{
+      const mins=resolveOcrTime(m[1],m[2],m[3],running);
+      if(mins!==null) running=Math.max(running,mins);
+      return mins;
+    });
+    if(resolved.length<2 || resolved[0]===null || resolved[1]===null) continue; // need a start AND an end
+    const [startM,endM]=resolved;
+
+    // Strip the matched time tokens + connector junk (-, to, arrows) to
+    // isolate whatever label text is left on the line.
+    let label=line;
+    [matches[0][0],matches[1][0]].forEach(tok=>{ label=label.replace(tok,''); });
+    label=label.replace(/[–—\-→>]+/g,' ').replace(/\bto\b/gi,' ').replace(/\s+/g,' ').trim();
+    label=label.replace(/^[|•·:.,]+|[|•·:.,]+$/g,'').trim();
+
+    const is_sleep=/\b(sleep|bed(time)?|night)\b/i.test(label);
+    slots.push({
+      start_time: ocrMinutesToTimeStr(startM),
+      end_time: ocrMinutesToTimeStr(endM),
+      is_sleep,
+      subject: is_sleep ? null : (label || null)
+    });
+  }
+  return slots;
+}
+
+// Draws the image at 2x scale onto a canvas before OCR - fixed a real
+// character misread ("7:15" -> "7A5") in testing on a dark UI screenshot.
+function upscaleImageFile(file){
+  return new Promise((resolve, reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      canvas.width=img.width*2; canvas.height=img.height*2;
+      const ctx=canvas.getContext('2d');
+      ctx.imageSmoothingEnabled=true;
+      ctx.imageSmoothingQuality='high';
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('canvas toBlob failed')), 'image/png');
+    };
+    img.onerror=reject;
+    img.src=URL.createObjectURL(file);
+  });
+}
+
+async function handleScheduleScreenshot(evt){
+  const file=evt.target.files && evt.target.files[0];
+  evt.target.value=''; // allow re-selecting the same file later
+  if(!file) return;
+
+  const statusEl=document.getElementById('ocrStatus');
+  const btn=document.getElementById('ocrScanBtn');
+  statusEl.style.display='';
+  btn.disabled=true;
+  statusEl.textContent='Reading screenshot… this can take a few seconds.';
+
+  let worker=null;
+  try{
+    const upscaled=await upscaleImageFile(file);
+    worker=await Tesseract.createWorker('eng', 1, {
+      logger: m=>{
+        if(m.status==='recognizing text' && typeof m.progress==='number'){
+          statusEl.textContent=`Reading screenshot… ${Math.round(m.progress*100)}%`;
+        }
+      }
+    });
+    // PSM 6 = "assume a single uniform block of text", which matched a
+    // table-style timetable far better than the default page-layout mode
+    // in testing (fixed a "7:15" -> "7A5" misread).
+    await worker.setParameters({ tessedit_pageseg_mode: '6' });
+    const { data } = await worker.recognize(upscaled);
+
+    const detected=parseScheduleText(data.text);
+
+    if(!detected.length){
+      statusEl.textContent='Couldn\'t find any clear "start–end" time rows in that image. Try a clearer screenshot, or add slots manually below.';
+      btn.disabled=false;
+      return;
+    }
+
+    await openScheduleBuilderFromDetectedSlots(detected);
+    statusEl.textContent=`Detected ${detected.length} slot${detected.length===1?'':'s'} from the screenshot. Check the times/subjects, pick a Block for each row, and set the repeat days.`;
+  }catch(err){
+    console.error('OCR failed', err);
+    statusEl.textContent='Could not read that screenshot. Try a clearer, higher-contrast image.';
+  }finally{
+    if(worker) await worker.terminate();
+    btn.disabled=false;
+  }
+}
+
+// Opens the normal schedule builder (loads presets etc via
+// openScheduleBuilder) then swaps its single empty starter row for the
+// OCR-detected slots. Block selection and repeat-days stay untouched /
+// manual, exactly like a fresh "+ New schedule" would.
+async function openScheduleBuilderFromDetectedSlots(detectedSlots){
+  await openScheduleBuilder();
+  document.getElementById('schSlots').innerHTML='';
+  scheduleSlotSeq=0;
+  detectedSlots
+    .slice()
+    .sort((a,b)=>a.start_time.localeCompare(b.start_time))
+    .forEach(s=>{
+      addScheduleSlotRow({
+        id:null,
+        preset_id:null,
+        subject:s.subject,
+        start_time:`${s.start_time}:00`,
+        end_time:`${s.end_time}:00`,
+        break_after_minutes:0,
+        is_sleep:s.is_sleep
+      });
+    });
+}
+
 /* ── 500-char "ultra gibberish" edit-lock gate ──
    Same honesty rule as the extension's 150-char focus-block unlock code
    (blocked/unlock.js): must be typed exactly, no paste-and-hope. Longer
