@@ -138,6 +138,25 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
 .year-heat-daylabels{display:grid;grid-template-rows:repeat(7,13px);gap:3px;font-size:0.58rem;color:var(--muted);width:22px;}
 .year-heat-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,13px);grid-auto-columns:13px;gap:3px;}
 .year-heat-legend{display:flex;align-items:center;gap:0.3rem;font-size:0.6rem;color:var(--muted);margin-top:0.6rem;margin-left:28px;}
+/* ── LEADERBOARDS ── */
+.lb-select{background:var(--s1);border:1px solid var(--border);color:var(--text);font-size:0.7rem;padding:0.45rem 0.7rem;max-width:220px;}
+.lb-table{display:flex;flex-direction:column;gap:0.4rem;margin-top:0.85rem;}
+.lb-row{display:grid;grid-template-columns:28px 30px 1fr 70px 70px;align-items:center;gap:0.65rem;padding:0.5rem 0.6rem;border-radius:4px;background:var(--s2);}
+.lb-row.me{background:var(--gold-dim);box-shadow:inset 0 0 0 1px rgba(200,169,110,0.4);}
+.lb-rank{font-size:0.75rem;font-weight:800;color:var(--muted);text-align:center;}
+.lb-row[data-rank="1"] .lb-rank{color:#ffd700;}
+.lb-row[data-rank="2"] .lb-rank{color:#c9c9d4;}
+.lb-row[data-rank="3"] .lb-rank{color:#c8834a;}
+.lb-avatar{width:30px;height:30px;border-radius:50%;background:var(--s1);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--muted);overflow:hidden;flex-shrink:0;}
+.lb-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.lb-name{font-size:0.76rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lb-name .lb-track{display:block;font-size:0.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.04em;}
+.lb-hours,.lb-coins{font-size:0.72rem;color:var(--muted);text-align:right;white-space:nowrap;}
+.lb-hours strong,.lb-coins strong{color:var(--gold);font-weight:700;}
+.lb-head{display:grid;grid-template-columns:28px 30px 1fr 70px 70px;gap:0.65rem;padding:0 0.6rem;font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--dim);}
+.lb-head span:nth-child(4),.lb-head span:nth-child(5){text-align:right;}
+.lb-empty{font-size:0.72rem;color:var(--muted);padding:1rem 0;text-align:center;}
+.lb-group-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;margin-bottom:0.4rem;}
 </style>
 </head>
 <body>
@@ -468,6 +487,25 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
             <div class="a-card-title">Topics Added</div>
             <div class="streak-num" id="topicsAdded">0</div>
             <div class="streak-sub" id="topicsSub">of — days filled</div>
+          </div>
+        </div>
+
+        <!-- Leaderboards -->
+        <div class="eyebrow" style="margin-top:0.5rem;">// Leaderboards</div>
+        <h3 style="font-size:1rem;font-weight:800;color:var(--white);text-transform:uppercase;letter-spacing:-0.01em;margin-bottom:1rem;">Where you rank</h3>
+        <div class="analytics-grid-2" style="margin-bottom:1.5rem;">
+          <div class="a-card">
+            <div class="a-card-title">Global Leaderboard <span style="opacity:0.6;">— hours + coins, selected range</span></div>
+            <div class="lb-head"><span>#</span><span></span><span>Student</span><span>Hours</span><span>Coins</span></div>
+            <div class="lb-table" id="globalLbTable"><div class="lb-empty">Loading…</div></div>
+          </div>
+          <div class="a-card">
+            <div class="lb-group-header">
+              <div class="a-card-title" style="margin-bottom:0;">Group Leaderboard <span style="opacity:0.6;">— selected range</span></div>
+              <select class="lb-select" id="groupLbSelect" onchange="renderGroupLeaderboard()"></select>
+            </div>
+            <div class="lb-head"><span>#</span><span></span><span>Student</span><span>Hours</span><span>Coins</span></div>
+            <div class="lb-table" id="groupLbTable"><div class="lb-empty">Join a group to see its leaderboard</div></div>
           </div>
         </div>
 
@@ -1809,6 +1847,79 @@ async function renderAnalytics(){
 
   renderMemoryStrength();
   populateForgettingCurveSelect();
+
+  renderGlobalLeaderboard();
+  loadMyLeaderboardGroups(); // repopulates the picker only once, see guard inside
+}
+
+/* ── LEADERBOARDS ── */
+let lbGroupsLoaded=false;
+
+function lbAvatarHtml(row){
+  if(row.avatar_url) return `<img src="${escHtml(row.avatar_url)}" alt="">`;
+  const initial=(row.username||'?').trim().charAt(0).toUpperCase();
+  return initial||'?';
+}
+
+function renderLbRows(container, rows, emptyMsg){
+  const el=document.getElementById(container);
+  if(!rows||!rows.length){ el.innerHTML=`<div class="lb-empty">${emptyMsg}</div>`; return; }
+  el.innerHTML=rows.map(r=>`
+    <div class="lb-row${r.is_me?' me':''}" data-rank="${r.rank}">
+      <span class="lb-rank">${r.rank<=3?['🥇','🥈','🥉'][r.rank-1]:r.rank}</span>
+      <span class="lb-avatar">${lbAvatarHtml(r)}</span>
+      <span class="lb-name">${escHtml(r.username)}${r.track?`<span class="lb-track">${escHtml(r.track)}</span>`:''}</span>
+      <span class="lb-hours"><strong>${(r.hours||0).toFixed(1)}h</strong></span>
+      <span class="lb-coins"><strong>${r.coins||0}</strong> M²</span>
+    </div>
+  `).join('');
+}
+
+async function renderGlobalLeaderboard(){
+  try{
+    const { data, error } = await sb.rpc('leaderboard_global', { p_range: analyticsRange, p_limit: 20 });
+    if(error) throw error;
+    renderLbRows('globalLbTable', data, 'No study activity yet in this range.');
+  }catch(e){
+    console.warn('Global leaderboard failed to load:', e);
+    document.getElementById('globalLbTable').innerHTML='<div class="lb-empty">Couldn\'t load the leaderboard right now.</div>';
+  }
+}
+
+async function loadMyLeaderboardGroups(){
+  if(lbGroupsLoaded) { renderGroupLeaderboard(); return; }
+  try{
+    const { data, error } = await sb.rpc('my_leaderboard_groups');
+    if(error) throw error;
+    const sel=document.getElementById('groupLbSelect');
+    if(!data || !data.length){
+      sel.innerHTML='<option value="">No groups joined</option>';
+      document.getElementById('groupLbTable').innerHTML='<div class="lb-empty">Join a group to see its leaderboard</div>';
+      lbGroupsLoaded=true;
+      return;
+    }
+    sel.innerHTML=data.map(g=>`<option value="${g.group_id}">${escHtml(g.name)}</option>`).join('');
+    lbGroupsLoaded=true;
+    renderGroupLeaderboard();
+  }catch(e){
+    console.warn('Could not load your groups for the leaderboard picker:', e);
+    document.getElementById('groupLbTable').innerHTML='<div class="lb-empty">Couldn\'t load your groups right now.</div>';
+  }
+}
+
+async function renderGroupLeaderboard(){
+  const sel=document.getElementById('groupLbSelect');
+  const groupId=sel && sel.value;
+  if(!groupId) return;
+  document.getElementById('groupLbTable').innerHTML='<div class="lb-empty">Loading…</div>';
+  try{
+    const { data, error } = await sb.rpc('leaderboard_group', { p_group_id: groupId, p_range: analyticsRange, p_limit: 20 });
+    if(error) throw error;
+    renderLbRows('groupLbTable', data, 'No study activity yet in this range.');
+  }catch(e){
+    console.warn('Group leaderboard failed to load:', e);
+    document.getElementById('groupLbTable').innerHTML='<div class="lb-empty">Couldn\'t load the leaderboard right now.</div>';
+  }
 }
 
 /* ── EBBINGHAUS FORGETTING CURVE (illustrative, per-topic) ──
