@@ -123,6 +123,21 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
 .ring-info p{font-size:0.78rem;color:var(--text);margin-bottom:0.2rem;}
 .ring-info span{font-size:0.68rem;color:var(--muted);}
 .ad-slot{background:var(--s1);border:1px solid var(--border);padding:0.75rem;text-align:center;font-size:0.65rem;color:var(--dim);letter-spacing:0.08em;text-transform:uppercase;margin:0.75rem 0;}
+/* ── INSIGHTS (expanded analytics) ── */
+.range-toggle{display:flex;background:var(--s1);border:1px solid var(--border);}
+.range-btn{background:none;border:none;color:var(--muted);font-size:0.68rem;font-weight:700;letter-spacing:0.04em;padding:0.45rem 0.8rem;cursor:pointer;transition:background 0.15s,color 0.15s;border-right:1px solid var(--border);}
+.range-btn:last-child{border-right:none;}
+.range-btn:hover{color:var(--text);}
+.range-btn.active{background:var(--gold-dim);color:var(--gold);}
+.analytics-grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1rem;}
+.chart-card{display:flex;flex-direction:column;}
+.chart-wrap{position:relative;height:260px;width:100%;}
+.year-heat-wrap{display:flex;flex-direction:column;gap:0.35rem;min-width:750px;}
+.year-heat-months{display:grid;grid-auto-flow:column;grid-auto-columns:13px;gap:3px;font-size:0.6rem;color:var(--muted);margin-left:28px;}
+.year-heat-body{display:flex;gap:6px;}
+.year-heat-daylabels{display:grid;grid-template-rows:repeat(7,13px);gap:3px;font-size:0.58rem;color:var(--muted);width:22px;}
+.year-heat-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,13px);grid-auto-columns:13px;gap:3px;}
+.year-heat-legend{display:flex;align-items:center;gap:0.3rem;font-size:0.6rem;color:var(--muted);margin-top:0.6rem;margin-left:28px;}
 </style>
 </head>
 <body>
@@ -400,16 +415,23 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
     <div class="inner-page" id="page-analytics">
       <div class="analytics-wrap">
         <div class="eyebrow">// Analytics</div>
-        <h2 style="font-size:1.3rem;font-weight:900;color:var(--white);text-transform:uppercase;letter-spacing:-0.02em;margin-bottom:1.5rem">Your progress</h2>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:1.5rem;">
+          <h2 style="font-size:1.3rem;font-weight:900;color:var(--white);text-transform:uppercase;letter-spacing:-0.02em;">Your insights</h2>
+          <div class="range-toggle" id="rangeToggle">
+            <button class="range-btn" data-range="7d" onclick="setAnalyticsRange('7d')">7D</button>
+            <button class="range-btn active" data-range="30d" onclick="setAnalyticsRange('30d')">30D</button>
+            <button class="range-btn" data-range="90d" onclick="setAnalyticsRange('90d')">90D</button>
+            <button class="range-btn" data-range="1y" onclick="setAnalyticsRange('1y')">1Y</button>
+            <button class="range-btn" data-range="all" onclick="setAnalyticsRange('all')">All time</button>
+          </div>
+        </div>
 
         <div class="analytics-grid">
-          <!-- Streak -->
           <div class="a-card">
             <div class="a-card-title">Study Streak</div>
             <div class="streak-num" id="streakNum">0</div>
             <div class="streak-sub" id="streakSub">days in a row</div>
           </div>
-          <!-- Completion ring -->
           <div class="a-card">
             <div class="a-card-title">Revision Completion</div>
             <div class="completion-ring">
@@ -427,13 +449,21 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
               </div>
             </div>
           </div>
-          <!-- Total study time -->
           <div class="a-card">
-            <div class="a-card-title">Total Study Time</div>
+            <div class="a-card-title">Total Study Time <span style="opacity:0.6;">— selected range</span></div>
             <div class="streak-num" id="totalStudyTime" style="font-size:2rem;">0h 0m</div>
-            <div class="streak-sub">across all sessions</div>
+            <div class="streak-sub" id="totalStudyTimeAll">0h 0m all-time</div>
           </div>
-          <!-- Topics added -->
+          <div class="a-card">
+            <div class="a-card-title">Total Focus-Lock Time <span style="opacity:0.6;">— selected range</span></div>
+            <div class="streak-num" id="totalBlockTime" style="font-size:2rem;">0h 0m</div>
+            <div class="streak-sub" id="blockSessionCount">0 sessions</div>
+          </div>
+          <div class="a-card">
+            <div class="a-card-title">Blocks Completed <span style="opacity:0.6;">vs unlocked early</span></div>
+            <div class="streak-num" id="blocksCompletedPct" style="font-size:2rem;">0%</div>
+            <div class="streak-sub" id="blocksCompletedSub">— of — sessions run to the end</div>
+          </div>
           <div class="a-card">
             <div class="a-card-title">Topics Added</div>
             <div class="streak-num" id="topicsAdded">0</div>
@@ -441,10 +471,46 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
           </div>
         </div>
 
-        <!-- Subject time breakdown -->
-        <div class="a-card" style="margin-bottom:1rem;">
-          <div class="a-card-title">Time by subject</div>
-          <div class="bar-chart" id="subjectBars"><div style="font-size:0.78rem;color:var(--muted)">No sessions logged yet. Start the study timer.</div></div>
+        <!-- Study hours over time -->
+        <div class="a-card chart-card" style="margin-bottom:1rem;">
+          <div class="a-card-title">Study hours over time</div>
+          <div class="chart-wrap"><canvas id="hoursChart"></canvas></div>
+        </div>
+
+        <!-- Subject breakdown: doughnut + stacked trend -->
+        <div class="analytics-grid-2" style="margin-bottom:1rem;">
+          <div class="a-card chart-card">
+            <div class="a-card-title">Time by subject <span style="opacity:0.6;">— selected range</span></div>
+            <div class="chart-wrap" style="max-height:260px;"><canvas id="subjectDoughnut"></canvas></div>
+          </div>
+          <div class="a-card chart-card">
+            <div class="a-card-title">Subject trend over time</div>
+            <div class="chart-wrap"><canvas id="subjectTrendChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Year-long activity heatmap -->
+        <div class="a-card" style="margin-bottom:1rem;overflow-x:auto;">
+          <div class="a-card-title">Activity — last 12 months</div>
+          <div id="yearHeatmap"></div>
+        </div>
+
+        <!-- Focus Lock / Blocks insights -->
+        <div class="eyebrow" style="margin-top:0.5rem;">// Focus Lock</div>
+        <h3 style="font-size:1rem;font-weight:800;color:var(--white);text-transform:uppercase;letter-spacing:-0.01em;margin-bottom:1rem;">Blocks &amp; discipline</h3>
+        <div class="analytics-grid-2" style="margin-bottom:1rem;">
+          <div class="a-card chart-card">
+            <div class="a-card-title">Blocks over time</div>
+            <div class="chart-wrap"><canvas id="blocksOverTimeChart"></canvas></div>
+          </div>
+          <div class="a-card chart-card">
+            <div class="a-card-title">Block time by name</div>
+            <div class="chart-wrap"><canvas id="blockNameChart"></canvas></div>
+          </div>
+        </div>
+        <div class="a-card chart-card" style="margin-bottom:1rem;">
+          <div class="a-card-title">How your sessions ended <span style="opacity:0.6;">— selected range</span></div>
+          <div class="chart-wrap" style="max-height:220px;"><canvas id="sessionOutcomeChart"></canvas></div>
         </div>
 
         <!-- Memory Strength -->
@@ -497,6 +563,7 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
 
 <script src="shared.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 const sb=window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL,REVM2_CONFIG.SUPABASE_ANON);
 let myUserId=null;
@@ -1398,7 +1465,267 @@ function renderMemoryStrength(){
   }).join('');
 }
 
-function renderAnalytics(){
+let analyticsRange='30d';
+let flSessions=null; // cached focus_lock_sessions rows, loaded once per page load
+let chartInstances={};
+
+function setAnalyticsRange(r){
+  analyticsRange=r;
+  document.querySelectorAll('.range-btn').forEach(b=>b.classList.toggle('active', b.dataset.range===r));
+  renderAnalytics();
+}
+
+async function loadFocusLockSessions(){
+  if(flSessions) return flSessions;
+  const { data } = await sb.from('focus_lock_sessions')
+    .select('id,block_name,started_at,ended_at,ends_at,active,verified,used_emergency_unlock,used_code_unlock,source,no_early_unlock')
+    .eq('user_id', myUserId)
+    .order('started_at',{ascending:true});
+  flSessions = data||[];
+  return flSessions;
+}
+
+function dateKeyDay(d){ return d.toISOString().split('T')[0]; }
+function weekKeyOf(d){ const dt=new Date(d); const dow=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-dow); return dateKeyDay(dt); }
+function monthKeyOf(d){ return d.toISOString().slice(0,7); }
+function bucketKeyFor(d,bucketType){ return bucketType==='day'?dateKeyDay(d):bucketType==='week'?weekKeyOf(d):monthKeyOf(d); }
+function bucketLabelFor(key,bucketType){
+  if(bucketType==='day'){ return new Date(key+'T00:00:00').toLocaleDateString([], {month:'short',day:'numeric'}); }
+  if(bucketType==='week'){ return 'Wk '+new Date(key+'T00:00:00').toLocaleDateString([], {month:'short',day:'numeric'}); }
+  return new Date(key+'-01T00:00:00').toLocaleDateString([], {month:'short',year:'2-digit'});
+}
+function getRangeConfig(range){
+  const end=new Date(TODAY);
+  let startDate,bucketType;
+  if(range==='7d'){ startDate=new Date(end.getTime()-6*86400000); bucketType='day'; }
+  else if(range==='30d'){ startDate=new Date(end.getTime()-29*86400000); bucketType='day'; }
+  else if(range==='90d'){ startDate=new Date(end.getTime()-89*86400000); bucketType='week'; }
+  else if(range==='1y'){ startDate=new Date(end.getTime()-364*86400000); bucketType='month'; }
+  else {
+    const allDates=Object.keys(slog).sort();
+    startDate=allDates.length?new Date(allDates[0]+'T00:00:00'):new Date(end.getTime()-364*86400000);
+    bucketType='month';
+  }
+  return {startDate, endDate:end, bucketType};
+}
+function buildBucketList(startDate,endDate,bucketType){
+  const keys=[],seen=new Set();
+  let cursor=new Date(startDate);
+  while(cursor<=endDate){
+    const k=bucketKeyFor(cursor,bucketType);
+    if(!seen.has(k)){ seen.add(k); keys.push(k); }
+    cursor=new Date(cursor.getTime()+86400000);
+  }
+  return keys;
+}
+function chartBaseOptions(yLabel,opts={}){
+  return {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:!!opts.showLegend, position:'bottom', labels:{color:'#999', font:{size:10}, boxWidth:10}},
+      tooltip:{backgroundColor:'#111920', borderColor:'rgba(200,169,110,0.3)', borderWidth:1, titleColor:'#fff', bodyColor:'#d4d4d4', padding:8}
+    },
+    scales:{
+      x:{ticks:{color:'#666', font:{size:10}}, grid:{color:'rgba(255,255,255,0.05)'}},
+      y:{ticks:{color:'#666', font:{size:10}}, grid:{color:'rgba(255,255,255,0.05)'}, title:{display:!!yLabel, text:yLabel, color:'#666', font:{size:10}}}
+    }
+  };
+}
+const CHART_PALETTE=['#c8a96e','#38bdf8','#4ade80','#f87171','#fbbf24','#a78bfa','#f472b6','#34d399'];
+
+function renderHoursChart(){
+  const {startDate,endDate,bucketType}=getRangeConfig(analyticsRange);
+  const buckets=buildBucketList(startDate,endDate,bucketType);
+  const totals={}; buckets.forEach(k=>totals[k]=0);
+  Object.entries(slog).forEach(([dateStr,subs])=>{
+    const d=new Date(dateStr+'T00:00:00');
+    if(d<startDate||d>endDate) return;
+    const k=bucketKeyFor(d,bucketType);
+    if(k in totals) totals[k]+=Object.values(subs).reduce((a,b)=>a+b,0);
+  });
+  const labels=buckets.map(k=>bucketLabelFor(k,bucketType));
+  const data=buckets.map(k=>+(totals[k]/60).toFixed(1));
+  if(chartInstances.hours) chartInstances.hours.destroy();
+  chartInstances.hours=new Chart(document.getElementById('hoursChart'),{
+    type:'line',
+    data:{labels, datasets:[{label:'Minutes studied', data, borderColor:'#c8a96e', backgroundColor:'rgba(200,169,110,0.15)', fill:true, tension:0.3, pointRadius:2, pointBackgroundColor:'#c8a96e'}]},
+    options:chartBaseOptions('Minutes')
+  });
+}
+
+function renderSubjectDoughnut(){
+  const {startDate,endDate}=getRangeConfig(analyticsRange);
+  const subTotals={};
+  Object.entries(slog).forEach(([dateStr,subs])=>{
+    const d=new Date(dateStr+'T00:00:00');
+    if(d<startDate||d>endDate) return;
+    Object.entries(subs).forEach(([sub,secs])=>{ subTotals[sub]=(subTotals[sub]||0)+secs; });
+  });
+  const entries=Object.entries(subTotals).sort((a,b)=>b[1]-a[1]);
+  if(chartInstances.subjectDoughnut) chartInstances.subjectDoughnut.destroy();
+  if(!entries.length) return;
+  const labels=entries.map(e=>e[0]);
+  const data=entries.map(e=>+(e[1]/60).toFixed(1));
+  chartInstances.subjectDoughnut=new Chart(document.getElementById('subjectDoughnut'),{
+    type:'doughnut',
+    data:{labels, datasets:[{data, backgroundColor:labels.map((_,i)=>CHART_PALETTE[i%CHART_PALETTE.length]), borderColor:'#0d1117', borderWidth:2}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right', labels:{color:'#999', font:{size:10}, boxWidth:10}}, tooltip:chartBaseOptions().plugins.tooltip}}
+  });
+}
+
+function renderSubjectTrendChart(){
+  const {startDate,endDate,bucketType}=getRangeConfig(analyticsRange);
+  const buckets=buildBucketList(startDate,endDate,bucketType);
+  const overallTotals={};
+  Object.entries(slog).forEach(([dateStr,subs])=>{
+    const d=new Date(dateStr+'T00:00:00');
+    if(d<startDate||d>endDate) return;
+    Object.entries(subs).forEach(([sub,secs])=>{ overallTotals[sub]=(overallTotals[sub]||0)+secs; });
+  });
+  const topSubjects=Object.entries(overallTotals).sort((a,b)=>b[1]-a[1]).slice(0,5).map(e=>e[0]);
+  const hasOther=Object.keys(overallTotals).length>topSubjects.length;
+  const seriesNames=hasOther?[...topSubjects,'Other']:topSubjects;
+  const perBucket={}; buckets.forEach(k=>perBucket[k]={});
+  Object.entries(slog).forEach(([dateStr,subs])=>{
+    const d=new Date(dateStr+'T00:00:00');
+    if(d<startDate||d>endDate) return;
+    const k=bucketKeyFor(d,bucketType);
+    if(!(k in perBucket)) return;
+    Object.entries(subs).forEach(([sub,secs])=>{
+      const name=topSubjects.includes(sub)?sub:'Other';
+      perBucket[k][name]=(perBucket[k][name]||0)+secs;
+    });
+  });
+  const labels=buckets.map(k=>bucketLabelFor(k,bucketType));
+  const datasets=seriesNames.map((name,i)=>({
+    label:name,
+    data:buckets.map(k=>+((perBucket[k][name]||0)/60).toFixed(1)),
+    backgroundColor:CHART_PALETTE[i%CHART_PALETTE.length]
+  }));
+  if(chartInstances.subjectTrend) chartInstances.subjectTrend.destroy();
+  if(!seriesNames.length) return;
+  chartInstances.subjectTrend=new Chart(document.getElementById('subjectTrendChart'),{
+    type:'bar',
+    data:{labels, datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:true, position:'bottom', labels:{color:'#999', font:{size:10}, boxWidth:10}}, tooltip:chartBaseOptions().plugins.tooltip},
+      scales:{
+        x:{stacked:true, ticks:{color:'#666', font:{size:10}}, grid:{display:false}},
+        y:{stacked:true, ticks:{color:'#666', font:{size:10}}, grid:{color:'rgba(255,255,255,0.05)'}, title:{display:true, text:'Minutes', color:'#666', font:{size:10}}}
+      }
+    }
+  });
+}
+
+async function renderBlocksOverTimeChart(sessions){
+  const {startDate,endDate,bucketType}=getRangeConfig(analyticsRange);
+  const buckets=buildBucketList(startDate,endDate,bucketType);
+  const counts={}; buckets.forEach(k=>counts[k]=0);
+  sessions.forEach(s=>{
+    if(!s.started_at) return;
+    const d=new Date(s.started_at);
+    if(d<startDate||d>endDate) return;
+    const k=bucketKeyFor(d,bucketType);
+    if(k in counts) counts[k]++;
+  });
+  const labels=buckets.map(k=>bucketLabelFor(k,bucketType));
+  const data=buckets.map(k=>counts[k]);
+  if(chartInstances.blocksOverTime) chartInstances.blocksOverTime.destroy();
+  chartInstances.blocksOverTime=new Chart(document.getElementById('blocksOverTimeChart'),{
+    type:'bar',
+    data:{labels, datasets:[{label:'Blocks started', data, backgroundColor:'rgba(200,169,110,0.65)'}]},
+    options:chartBaseOptions('Sessions')
+  });
+}
+
+function renderBlockNameChart(sessions){
+  const {startDate,endDate}=getRangeConfig(analyticsRange);
+  const totals={};
+  sessions.forEach(s=>{
+    if(!s.started_at) return;
+    const start=new Date(s.started_at);
+    if(start<startDate||start>endDate) return;
+    const end=s.ended_at?new Date(s.ended_at):(s.active?new Date():(s.ends_at?new Date(s.ends_at):start));
+    const secs=Math.max(0,(end-start)/1000);
+    const name=s.block_name||'Unnamed block';
+    totals[name]=(totals[name]||0)+secs;
+  });
+  const entries=Object.entries(totals).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if(chartInstances.blockName) chartInstances.blockName.destroy();
+  if(!entries.length) return;
+  const labels=entries.map(e=>e[0]);
+  const data=entries.map(e=>+(e[1]/60).toFixed(1));
+  chartInstances.blockName=new Chart(document.getElementById('blockNameChart'),{
+    type:'bar',
+    data:{labels, datasets:[{label:'Minutes', data, backgroundColor:'rgba(56,189,248,0.65)'}]},
+    options:{...chartBaseOptions('Minutes'), indexAxis:'y'}
+  });
+}
+
+function renderSessionOutcomeChart(sessions){
+  const {startDate,endDate}=getRangeConfig(analyticsRange);
+  const inRange=sessions.filter(s=>{
+    if(!s.started_at) return false;
+    const d=new Date(s.started_at);
+    return d>=startDate && d<=endDate;
+  });
+  let completed=0,codeUnlock=0,emergencyUnlock=0,stillActive=0,other=0;
+  inRange.forEach(s=>{
+    if(s.active) stillActive++;
+    else if(s.used_emergency_unlock) emergencyUnlock++;
+    else if(s.used_code_unlock) codeUnlock++;
+    else if(s.verified) completed++;
+    else other++;
+  });
+  const all=[['Completed',completed,'#4ade80'],['Code unlock',codeUnlock,'#fbbf24'],['Emergency unlock',emergencyUnlock,'#f87171'],['Still active',stillActive,'#38bdf8'],['Other',other,'#666']];
+  const filtered=all.filter(x=>x[1]>0);
+  if(chartInstances.outcome) chartInstances.outcome.destroy();
+  if(!filtered.length) return;
+  chartInstances.outcome=new Chart(document.getElementById('sessionOutcomeChart'),{
+    type:'doughnut',
+    data:{labels:filtered.map(x=>x[0]), datasets:[{data:filtered.map(x=>x[1]), backgroundColor:filtered.map(x=>x[2]), borderColor:'#0d1117', borderWidth:2}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right', labels:{color:'#999', font:{size:10}, boxWidth:10}}}}
+  });
+}
+
+function renderYearHeatmap(){
+  const wrap=document.getElementById('yearHeatmap');
+  const end=new Date(TODAY);
+  const start=new Date(end.getTime()-364*86400000);
+  const startDow=(start.getDay()+6)%7;
+  const gridStart=new Date(start.getTime()-startDow*86400000);
+  const totalsByDate={};
+  Object.entries(slog).forEach(([dateStr,subs])=>{ totalsByDate[dateStr]=Object.values(subs).reduce((a,b)=>a+b,0); });
+  const days=[];
+  let cursor=new Date(gridStart);
+  while(cursor<=end){ days.push(new Date(cursor)); cursor=new Date(cursor.getTime()+86400000); }
+  const cellsHtml=days.map(d=>{
+    const key=dateKeyDay(d);
+    const secs=totalsByDate[key]||0;
+    const l=secs>14400?4:secs>7200?3:secs>3600?2:secs>0?1:0;
+    const inRange=d>=start;
+    return `<div class="heat-cell" ${l&&inRange?`data-l="${l}"`:''} title="${fmtDateShort(key)}: ${fmtTime(secs)}" style="${inRange?'':'opacity:0.15;'}"></div>`;
+  }).join('');
+  const weekCount=Math.ceil(days.length/7);
+  let monthLabels=[],lastMonth=-1;
+  for(let w=0;w<weekCount;w++){
+    const d=days[w*7]; if(!d) continue;
+    const m=d.getMonth();
+    if(m!==lastMonth){ monthLabels.push(d.toLocaleDateString([], {month:'short'})); lastMonth=m; }
+    else monthLabels.push('');
+  }
+  wrap.innerHTML=`<div class="year-heat-wrap">
+    <div class="year-heat-months">${monthLabels.map(m=>`<div>${m}</div>`).join('')}</div>
+    <div class="year-heat-body">
+      <div class="year-heat-daylabels"><div></div><div>Mon</div><div></div><div>Wed</div><div></div><div>Fri</div><div></div></div>
+      <div class="year-heat-grid">${cellsHtml}</div>
+    </div>
+    <div class="year-heat-legend">Less <div class="heat-cell"></div><div class="heat-cell" data-l="1"></div><div class="heat-cell" data-l="2"></div><div class="heat-cell" data-l="3"></div><div class="heat-cell" data-l="4"></div> More</div>
+  </div>`;
+}
+
+async function renderAnalytics(){
   // streak
   let streak=0,d=new Date(TODAY);
   while(true){
@@ -1426,22 +1753,46 @@ function renderAnalytics(){
   document.getElementById('topicsAdded').textContent=topicCount;
   document.getElementById('topicsSub').textContent='of '+rows.length+' days filled';
 
-  // total study time
-  const totalSecs=Object.values(slog).reduce((acc,day)=>acc+Object.values(day).reduce((a,b)=>a+b,0),0);
-  document.getElementById('totalStudyTime').textContent=fmtTime(totalSecs);
+  // total study time — range-scoped + all-time
+  const {startDate,endDate}=getRangeConfig(analyticsRange);
+  let rangeSecs=0, allSecs=0;
+  Object.entries(slog).forEach(([dateStr,subs])=>{
+    const daySecs=Object.values(subs).reduce((a,b)=>a+b,0);
+    allSecs+=daySecs;
+    const d2=new Date(dateStr+'T00:00:00');
+    if(d2>=startDate && d2<=endDate) rangeSecs+=daySecs;
+  });
+  document.getElementById('totalStudyTime').textContent=fmtTime(rangeSecs);
+  document.getElementById('totalStudyTimeAll').textContent=fmtTime(allSecs)+' all-time';
 
-  // subject bars (time)
-  const subTotals={};
-  Object.values(slog).forEach(day=>Object.entries(day).forEach(([sub,secs])=>{subTotals[sub]=(subTotals[sub]||0)+secs;}));
-  const maxT=Math.max(...Object.values(subTotals),1);
-  const sbHtml=Object.entries(subTotals).sort((a,b)=>b[1]-a[1]).map(([sub,secs])=>
-    `<div class="bar-row">
-      <span class="bar-label" title="${escHtml(sub)}">${escHtml(sub)}</span>
-      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(secs/maxT*100)}%"></div></div>
-      <span class="bar-val">${fmtTime(secs)}</span>
-    </div>`
-  ).join('');
-  document.getElementById('subjectBars').innerHTML=sbHtml||'<div style="font-size:0.78rem;color:var(--muted)">No sessions yet.</div>';
+  // focus lock sessions — load once, then compute everything from it
+  const sessions=await loadFocusLockSessions();
+  const sessionsInRange=sessions.filter(s=>{
+    if(!s.started_at) return false;
+    const d3=new Date(s.started_at);
+    return d3>=startDate && d3<=endDate;
+  });
+  let blockSecs=0, endedCount=0, verifiedCount=0;
+  sessionsInRange.forEach(s=>{
+    const start=new Date(s.started_at);
+    const end=s.ended_at?new Date(s.ended_at):(s.active?new Date():(s.ends_at?new Date(s.ends_at):start));
+    blockSecs+=Math.max(0,(end-start)/1000);
+    if(!s.active){ endedCount++; if(s.verified) verifiedCount++; }
+  });
+  document.getElementById('totalBlockTime').textContent=fmtTime(blockSecs);
+  document.getElementById('blockSessionCount').textContent=sessionsInRange.length+(sessionsInRange.length===1?' session':' sessions');
+  const completedPct=endedCount>0?Math.round(verifiedCount/endedCount*100):0;
+  document.getElementById('blocksCompletedPct').textContent=completedPct+'%';
+  document.getElementById('blocksCompletedSub').textContent=`${verifiedCount} of ${endedCount} sessions run to the end`;
+
+  // charts
+  renderHoursChart();
+  renderSubjectDoughnut();
+  renderSubjectTrendChart();
+  renderYearHeatmap();
+  renderBlocksOverTimeChart(sessions);
+  renderBlockNameChart(sessions);
+  renderSessionOutcomeChart(sessions);
 
   // status bars
   const counts={new:0,active:0,done:0,overdue:0};
