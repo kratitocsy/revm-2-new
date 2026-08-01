@@ -141,6 +141,207 @@
 .story-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
 .story-video-credit{font-size:0.62rem;letter-spacing:0.04em;color:var(--dim,var(--muted));margin-top:0.4rem;opacity:0.7;}
 
+/* ── SCIENCE BAND ── */
+.science-band{
+  background:var(--s1);border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  padding:4.5rem 3rem;position:relative;z-index:2;
+}
+.science-inner{max-width:1100px;margin:0 auto;}
+.science-head{max-width:640px;margin-bottom:2.25rem;}
+.science-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);}
+.science-card{background:var(--bg);padding:1.5rem 1.6rem;}
+.science-card-label{font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:0.6rem;}
+.science-card p{font-size:0.8rem;color:var(--muted);line-height:1.75;}
+.science-card p strong{color:var(--text);font-weight:600;}
+
+/* ── FLAGSHIP SHOWCASE ── */
+.flagship-intro{max-width:720px;margin-bottom:1rem;}
+.flagship-row{
+  display:grid;grid-template-columns:1.02fr 0.98fr;gap:3.5rem;align-items:center;
+  padding:4rem 0;border-bottom:1px solid var(--border);
+}
+.flagship-row:last-of-type{border-bottom:none;}
+.flagship-row.reverse .flagship-visual{order:2;}
+.flagship-row.reverse .flagship-text{order:1;}
+.flagship-num{font-size:0.62rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:0.75rem;display:flex;align-items:center;gap:0.6rem;}
+.flagship-num::after{content:'';flex:1;height:1px;background:var(--border);}
+.flagship-text h3{font-family:var(--font-display);font-size:clamp(1.55rem,2.6vw,2.05rem);font-weight:560;color:var(--white);letter-spacing:-0.01em;line-height:1.14;margin-bottom:1rem;}
+.flagship-text h3 em{color:var(--gold);font-style:italic;}
+.flagship-text > p{font-size:0.86rem;color:var(--muted);line-height:1.85;margin-bottom:1.1rem;}
+.flagship-principle{
+  display:flex;gap:0.6rem;align-items:flex-start;
+  border-left:2px solid var(--gold-border);background:var(--gold-dim);
+  padding:0.65rem 0.9rem;font-size:0.75rem;color:var(--muted);line-height:1.6;margin-bottom:1.4rem;
+}
+.flagship-principle b{color:var(--gold);font-weight:700;letter-spacing:0.02em;white-space:nowrap;}
+.flagship-visual{
+  background:var(--s1);border:1px solid var(--border);
+  padding:1.6rem;position:relative;min-height:320px;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.flagship-visual::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 30% 0%,rgba(200,169,110,0.06),transparent 60%);
+}
+
+/* Mock — Focus Lock */
+.mock-lock{position:relative;z-index:1;border:1px solid var(--border2);background:var(--black);}
+.mock-lock-top{display:flex;align-items:center;gap:0.4rem;padding:0.6rem 0.8rem;border-bottom:1px solid var(--border);}
+.mock-dot{width:7px;height:7px;border-radius:50%;background:var(--dim);}
+.mock-url{margin-left:0.5rem;font-size:0.62rem;color:var(--muted);font-family:monospace;}
+.mock-lock-body{padding:1.6rem 1.4rem;text-align:center;}
+.mock-lock-icon{width:38px;height:38px;margin:0 auto 1rem;border:1px solid var(--gold-border);background:var(--gold-dim);display:flex;align-items:center;justify-content:center;color:var(--gold);animation:mockPulse 2.4s ease-in-out infinite;}
+@keyframes mockPulse{0%,100%{box-shadow:0 0 0 0 rgba(200,169,110,0.25);}50%{box-shadow:0 0 0 10px rgba(200,169,110,0);}}
+.mock-lock-title{font-size:0.88rem;font-weight:700;color:var(--white);margin-bottom:0.3rem;}
+.mock-lock-sub{font-size:0.68rem;color:var(--muted);margin-bottom:1.2rem;}
+.mock-chip-row{display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center;margin-bottom:1.2rem;}
+.mock-chip{font-size:0.62rem;padding:0.3rem 0.6rem;border:1px solid var(--border2);white-space:nowrap;}
+.mock-chip.allow{color:var(--success);border-color:rgba(74,222,128,0.3);background:rgba(74,222,128,0.06);}
+.mock-chip.block{color:var(--danger);border-color:rgba(248,113,113,0.25);background:rgba(248,113,113,0.05);}
+.mock-unlock{font-size:0.62rem;color:var(--dim);border-top:1px solid var(--border);padding-top:0.9rem;line-height:1.6;}
+
+/* Mock — RevMGrid */
+.mock-grid{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:0.9rem;}
+.mock-tile{background:var(--black);border:1px solid var(--border2);padding:1rem 0.8rem;display:flex;flex-direction:column;align-items:center;gap:0.5rem;position:relative;}
+.mock-tile.speaking{border-color:var(--gold-border);}
+.mock-avatar{width:34px;height:34px;border-radius:50%;background:var(--s3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;color:var(--gold);}
+.mock-tile-name{font-size:0.62rem;color:var(--muted);}
+.mock-wave{position:absolute;top:0.5rem;right:0.5rem;width:16px;height:10px;background:repeating-linear-gradient(90deg,var(--gold) 0 2px,transparent 2px 4px);opacity:0.7;animation:mockWave 1s ease-in-out infinite;}
+@keyframes mockWave{0%,100%{opacity:0.35;}50%{opacity:0.9;}}
+.mock-tile.dnd .mock-tile-name{color:var(--danger);}
+.mock-leaderboard{position:relative;z-index:1;text-align:center;font-size:0.68rem;color:var(--gold);border-top:1px solid var(--border);padding-top:0.9rem;}
+
+/* Mock — Partners */
+.mock-swipe{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:1rem;}
+.mock-swipe-card{width:100%;max-width:260px;background:var(--black);border:1px solid var(--border2);padding:1.5rem 1.25rem;text-align:center;}
+.mock-swipe-avatar{width:46px;height:46px;border-radius:50%;background:var(--s3);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:700;color:var(--gold);margin:0 auto 0.75rem;}
+.mock-swipe-name{font-size:0.82rem;font-weight:600;color:var(--white);margin-bottom:0.2rem;}
+.mock-compat{font-size:0.68rem;color:var(--gold);margin-bottom:0.85rem;}
+.mock-swipe-tags{display:flex;flex-wrap:wrap;gap:0.35rem;justify-content:center;}
+.mock-swipe-tags span{font-size:0.6rem;color:var(--muted);border:1px solid var(--border2);padding:0.22rem 0.5rem;}
+.mock-swipe-actions{display:flex;gap:0.9rem;}
+.mock-swipe-actions button{width:38px;height:38px;border-radius:50%;border:1px solid var(--border2);background:var(--black);color:var(--muted);font-size:0.95rem;cursor:default;}
+.mock-swipe-actions .mock-check{color:var(--gold);border-color:var(--gold-border);}
+
+@media(max-width:768px){
+  .science-grid{grid-template-columns:1fr;}
+  .flagship-row,.flagship-row.reverse{grid-template-columns:1fr;gap:1.75rem;padding:2.75rem 0;}
+  .flagship-row.reverse .flagship-visual,.flagship-row.reverse .flagship-text{order:0;}
+  .science-band{padding:3rem 1.5rem;}
+}
+@media(prefers-reduced-motion:reduce){
+  .mock-lock-icon,.mock-wave{animation:none!important;}
+}
+
+/* ── BENTO GRID ── */
+.bento-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  grid-auto-rows:minmax(140px,auto);grid-auto-flow:dense;
+  gap:1px;background:var(--border);border:1px solid var(--border);
+}
+.bento-card{
+  background:var(--s1);padding:1.75rem;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;
+  opacity:0;transform:translateY(18px);
+  will-change:transform,opacity;
+}
+.bento-card.in-view{animation:bentoIn 0.65s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--d,0ms);}
+@keyframes bentoIn{from{opacity:0;transform:translateY(18px) scale(0.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+.bento-card.in-view:hover{transition:box-shadow 0.25s ease,background 0.25s ease;}
+.bento-card:hover{background:var(--s2);box-shadow:inset 0 0 0 1px var(--gold-border),0 20px 46px rgba(0,0,0,0.4);z-index:3;}
+.bento-card .flagship-num{margin-bottom:0.6rem;}
+.bento-card h3{font-family:var(--font-display);font-weight:560;color:var(--white);letter-spacing:-0.01em;line-height:1.15;margin-bottom:0.6rem;font-size:1.35rem;}
+.bento-card h3 em{color:var(--gold);font-style:italic;}
+.bento-card > p{font-size:0.8rem;color:var(--muted);line-height:1.75;margin-bottom:0.9rem;}
+.bento-card .flagship-principle{margin-bottom:1rem;font-size:0.72rem;}
+.bento-2x2{grid-column:span 2;grid-row:span 2;}
+.bento-2x1{grid-column:span 2;}
+.bento-1x1{grid-column:span 1;}
+.bento-4x1{grid-column:span 4;}
+.bento-cta{
+  flex-direction:row;align-items:center;justify-content:space-between;gap:2rem;flex-wrap:wrap;
+  background:linear-gradient(120deg,var(--s1) 0%,var(--s2) 100%);
+}
+.bento-cta h3{font-family:var(--font-display);color:var(--white);margin:0.4rem 0 0.6rem;}
+.cta-br{display:none;}
+
+/* Mock — Forgetting curve (loss aversion) */
+.mock-curve{display:flex;align-items:flex-end;gap:0.5rem;height:70px;margin:0.4rem 0 0.5rem;}
+.mock-curve-bar{
+  flex:1;height:var(--h);background:linear-gradient(to top,var(--gold),rgba(200,169,110,0.25));
+  position:relative;min-height:6px;
+  animation:barGrow 1s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes barGrow{from{transform:scaleY(0);transform-origin:bottom;}to{transform:scaleY(1);transform-origin:bottom;}}
+.mock-curve-bar span{position:absolute;bottom:-1.15rem;left:50%;transform:translateX(-50%);font-size:0.55rem;color:var(--muted);white-space:nowrap;}
+.mock-curve-caption{margin-top:1.4rem;font-size:0.6rem;color:var(--dim);}
+
+/* Mock — Zeigarnik checklist */
+.mock-checklist{display:flex;flex-direction:column;gap:0.5rem;margin-top:auto;}
+.mock-check-row{display:flex;align-items:center;gap:0.55rem;font-size:0.72rem;color:var(--muted);border:1px solid var(--border2);padding:0.5rem 0.7rem;background:var(--black);}
+.mock-check-row.done{color:var(--muted);text-decoration:line-through;opacity:0.6;}
+.mock-check-box{width:14px;height:14px;border:1px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:var(--success);}
+.mock-check-row.done .mock-check-box{border-color:var(--success);background:rgba(74,222,128,0.12);}
+.mock-check-row.nag{border-color:var(--gold-border);animation:nagPulse 2.2s ease-in-out infinite;}
+@keyframes nagPulse{0%,100%{box-shadow:0 0 0 0 rgba(200,169,110,0.18);}50%{box-shadow:0 0 0 6px rgba(200,169,110,0);}}
+
+/* Mock — Streak / identity */
+.mock-streak{margin-top:auto;display:flex;align-items:center;gap:1.25rem;padding-top:0.5rem;}
+.mock-streak-num{font-size:2.4rem;font-weight:900;color:var(--gold);letter-spacing:-0.03em;line-height:1;}
+.mock-streak-label{font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:0.2rem;}
+.mock-streak-days{display:flex;gap:0.3rem;margin-left:auto;}
+.mock-streak-days span{width:10px;height:22px;background:var(--dim);}
+.mock-streak-days span.on{background:var(--gold);animation:streakRise 0.5s cubic-bezier(.16,1,.3,1) both;}
+.mock-streak-days span.on:nth-child(1){animation-delay:0.05s;}
+.mock-streak-days span.on:nth-child(2){animation-delay:0.1s;}
+.mock-streak-days span.on:nth-child(3){animation-delay:0.15s;}
+.mock-streak-days span.on:nth-child(4){animation-delay:0.2s;}
+.mock-streak-days span.on:nth-child(5){animation-delay:0.25s;}
+.mock-streak-days span.on:nth-child(6){animation-delay:0.3s;}
+.mock-streak-days span.on:nth-child(7){animation-delay:0.35s;}
+@keyframes streakRise{from{transform:scaleY(0);transform-origin:bottom;}to{transform:scaleY(1);transform-origin:bottom;}}
+
+@media(max-width:900px){
+  .bento-grid{grid-template-columns:repeat(2,1fr);}
+  .bento-2x2{grid-column:span 2;grid-row:span 1;}
+  .bento-4x1{grid-column:span 2;}
+  .bento-cta{flex-direction:column;align-items:flex-start;}
+}
+@media(max-width:640px){
+  .bento-grid{grid-template-columns:1fr;}
+  .bento-2x2,.bento-2x1,.bento-1x1,.bento-4x1{grid-column:span 1;}
+  .cta-br{display:inline;}
+}
+@media(prefers-reduced-motion:reduce){
+  .bento-card{opacity:1;transform:none;}
+  .bento-card.in-view{animation:none;}
+  .mock-curve-bar,.mock-check-row.nag,.mock-streak-days span.on{animation:none!important;}
+}
+
+/* ── EARN GRID (Bounty + RevHead) ── */
+.earn-grid{
+  display:grid;grid-template-columns:repeat(2,1fr);
+  gap:1px;background:var(--border);border:1px solid var(--border);
+}
+.earn-grid .bento-card{min-height:100%;}
+@media(max-width:768px){.earn-grid{grid-template-columns:1fr;}}
+
+.mock-bounty{margin-top:auto;border:1px solid var(--border2);background:var(--black);padding:1rem;}
+.mock-bounty-head{display:flex;justify-content:space-between;gap:0.5rem;font-size:0.68rem;color:var(--white);margin-bottom:0.9rem;}
+.mock-bounty-pool{color:var(--gold);font-weight:700;white-space:nowrap;}
+.mock-bounty-row{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.55rem;}
+.mock-bounty-bar{flex:1;height:6px;background:var(--s3);overflow:hidden;}
+.mock-bounty-bar div{height:100%;background:var(--gold);transform:scaleX(0);transform-origin:left;animation:bountyFill 1s cubic-bezier(.16,1,.3,1) forwards;}
+@keyframes bountyFill{to{transform:scaleX(1);}}
+.mock-bounty-pct{font-size:0.62rem;color:var(--muted);width:26px;text-align:right;flex-shrink:0;}
+
+.mock-revhead{margin-top:auto;border:1px solid var(--border2);background:var(--black);padding:1rem;}
+.mock-revhead-link{font-family:monospace;font-size:0.68rem;color:var(--gold);border:1px dashed var(--gold-border);padding:0.55rem 0.7rem;margin-bottom:0.9rem;text-align:center;}
+.mock-revhead-stats{display:flex;gap:1.75rem;}
+.mock-revhead-num{display:block;font-size:1.3rem;font-weight:900;color:var(--white);}
+.mock-revhead-num.gold{color:var(--gold);animation:mockPulse 2s ease-in-out infinite;border-radius:50%;width:fit-content;}
+.mock-revhead-label{font-size:0.58rem;color:var(--muted);}
+
 /* ── MOBILE HERO ── */
 @media(max-width:768px){
   .hero{
@@ -178,12 +379,14 @@
 <nav class="topnav">
   <a href="index.html"><div class="rm2-logo" data-size="nav"></div></a>
   <ul class="topnav-links">
+    <li><a href="#flagship">Flagship</a></li>
+    <li><a href="#earn">Earn</a></li>
     <li><a href="#features">Features</a></li>
     <li><a href="#exams">Exams</a></li>
     <li><a href="#how">How it works</a></li>
     <li><a href="#story">Story</a></li>
   </ul>
-  <a class="topnav-cta" href="login.html">Launch app →</a>
+  <a class="topnav-cta" href="login.html">App kholo →</a>
 </nav>
 
 <div class="hero" id="hero">
@@ -206,13 +409,13 @@
       </div>
     </div>
 
-    <h1>Master<br>Every<br>Revision.</h1>
+    <h1>Bhoolna<br>Band.<br>Ab Nahi.</h1>
 
-    <p class="hero-desc">The complete study OS for JEE, NEET, CAT and UPSC aspirants — spaced-repetition tracking, Focus Lock, and a study community, all in one place. Free, forever.</p>
+    <p class="hero-desc">Ek hi app mein sab kuch — tracking jo actually kaam karta hai, blocker jo reels ko ghusne nahi deta, aur ek poora study gang jo grind mein hai. JEE, NEET, CAT, UPSC — jo bhi ho, scene set hai. Bilkul free, hamesha.</p>
 
     <div class="hero-actions">
-      <a class="btn btn-white" href="login.html">Start tracking →</a>
-      <a class="btn btn-ghost" href="#features">See features</a>
+      <a class="btn btn-white" href="login.html">Shuru karo →</a>
+      <a class="btn btn-ghost" href="#features">Features dekho</a>
     </div>
   </div>
 
@@ -220,24 +423,182 @@
 </div>
 
 <div class="stats-strip">
-  <div class="stat-strip-item"><span class="stat-strip-num">204</span><span class="stat-strip-label">Days tracked</span></div>
+  <div class="stat-strip-item"><span class="stat-strip-num">204</span><span class="stat-strip-label">Din track hue</span></div>
   <div class="stat-strip-item"><span class="stat-strip-num">8</span><span class="stat-strip-label">Revision intervals</span></div>
-  <div class="stat-strip-item"><span class="stat-strip-num">10+</span><span class="stat-strip-label">Exams supported</span></div>
-  <div class="stat-strip-item"><span class="stat-strip-num">₹0</span><span class="stat-strip-label">Forever free</span></div>
+  <div class="stat-strip-item"><span class="stat-strip-num">10+</span><span class="stat-strip-label">Exams cover</span></div>
+  <div class="stat-strip-item"><span class="stat-strip-num">₹0</span><span class="stat-strip-label">Hamesha free</span></div>
 </div>
 
+<div class="science-band">
+  <div class="science-inner">
+    <div class="science-head">
+      <div class="eyebrow">// scene kya hai</div>
+      <h2 class="section-title">Reels ka game<br>fix hai. Humne<br>counter bana diya.</h2>
+    </div>
+    <p class="hero-desc" style="max-width:760px;font-size:0.9rem;">Shorts/Reels ka pura design hi <strong style="color:var(--gold);">variable-ratio reinforcement</strong> pe chalta hai — wahi trick jo slot machines use karti hain. Har swipe pe lagta hai "bas ek aur wala achha nikal sakta hai," toh dimaag scroll karna band hi nahi karta. Ye accident nahi hai — same mechanism decades pehle B.F. Skinner ne discover kiya tha, aur yahi reason hai ki JEE/NEET grind mein attention span sabse scarce cheez ban gaya hai. Hum sirf "willpower rakho" wala gyaan nahi dete — same tricks lekar, unhe padhai ke side pe laga dete hain. Neeche dekho.</p>
+  </div>
+</div>
+
+<div class="full-section" id="flagship" style="padding-bottom:2rem;">
+  <div class="eyebrow">// Non-negotiable, fr</div>
+  <h2 class="section-title">Woh app nahi jo<br>March tak hi chale.</h2>
+  <p class="section-desc flagship-intro">Motivation ek mood hai, bhai — kabhi aata hai, kabhi ghaayab. Jo cheez actually routine ko tikaye rakhti hai woh ek system hai jo tumse "aaj mann hai kya" nahi poochta, bas chalta hai. Wahi sab neeche hai.</p>
+
+  <div class="bento-grid">
+
+    <div class="bento-card bento-2x2" id="bentoLock">
+      <div class="flagship-num">01 — Focus Lock</div>
+      <h3>Internet ka sabse <em>saqt</em> blocker, no cap.</h3>
+      <p>Normal blockers ka jugaad simple hai — tab band karo, incognito kholo, wapas scroll pe. Yahaan aisa nahi chalta. Focus Lock desktop app level pe lock karta hai, toh force-quit, uninstall, browser change — kuch bhi try karo, session khatam hone tak bahar nahi nikal sakte. YouTube pe apna alag mode hai: home feed aur search khula rehta hai, but sirf tumhare whitelist wale channels hi dikhenge — Shorts aur "recommended" ka toh naam nahi lena.</p>
+      <div class="flagship-principle"><b>Precommitment</b> Isko Ulysses contract kehte hain — pehle hi khud ko mast se baandh lo, taaki temptation aaye toh decide karne ko kuch bache hi nahi.</div>
+      <div class="mock-lock" style="margin-top:auto;">
+        <div class="mock-lock-top"><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-url">youtube.com</span></div>
+        <div class="mock-lock-body">
+          <div class="mock-lock-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+          <div class="mock-lock-title">Session locked · 41:12 left</div>
+          <div class="mock-lock-sub">Only these channels are reachable right now</div>
+          <div class="mock-chip-row">
+            <span class="mock-chip allow">✓ 3Blue1Brown</span>
+            <span class="mock-chip allow">✓ Khan Academy</span>
+            <span class="mock-chip block">✕ Shorts feed</span>
+            <span class="mock-chip block">✕ Recommended</span>
+          </div>
+          <div class="mock-unlock">Early exit takes a 250-character passphrase, typed by hand — not a tap.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bento-card bento-2x1" id="bentoGrid">
+      <div class="flagship-num">02 — RevMGrid</div>
+      <h3>Padho jaise koi <em>dekh</em> raha hai — kyunki dekh raha hai.</h3>
+      <p>Live video/audio rooms jahan poora gang camera pe saath padhta hai, chup-chaap, side by side. Speaking detection, DND mode, aur group streak jo consistency ko sabke saamne rakh deta hai.</p>
+      <div class="flagship-principle"><b>Social facilitation</b> Psychology ka sabse purana, sabse-proven finding: quiet company mein log akele se zyada der focus rakh paate hain.</div>
+      <div class="mock-grid" style="margin-top:auto;">
+        <div class="mock-tile speaking"><div class="mock-avatar">P</div><span class="mock-tile-name">Priya · Physics</span><span class="mock-wave"></span></div>
+        <div class="mock-tile"><div class="mock-avatar">A</div><span class="mock-tile-name">Arjun · Bio</span></div>
+        <div class="mock-tile dnd"><div class="mock-avatar">S</div><span class="mock-tile-name">Sana · DND</span></div>
+        <div class="mock-tile speaking"><div class="mock-avatar">R</div><span class="mock-tile-name">Rohit · Maths</span><span class="mock-wave"></span></div>
+      </div>
+      <div class="mock-leaderboard">🔥 Group streak — 14 days straight</div>
+    </div>
+
+    <div class="bento-card bento-2x1" id="bentoPartners">
+      <div class="flagship-num">03 — Study Partners</div>
+      <h3>Koi dhoondo jo <em>actually</em> tumhara syllabus grind kar raha hai.</h3>
+      <p>Swipe karo, exam track aur study habits pe match karo, dono ne "haan" bola toh seedha DM. Ek partner jo tumhare quiet ho jaane pe notice kare, woh kisi streak counter se zyada asar karta hai.</p>
+      <div class="flagship-principle"><b>Social contagion</b> Habits contacts ke through failti hain, network research mein proven — ek consistent partner "normal" ki definition badal deta hai.</div>
+      <div class="mock-swipe" style="margin-top:auto;">
+        <div class="mock-swipe-card">
+          <div class="mock-swipe-avatar">K</div>
+          <div class="mock-swipe-name">Kavya · NEET 2027</div>
+          <div class="mock-compat">92% compatibility</div>
+          <div class="mock-swipe-tags"><span>Biology</span><span>Early riser</span><span>Silent study</span></div>
+        </div>
+        <div class="mock-swipe-actions"><button class="mock-x">✕</button><button class="mock-check">♥</button></div>
+      </div>
+    </div>
+
+    <div class="bento-card bento-1x1" id="bentoCurve">
+      <div class="flagship-num">Loss aversion</div>
+      <h3 style="font-size:1.05rem;">Kuch abhi fade ho raha hai, bhai.</h3>
+      <p style="font-size:0.78rem;">Pehle din mein hi retention sabse zyada girta hai, phir slowly aur bhi. Jo topic revise nahi hua, woh ruka nahi hai — chup-chaap nikal raha hai jab tak tum "app kholu ya nahi" soch rahe ho.</p>
+      <div class="mock-curve">
+        <div class="mock-curve-bar" style="--h:88%;"><span>Aaj</span></div>
+        <div class="mock-curve-bar" style="--h:52%;"><span>+1d</span></div>
+        <div class="mock-curve-bar" style="--h:30%;"><span>+7d</span></div>
+        <div class="mock-curve-bar" style="--h:14%;"><span>+30d</span></div>
+      </div>
+      <div class="mock-curve-caption">Bina revision ke — forgetting curve, Ebbinghaus 1885</div>
+    </div>
+
+    <div class="bento-card bento-1x1" id="bentoZeigarnik">
+      <div class="flagship-num">Zeigarnik effect</div>
+      <h3 style="font-size:1.05rem;">Adhoora kaam dimaag mein chillata hai.</h3>
+      <p style="font-size:0.78rem;">Open loops closed loops se zyada zor se yaad rehte hain — isliye woh ek chapter jo revise nahi kiya, baar baar dimaag mein aata rehta hai. Tick maarna hi ek tareeka hai us noise ko band karne ka.</p>
+      <div class="mock-checklist">
+        <div class="mock-check-row done"><span class="mock-check-box">✓</span>Kinematics — done hai</div>
+        <div class="mock-check-row nag"><span class="mock-check-box"></span>Thermodynamics</div>
+        <div class="mock-check-row nag"><span class="mock-check-box"></span>Equilibrium</div>
+      </div>
+    </div>
+
+    <div class="bento-card bento-2x1" id="bentoIdentity">
+      <div class="flagship-num">Identity, not intensity</div>
+      <h3>Discipline "mood" nahi hai jiska wait kare.</h3>
+      <p>Bade goals se consistency nahi banti — chote, roz wale actions se banti hai, jab tak "roz padhne wala banda" tumhari identity hi na ban jaaye, kuch banne ki koshish na rahe. Streak ka point ye nahi ki number bada dikhe — point ye hai ki system chal gaya bina tumse subah "aaj karu ya nahi" negotiate kiye.</p>
+      <div class="mock-streak">
+        <div class="mock-streak-num">14</div>
+        <div class="mock-streak-label">din ka streak</div>
+        <div class="mock-streak-days">
+          <span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bento-card bento-4x1 bento-cta" id="bentoCTA">
+      <div>
+        <div class="flagship-num">// Bottom line</div>
+        <h3 style="font-size:clamp(1.4rem,2.4vw,1.9rem);">Exam ki date move nahi hogi.<br class="cta-br"> Toh tumhara system bhi nahi honi chahiye.</h3>
+        <p style="max-width:520px;">Jitne din ye "sochunga" reh jaayega, forgetting curve utna hi jeetta rahega — default se. Ek baar set karo, bas — free hai, aur kal phir se decide karne ko nahi bolega.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.6rem;align-items:flex-start;">
+        <a class="btn btn-white" href="login.html">Lock in kar — free hai →</a>
+        <span style="font-size:0.65rem;color:var(--dim);">Na card, na trial, na catch.</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="full-section" id="earn" style="padding-top:0.5rem;">
+  <div class="eyebrow">// paisa ka scene</div>
+  <h2 class="section-title">Community banana<br>bhi ek skill hai.<br>Uska bhi haq banta hai.</h2>
+  <p class="section-desc">Hum believe karte hain — apna group motivate karna, logo ko ek platform tak lekar aana, ye sab bhi real kaam hai. Toh RevM² pe padhne ke saath-saath, apni hustle bhi build kar sakte ho.</p>
+  <div class="earn-grid">
+
+    <div class="bento-card" id="bentoBounty">
+      <div class="flagship-num">Bounty Challenges</div>
+      <h3>Group ko dare do. Coins pe khelo.</h3>
+      <p>Koi bhi challenge banao — jo sabse zyada ghante padhega, sabse zyada coins le jaayega. Bounty pool mein daalo (optional), aur winner-takes-most: top scorer 80%, 2nd 15%, 3rd 5%. Peer pressure, but make it fun — grind ko thoda competitive bana do.</p>
+      <div class="flagship-principle"><b>Fair &amp; transparent</b> Ye M² coins mein hota hai, real cash mein nahi — koi gambling wala scene nahi, sirf apne gang ke saath healthy competition.</div>
+      <div class="mock-bounty">
+        <div class="mock-bounty-head"><span>🏆 Physics Sprint — aaj raat khatam</span><span class="mock-bounty-pool">240 coins</span></div>
+        <div class="mock-bounty-row"><span class="mock-avatar" style="width:24px;height:24px;font-size:0.58rem;">P</span><div class="mock-bounty-bar"><div style="width:88%;"></div></div><span class="mock-bounty-pct">80%</span></div>
+        <div class="mock-bounty-row"><span class="mock-avatar" style="width:24px;height:24px;font-size:0.58rem;">A</span><div class="mock-bounty-bar"><div style="width:52%;"></div></div><span class="mock-bounty-pct">15%</span></div>
+        <div class="mock-bounty-row"><span class="mock-avatar" style="width:24px;height:24px;font-size:0.58rem;">S</span><div class="mock-bounty-bar"><div style="width:30%;"></div></div><span class="mock-bounty-pct">5%</span></div>
+      </div>
+    </div>
+
+    <div class="bento-card" id="bentoRevhead">
+      <div class="flagship-num">RevHead Program</div>
+      <h3>Community banao. Revenue share kamao.</h3>
+      <p>Content banate ho, ya naye students ko RevM² tak le aate ho? RevHead ban jao aur platform grow hone ka genuine revenue share pao — kyunki logo ko ek achhi cheez tak pohchana bhi utni hi mehnat hai jitni khud padhna.</p>
+      <div class="flagship-principle"><b>Seedha baat</b> Ye "raatों-raat crorepati" wala jhaasa nahi hai — ek real share hai jo platform ke grow karne ke saath saath badhta hai. Apna hustle, apni pace.</div>
+      <div class="mock-revhead">
+        <div class="mock-revhead-link">revm2.app/r/kavya</div>
+        <div class="mock-revhead-stats">
+          <div><span class="mock-revhead-num">12</span><span class="mock-revhead-label">tumhare through joined</span></div>
+          <div><span class="mock-revhead-num gold">●</span><span class="mock-revhead-label">revenue share active</span></div>
+        </div>
+      </div>
+      <a class="btn btn-ghost" href="revhead.html" style="margin-top:1rem;align-self:flex-start;">RevHead ban jao →</a>
+    </div>
+
+  </div>
+</div>
+
+<div class="divider"></div>
+
+
 <div class="full-section" id="features">
-  <div class="eyebrow">// What's inside</div>
-  <h2 class="section-title">Built to study.<br>Built to lock in.</h2>
-  <p class="section-desc">Everything below is live in the app today — not a roadmap.</p>
+  <div class="eyebrow">// baaki sab bhi hai</div>
+  <h2 class="section-title">Padhai ke liye.<br>Lock-in ke liye.</h2>
+  <p class="section-desc">Ye sab already live hai app mein — koi "coming soon" wala jhaasa nahi.</p>
   <div class="features-grid">
     <div class="feat-card"><div class="feat-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M7 5h13v10"/><rect x="4" y="8" width="13" height="10" rx="2"/><path d="M7.5 13.3l2 2 4.5-4.5"/></svg></div><h3>Ebbinghaus Tracker</h3><p>8 scientifically optimal revision intervals per topic — 5m, 12h, +1d, +2d, +4d, +7d, +15d, +30d. Never lose what you studied.</p><span class="feat-tag">Core</span></div>
     <div class="feat-card"><div class="feat-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M7 3h10M7 21h10"/><path d="M8 3c0 4 3 5 4 6.5C13 8 16 7 16 3"/><path d="M8 21c0-4 3-5 4-6.5C13 16 16 17 16 21"/></svg></div><h3>Study Timer</h3><p>Per-subject timers you can add to yourself — start, pause, and it logs the split automatically. Pair it with a schedule and it starts and stops on its own.</p><span class="feat-tag">Focus</span></div>
-    <div class="feat-card"><div class="feat-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div><h3>Focus Lock</h3><p>Block distracting sites and apps, or allow only the ones you need. Per-channel YouTube rules, timed sessions, and a "locked until time's up" mode with no early exit.</p><span class="feat-tag">Discipline</span></div>
     <div class="feat-card"><div class="feat-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><h3>Smart Schedules</h3><p>Chain your saved blocks into a repeating day plan — study, break, study — and it fires itself, no need to hit start. Snap a photo of your timetable and it builds the whole schedule for you.</p><span class="feat-tag">Automation</span></div>
-    <div class="feat-card"><div class="feat-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg></div><h3>Sleep Lock + Real Anti-Cheat</h3><p>A dedicated overnight mode that blocks every site and app on the device, backed by a desktop companion app enforcing it at the OS level — not just in a browser tab. Loosening a commitment you already made takes a genuinely long, deliberate gibberish code, not a tap.</p><span class="feat-tag">Enforced</span></div>
-    <div class="feat-card"><div class="feat-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7.5" r="3.5"/><path d="M17.5 11a3.5 3.5 0 1 0 0-7"/><path d="M22 21v-1.5a4 4 0 0 0-3-3.87"/></svg></div><h3>Study Groups</h3><p>Live video/audio study rooms with speaking detection and a quiet DND mode, plus group leaderboards to keep everyone honest.</p><span class="feat-tag">Community</span></div>
-    <div class="feat-card"><div class="feat-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><circle cx="7" cy="5" r="2.3"/><path d="M4 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><circle cx="17" cy="5" r="2.3"/><path d="M14 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><path d="M10 14.5h4"/></svg></div><h3>Study Partners</h3><p>Swipe to match with people on your track, then DM straight from the app. Find someone who's actually grinding the same syllabus.</p><span class="feat-tag">Community</span></div>
+    <div class="feat-card"><div class="feat-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg></div><h3>Sleep Lock</h3><p>A dedicated overnight mode that blocks every site and app on the device. Loosening a commitment you already made takes a genuinely long, deliberate gibberish code, not a tap.</p><span class="feat-tag">Enforced</span></div>
     <div class="feat-card"><div class="feat-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg></div><h3>M² Store &amp; Coin Economy</h3><p>Earn coins through the app, spend them on avatars and cosmetics in the M² Store. Your profile, your way.</p><span class="feat-tag">Rewards</span></div>
     <div class="feat-card"><div class="feat-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M12 2c1 3-3 4.5-3 8a3 3 0 0 0 6 0c1.5 1 2 2.8 2 4.3A6.3 6.3 0 0 1 5.5 14C5.5 8 12 6 12 2Z"/></svg></div><h3>RevHead Program</h3><p>Build content or bring people to RevM² and earn a real revenue share as a RevHead — you grow the community, you get paid for it.</p><span class="feat-tag">Earn</span></div>
     <div class="feat-card"><div class="feat-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></div><h3>Reminders</h3><p>Connect Telegram or email and RevM² nudges you the moment a revision is due — a missed day never quietly turns into a forgotten topic.</p><span class="feat-tag">Never miss</span></div>
@@ -248,9 +609,9 @@
 <div class="divider"></div>
 
 <div class="full-section" id="exams">
-  <div class="eyebrow">// Supported exams</div>
-  <h2 class="section-title">Your exam.<br>Your track.</h2>
-  <p class="section-desc">RevM² auto-detects your exam from subjects. No manual setup.</p>
+  <div class="eyebrow">// exams jo cover hain</div>
+  <h2 class="section-title">Tumhara exam.<br>Tumhara track.</h2>
+  <p class="section-desc">Subjects daalo, RevM² khud pata laga lega konsa exam hai. Setup ka jhanjhat nahi.</p>
   <div class="tracks-grid">
     <div class="track-card"><div class="track-abbr">JEE</div><div class="track-name">JEE & Adv</div><div class="track-subs">Physics · Chemistry · Maths</div></div>
     <div class="track-card"><div class="track-abbr">NEET</div><div class="track-name">NEET</div><div class="track-subs">Physics · Chemistry · Biology</div></div>
@@ -266,14 +627,14 @@
 <div class="divider"></div>
 
 <div class="full-section" id="how">
-  <div class="eyebrow">// How it works</div>
-  <h2 class="section-title">Up in 60 seconds.</h2>
-  <p class="section-desc">No tutorials needed. The app guides you through everything.</p>
+  <div class="eyebrow">// kaise chalu karein</div>
+  <h2 class="section-title">60 second mein ready.</h2>
+  <p class="section-desc">Koi tutorial dekhna nahi padega. App khud guide kar dega.</p>
   <div class="steps">
-    <div class="step"><div class="step-num">01</div><div><h3>Pick your subjects</h3><p>Select from the list or type any subject. RevM² auto-detects your exam — JEE, NEET, CAT, UPSC or custom.</p></div></div>
-    <div class="step"><div class="step-num">02</div><div><h3>Set your timeline</h3><p>Enter your exam date. RevM² builds your entire revision calendar — every session, every interval, pre-planned.</p></div></div>
-    <div class="step"><div class="step-num">03</div><div><h3>Study and mark done</h3><p>Open your tracker daily. See exactly what to revise. Tick intervals. The Ebbinghaus curve does the rest.</p></div></div>
-    <div class="step"><div class="step-num">04</div><div><h3>Lock in when it matters</h3><p>Set up a Focus Lock or a full day schedule — even scan a photo of your timetable — and RevM² blocks the distractions and runs the day for you.</p></div></div>
+    <div class="step"><div class="step-num">01</div><div><h3>Subjects choose karo</h3><p>List se pick karo ya type kar do. RevM² khud samajh lega exam kaunsa hai — JEE, NEET, CAT, UPSC ya custom.</p></div></div>
+    <div class="step"><div class="step-num">02</div><div><h3>Exam date daalo</h3><p>Bas date enter karo. RevM² poora revision calendar bana dega — har session, har interval, pre-planned.</p></div></div>
+    <div class="step"><div class="step-num">03</div><div><h3>Padho, tick maaro</h3><p>Roz tracker kholo, dekh lo kya revise karna hai. Tick maaro, baaki forgetting curve khud handle kar lega.</p></div></div>
+    <div class="step"><div class="step-num">04</div><div><h3>Jab zaroori ho, lock in kar</h3><p>Focus Lock laga do ya poora din schedule kar do — timetable ki photo bhi chalegi — RevM² distractions block karke din chala dega.</p></div></div>
   </div>
 </div>
 
@@ -758,6 +1119,42 @@
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
     requestAnimationFrame(mountBrain);
   }
+</script>
+<script>
+(function initBento(){
+  function run(){
+    var cards = document.querySelectorAll('.bento-card');
+    if (!cards.length) return;
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    cards.forEach(function(c, i){ c.style.setProperty('--d', (i * 70) + 'ms'); });
+
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+          if (e.isIntersecting) { e.target.classList.add('in-view'); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.15 });
+      cards.forEach(function(c){ io.observe(c); });
+    } else {
+      cards.forEach(function(c){ c.classList.add('in-view'); });
+    }
+
+    if (!reduced) {
+      cards.forEach(function(c){
+        c.addEventListener('mousemove', function(e){
+          var r = c.getBoundingClientRect();
+          var px = (e.clientX - r.left) / r.width - 0.5;
+          var py = (e.clientY - r.top) / r.height - 0.5;
+          c.style.transform = 'perspective(900px) rotateX(' + (-py * 3.5).toFixed(2) + 'deg) rotateY(' + (px * 3.5).toFixed(2) + 'deg) translateY(-2px)';
+        });
+        c.addEventListener('mouseleave', function(){ c.style.transform = ''; });
+      });
+    }
+  }
+  if (document.readyState === 'complete' || document.readyState === 'interactive') run();
+  else document.addEventListener('DOMContentLoaded', run);
+})();
 </script>
 </body>
 </html>
