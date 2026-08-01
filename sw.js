@@ -1,16 +1,13 @@
 /* RevM² Service Worker — Offline Support */
-const CACHE = 'revm2-v7'; // bumped: was v6. This bump alone purges every
-// existing client's stale cached HTML pages (see the fetch handler below
-// for why that staleness could happen in the first place) - existing
-// installs pick this up automatically next launch since we skipWaiting +
-// clients.claim below.
+const CACHE = 'revm2-v8'; // bumped: was v7. Removed calculator.html and
+// predictor.html from SHELL below (pages deleted from the platform) -
+// this bump purges them out of every existing client's cache too, not
+// just new installs.
 const SHELL = [
   '/',
   '/index.html',
   '/login.html',
   '/tracker.html',
-  '/calculator.html',
-  '/predictor.html',
   '/groups.html',
   '/partners.html',
   '/chat.html',

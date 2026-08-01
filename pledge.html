@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RevM² — Pledge</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#c8a96e">
+<style>
+.pl-wrap{padding:1.75rem;max-width:820px;overflow-y:auto;}
+.pl-card{background:var(--s2);border:1px solid var(--border2);padding:1.25rem;margin-bottom:1.25rem;}
+.pl-card-title{font-size:0.65rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:0.9rem;}
+.pl-field{margin-bottom:1rem;}
+.pl-field label{display:block;font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.4rem;}
+.pl-code-box{font-family:monospace;font-size:1.1rem;letter-spacing:0.1em;color:var(--gold);background:var(--black);border:1px solid var(--gold-border);padding:0.8rem 1rem;text-align:center;}
+.pl-code-hint{font-size:0.72rem;color:var(--muted);margin-top:0.5rem;line-height:1.5;}
+.pl-subject-row{display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;}
+.pl-subject-row span{flex:1;font-size:0.82rem;color:var(--text);}
+.pl-subject-row input{width:80px;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.4rem 0.6rem;font-family:var(--font);}
+.pl-total{font-size:0.78rem;color:var(--muted);margin-top:0.4rem;}
+.pl-total.ok{color:var(--success);}
+.pl-photos{display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.7rem;}
+.pl-photo-thumb{width:64px;height:64px;object-fit:cover;border:1px solid var(--border2);}
+.pl-status-pill{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.65rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:0.2rem 0.55rem;border:1px solid var(--muted);color:var(--muted);}
+.pl-status-pill.accepted{border-color:var(--success);color:var(--success);}
+.pl-status-pill.rejected,.pl-status-pill.flagged{border-color:var(--danger);color:var(--danger);}
+.pl-status-pill.appeal_pending{border-color:var(--warn);color:var(--warn);}
+.pl-history-row{padding:0.7rem 0.85rem;background:var(--s1);border:1px solid var(--border);margin-bottom:0.6rem;}
+.pl-history-top{display:flex;align-items:center;justify-content:space-between;gap:0.6rem;}
+.pl-history-meta{font-size:0.72rem;color:var(--muted);margin-top:0.3rem;}
+.pl-coin-balance{font-size:1.6rem;font-weight:700;color:var(--gold);}
+.pl-coin-label{font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;}
+</style>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <a class="sidebar-logo" href="index.html"><div class="rm2-logo" data-size="small"></div></a>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Study</div>
+      <div class="nav-item" onclick="go('tracker.html')"><span class="nav-icon">📖</span>Tracker</div>
+      <div class="nav-item" onclick="go('blocks.html')"><span class="nav-icon">🔒</span>Blocks</div>
+      <div class="nav-item active"><span class="nav-icon">📝</span>Pledge</div>
+      <div class="nav-section">Community</div>
+      <div class="nav-item" onclick="go('groups.html')"><span class="nav-icon">👥</span>Study Groups</div>
+      <div class="nav-item" onclick="go('partners.html')"><span class="nav-icon">🤝</span>Study Partners</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-track" id="sTrack">—</div>
+      <div class="sidebar-exam" id="sExam">—</div>
+    </div>
+  </aside>
+
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
+  <div class="app-main">
+    <div class="topbar">
+      <button class="hamburger-btn" onclick="openMobileSidebar()" aria-label="Open menu">☰</button>
+      <div><div class="topbar-title">Pledge</div><div class="topbar-sub">Solve 100 questions, prove it, earn coins that buy you early release from a Sleep lock</div></div>
+    </div>
+
+    <div class="pl-wrap">
+
+      <div class="pl-card">
+        <div class="pl-card-title">Effort coins</div>
+        <div class="pl-coin-balance" id="coinBalance">—</div>
+        <div class="pl-coin-label">earned only · never purchasable · spends on Sleep-slot early release (coming soon)</div>
+      </div>
+
+      <div class="pl-card" id="startCard">
+        <div class="pl-card-title">Start a pledge</div>
+        <div class="pl-field">
+          <label>Your freshness code — write this + today's date on page 1</label>
+          <div class="pl-code-box" id="freshnessCode">—</div>
+          <div class="pl-code-hint">This code is generated fresh right now. It has to be handwritten and visible on your first photographed page — that's what proves these pages were solved today, not photographed from an old notebook. Get a new one any time with "New code" below; only the code shown at submission time counts.</div>
+          <button type="button" class="btn btn-ghost btn-sm" style="margin-top:0.6rem;" onclick="regenerateCode()">↻ New code</button>
+        </div>
+        <div class="pl-field">
+          <label>How many questions, per subject (must total 100+)</label>
+          <div id="subjectRows"></div>
+          <div class="pl-total" id="subjectTotal">Total: 0 / 100</div>
+        </div>
+        <div class="pl-field">
+          <label>Photograph each solved page</label>
+          <input type="file" id="pageFiles" accept="image/*" capture="environment" multiple onchange="onFilesChosen()">
+          <div class="pl-photos" id="photoThumbs"></div>
+        </div>
+        <button class="btn btn-primary" id="submitPledgeBtn" onclick="submitPledge()" disabled>Submit pledge</button>
+        <div class="empty-note" id="submitStatus" style="margin-top:0.6rem;"></div>
+      </div>
+
+      <div class="pl-card">
+        <div class="pl-card-title">Your pledges</div>
+        <div id="pledgeHistory" class="empty-note">Loading…</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script>
+const sb=window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL,REVM2_CONFIG.SUPABASE_ANON);
+let myUserId=null;
+let freshnessCode='';
+let chosenFiles=[];
+
+requireAuth().then(session=>{
+  if(!session) return;
+  myUserId=session.user.id;
+  logEvent('feature_used','pledge');
+  regenerateCode();
+  renderSubjectRows();
+  loadCoinBalance();
+  loadPledgeHistory();
+});
+const cfg=Store.get('revm2_config',{});
+document.getElementById('sTrack').textContent=cfg.track||'—';
+document.getElementById('sExam').textContent=cfg.exam||'—';
+
+function regenerateCode(){
+  const bytes=new Uint32Array(6);
+  crypto.getRandomValues(bytes);
+  const charset='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars, easier to copy by hand
+  freshnessCode=[...bytes].map(b=>charset[b%charset.length]).join('');
+  document.getElementById('freshnessCode').textContent=freshnessCode;
+}
+
+function renderSubjectRows(){
+  const subs=(cfg.subjects&&cfg.subjects.length)?cfg.subjects:['General'];
+  document.getElementById('subjectRows').innerHTML=subs.map(s=>`
+    <div class="pl-subject-row">
+      <span>${escHtml(s)}</span>
+      <input type="number" min="0" class="pl-subject-count" data-subject="${escAttr(s)}" value="0" oninput="updateSubjectTotal()">
+    </div>`).join('');
+  updateSubjectTotal();
+}
+
+function updateSubjectTotal(){
+  const inputs=[...document.querySelectorAll('.pl-subject-count')];
+  const total=inputs.reduce((sum,i)=>sum+(parseInt(i.value,10)||0),0);
+  const el=document.getElementById('subjectTotal');
+  el.textContent=`Total: ${total} / 100`;
+  el.classList.toggle('ok', total>=100);
+  updateSubmitEnabled();
+}
+
+function onFilesChosen(){
+  chosenFiles=[...document.getElementById('pageFiles').files];
+  const wrap=document.getElementById('photoThumbs');
+  wrap.innerHTML='';
+  chosenFiles.forEach(f=>{
+    const url=URL.createObjectURL(f);
+    const img=document.createElement('img');
+    img.className='pl-photo-thumb';
+    img.src=url;
+    wrap.appendChild(img);
+  });
+  updateSubmitEnabled();
+}
+
+function updateSubmitEnabled(){
+  const total=[...document.querySelectorAll('.pl-subject-count')].reduce((s,i)=>s+(parseInt(i.value,10)||0),0);
+  document.getElementById('submitPledgeBtn').disabled = !(total>=100 && chosenFiles.length>=1);
+}
+
+// Resizes+recompresses a photo client-side before it ever leaves the
+// device - the whole "compressor" from the original ask lives here,
+// rather than as a separate server-side step.
+function compressImage(file, maxDim, quality){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      let {width,height}=img;
+      if(width>height && width>maxDim){ height=Math.round(height*maxDim/width); width=maxDim; }
+      else if(height>maxDim){ width=Math.round(width*maxDim/height); height=maxDim; }
+      const canvas=document.createElement('canvas');
+      canvas.width=width; canvas.height=height;
+      canvas.getContext('2d').drawImage(img,0,0,width,height);
+      canvas.toBlob(blob=>{ URL.revokeObjectURL(img.src); resolve(blob); }, 'image/jpeg', quality);
+    };
+    img.onerror=reject;
+    img.src=URL.createObjectURL(file);
+  });
+}
+
+async function submitPledge(){
+  const btn=document.getElementById('submitPledgeBtn');
+  const status=document.getElementById('submitStatus');
+  btn.disabled=true;
+  const subjectBreakdown={};
+  [...document.querySelectorAll('.pl-subject-count')].forEach(i=>{
+    const v=parseInt(i.value,10)||0;
+    if(v>0) subjectBreakdown[i.dataset.subject]=v;
+  });
+  const totalQuestions=Object.values(subjectBreakdown).reduce((a,b)=>a+b,0);
+
+  try{
+    status.textContent='Compressing photos…';
+    const compressed=[];
+    for(const f of chosenFiles) compressed.push(await compressImage(f, 1600, 0.72));
+
+    status.textContent='Creating the pledge record…';
+    const { data: pledgeRow, error: insertErr } = await sb.from('study_pledges').insert({
+      user_id: myUserId,
+      freshness_code: freshnessCode,
+      pdf_path: '', // filled in after upload below
+      subject_breakdown: subjectBreakdown,
+      total_questions: totalQuestions,
+      page_count: compressed.length,
+    }).select('id').single();
+    if(insertErr) throw insertErr;
+    const pledgeId=pledgeRow.id;
+
+    status.textContent='Uploading pages…';
+    const imagePaths=[];
+    for(let i=0;i<compressed.length;i++){
+      const path=`${myUserId}/${pledgeId}/page-${String(i+1).padStart(3,'0')}.jpg`;
+      const { error: upErr } = await sb.storage.from('study-pledges').upload(path, compressed[i], {contentType:'image/jpeg'});
+      if(upErr) throw upErr;
+      imagePaths.push(path);
+    }
+
+    status.textContent='Assembling the PDF for your record…';
+    const pdf=new window.jspdf.jsPDF();
+    for(let i=0;i<compressed.length;i++){
+      if(i>0) pdf.addPage();
+      const dataUrl=await new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(compressed[i]); });
+      const img=await new Promise(res=>{ const im=new Image(); im.onload=()=>res(im); im.src=dataUrl; });
+      const pageW=pdf.internal.pageSize.getWidth(), pageH=pdf.internal.pageSize.getHeight();
+      const ratio=Math.min(pageW/img.width, pageH/img.height);
+      pdf.addImage(dataUrl,'JPEG',0,0,img.width*ratio,img.height*ratio);
+    }
+    const pdfBlob=pdf.output('blob');
+    const pdfPath=`${myUserId}/${pledgeId}/pledge.pdf`;
+    const { error: pdfUpErr } = await sb.storage.from('study-pledges').upload(pdfPath, pdfBlob, {contentType:'application/pdf'});
+    if(pdfUpErr) throw pdfUpErr;
+    await sb.from('study_pledges').update({pdf_path:pdfPath}).eq('id',pledgeId);
+
+    status.textContent='Checking your pledge…';
+    const { data: sessionData } = await sb.auth.getSession();
+    const resp=await fetch(`${REVM2_CONFIG.SUPABASE_URL}/functions/v1/pledge-verify`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json', 'Authorization':`Bearer ${sessionData.session.access_token}`},
+      body: JSON.stringify({pledge_id: pledgeId, image_paths: imagePaths})
+    });
+    const result=await resp.json();
+    status.textContent = result.status==='accepted'
+      ? `Accepted — ${result.coins_awarded} effort coins added.`
+      : `Not accepted: ${result.reason||'see pledge history below'}`;
+
+    chosenFiles=[];
+    document.getElementById('pageFiles').value='';
+    document.getElementById('photoThumbs').innerHTML='';
+    renderSubjectRows();
+    regenerateCode();
+    loadCoinBalance();
+    loadPledgeHistory();
+  }catch(e){
+    status.textContent='Something went wrong: '+(e.message||e);
+  }finally{
+    updateSubmitEnabled();
+  }
+}
+
+async function loadCoinBalance(){
+  const { data } = await sb.from('effort_coin_transactions').select('amount').eq('user_id', myUserId);
+  const total=(data||[]).reduce((s,r)=>s+r.amount,0);
+  document.getElementById('coinBalance').textContent=total;
+}
+
+async function loadPledgeHistory(){
+  const { data: pledges } = await sb.from('study_pledges').select('*').eq('user_id', myUserId).order('created_at',{ascending:false}).limit(20);
+  const wrap=document.getElementById('pledgeHistory');
+  if(!pledges || !pledges.length){ wrap.innerHTML='No pledges submitted yet.'; return; }
+  wrap.innerHTML=pledges.map(p=>{
+    const date=new Date(p.created_at).toLocaleString([], {dateStyle:'medium', timeStyle:'short'});
+    const canAppeal = (p.status==='rejected' || p.status==='flagged');
+    return `<div class="pl-history-row">
+      <div class="pl-history-top">
+        <span>${p.total_questions} questions</span>
+        <span class="pl-status-pill ${p.status}">${p.status.replace('_',' ')}</span>
+      </div>
+      <div class="pl-history-meta">${date}${p.coins_awarded?` · +${p.coins_awarded} coins`:''}${p.reject_reason?` · ${escHtml(p.reject_reason)}`:''}${p.flagged_reason?` · ${escHtml(p.flagged_reason)}`:''}</div>
+      ${canAppeal?`<button class="btn btn-ghost btn-sm" style="margin-top:0.5rem;" onclick="fileAppeal('${p.id}', this)">File an appeal</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+async function fileAppeal(pledgeId, btn){
+  btn.disabled=true;
+  btn.textContent='Filing…';
+  const { error } = await sb.from('pledge_appeals').insert({pledge_id:pledgeId, user_id:myUserId});
+  if(error){ alert('Could not file the appeal: '+error.message); btn.disabled=false; btn.textContent='File an appeal'; return; }
+  await sb.from('study_pledges').update({status:'appeal_pending'}).eq('id',pledgeId);
+  loadPledgeHistory();
+}
+
+function escAttr(s){ return escHtml(s).replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>
