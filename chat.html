@@ -470,7 +470,7 @@ async function handleCallSignal(payload){
     callState = 'incoming';
     iWasCaller = false;
     showRingingOverlay(`Incoming ${callType==='video'?'video':'voice'} call…`, [
-      `<div class="call-btn-wrap"><button class="call-btn decline" onclick="declineCall()">${ICON_CLOSE}</button><span class="call-btn-label">Decline</span></div>`,
+      `<div class="call-btn-wrap"><button class="call-btn decline" onclick="declineCall()">${ICON_PHONE}</button><span class="call-btn-label">Decline</span></div>`,
       `<div class="call-btn-wrap"><button class="call-btn accept" onclick="acceptCall()">${ICON_PHONE}</button><span class="call-btn-label">Accept</span></div>`
     ]);
     startCallRingtone();
@@ -571,7 +571,7 @@ function showRingingOverlay(subText, buttonsHtml){
   if(buttonsHtml.length){
     controls.innerHTML = buttonsHtml.join('');
   } else {
-    controls.innerHTML = `<div class="call-btn-wrap"><button class="call-btn decline" onclick="cancelOutgoingCall()">${ICON_CLOSE}</button><span class="call-btn-label">Cancel</span></div>`;
+    controls.innerHTML = `<div class="call-btn-wrap"><button class="call-btn decline" onclick="cancelOutgoingCall()">${ICON_PHONE}</button><span class="call-btn-label">Cancel</span></div>`;
   }
 }
 
