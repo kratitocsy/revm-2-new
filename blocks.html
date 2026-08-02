@@ -95,6 +95,68 @@
 .ext-mock-folder-pick{display:flex;flex-direction:column;align-items:center;gap:0.25rem;font-size:0.62rem;color:var(--text);background:var(--s1);border:1px dashed var(--gold-border);border-radius:6px;padding:0.5rem 0.7rem;}
 .ext-step-note{font-size:0.72rem;color:var(--muted);line-height:1.55;margin-top:0.65rem;}
 @media(max-width:600px){.ext-guide{grid-template-columns:1fr;}}
+
+/* Schedule slot rows - was a flex-wrap row with mismatched item heights,
+   which wrapped unpredictably and left labels/inputs zig-zagging out of
+   line with each other at modal width. Grid fixes both the misalignment
+   (every column has a fixed track, not content-driven wrapping) and the
+   "cheap" look (native unstyled time/number inputs now match the rest of
+   the dark theme instead of rendering as plain white browser controls). */
+.sch-slots{display:flex;flex-direction:column;gap:0.9rem;}
+.sch-slot-card{
+  position:relative;background:var(--s1);border:1px solid var(--border2);
+  border-radius:6px;padding:1.15rem 1rem 0.9rem;transition:border-color 0.15s ease;
+}
+.sch-slot-card:hover{border-color:var(--gold-border);}
+.sch-slot-card.is-sleep{border-color:var(--gold-border);background:linear-gradient(180deg,var(--gold-dim),var(--s1) 65%);}
+.sch-slot-num{
+  position:absolute;top:-0.6rem;left:0.9rem;background:var(--s2);
+  border:1px solid var(--border2);color:var(--muted);font-size:0.6rem;
+  font-weight:800;letter-spacing:0.1em;text-transform:uppercase;
+  padding:0.15rem 0.55rem;border-radius:3px;
+}
+.sch-slot-card.is-sleep .sch-slot-num{border-color:var(--gold-border);color:var(--gold);}
+.sch-slot-grid{
+  display:grid;
+  grid-template-columns:104px minmax(120px,1.3fr) minmax(120px,1.1fr) 116px 116px 96px 32px;
+  gap:0.7rem;align-items:start;
+}
+.sch-field label{
+  display:block;font-size:0.6rem;font-weight:700;letter-spacing:0.09em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:0.35rem;
+  height:0.75rem;line-height:0.75rem;white-space:nowrap;overflow:hidden;
+}
+.sch-field .sch-hint{
+  font-size:0.65rem;color:var(--muted);margin-top:0.3rem;
+  min-height:0.8rem;line-height:0.8rem;
+}
+.sch-slot-grid select,.sch-slot-grid input[type=text],.sch-slot-grid input[type=time],.sch-slot-grid input[type=number]{
+  width:100%;box-sizing:border-box;background:var(--black);
+  border:1px solid var(--border2);color:var(--text);padding:0 0.6rem;
+  font-family:var(--font);font-size:0.8rem;outline:none;color-scheme:dark;
+  height:2.35rem;
+}
+.sch-slot-grid select:focus,.sch-slot-grid input:focus{border-color:var(--gold);}
+.sch-slot-grid select:disabled,.sch-slot-grid input:disabled{opacity:0.35;cursor:not-allowed;}
+.sch-sleep-toggle{
+  display:flex;align-items:center;gap:0.4rem;background:var(--black);
+  border:1px solid var(--border2);padding:0 0.65rem;cursor:pointer;
+  white-space:nowrap;height:2.35rem;box-sizing:border-box;font-size:0.78rem;color:var(--text);
+}
+.sch-sleep-toggle:has(input:checked){border-color:var(--gold);background:var(--gold-dim);color:var(--gold);}
+.sch-sleep-toggle input{accent-color:var(--gold);}
+.sch-remove-btn{
+  height:2.35rem;width:2.35rem;padding:0;align-self:end;
+  display:flex;align-items:center;justify-content:center;
+  background:transparent;border:1px solid var(--border2);color:var(--muted);
+  cursor:pointer;font-size:1rem;line-height:1;
+}
+.sch-remove-btn:hover{border-color:var(--danger);color:var(--danger);}
+@media(max-width:640px){
+  .sch-slot-grid{grid-template-columns:1fr 1fr;row-gap:0.7rem;}
+  .sch-remove-btn{grid-column:1/-1;justify-self:start;width:auto;padding:0 0.75rem;gap:0.4rem;}
+  .sch-remove-btn::after{content:'Remove slot';font-size:0.72rem;}
+}
 </style>
 </head>
 <body>
@@ -262,7 +324,7 @@
 
       <!-- Schedule builder / editor modal -->
       <div class="modal-overlay" id="scheduleModal">
-        <div class="modal" style="max-width:560px;max-height:85vh;overflow-y:auto;">
+        <div class="modal" style="max-width:720px;max-height:85vh;overflow-y:auto;">
           <h3 id="scheduleModalTitle">New schedule</h3>
           <div class="bl-field">
             <label>Name</label>
@@ -283,7 +345,7 @@
           </div>
           <div class="bl-field">
             <label>Slots (in order)</label>
-            <div id="schSlots"></div>
+            <div id="schSlots" class="sch-slots"></div>
             <button type="button" class="btn btn-ghost btn-sm" style="margin-top:0.6rem;" onclick="addScheduleSlotRow()">+ Add slot</button>
             <datalist id="schSubjectOptions"></datalist>
           </div>
@@ -1348,52 +1410,67 @@ function slotRowHtml(seq, presets, slot, defaultStart){
   const isAuto = !slot && defaultStart ? '1' : '0';
   const isSleep = !!(slot && slot.is_sleep);
   return `
-  <div class="site-add-row" style="flex-wrap:wrap;gap:0.5rem;align-items:flex-end;margin-bottom:0.6rem;" id="schSlotRow${seq}" data-orig-id="${slot?slot.id:''}">
-    <div style="min-width:110px;">
-      <label style="font-size:0.7rem;color:var(--muted);">&nbsp;</label><br>
-      <label style="display:flex;align-items:center;gap:0.35rem;white-space:nowrap;">
-        <input type="checkbox" id="schSlotSleep${seq}" ${isSleep?'checked':''} onchange="toggleSleepSlotFields(${seq})"> 😴 Sleep
-      </label>
+  <div class="sch-slot-card${isSleep?' is-sleep':''}" id="schSlotRow${seq}" data-orig-id="${slot?slot.id:''}">
+    <div class="sch-slot-num">Slot</div>
+    <div class="sch-slot-grid">
+      <div class="sch-field">
+        <label>Type</label>
+        <label class="sch-sleep-toggle">
+          <input type="checkbox" id="schSlotSleep${seq}" ${isSleep?'checked':''} onchange="toggleSleepSlotFields(${seq})"> 😴 Sleep
+        </label>
+      </div>
+      <div class="sch-field" id="schSlotPresetWrap${seq}">
+        <label>Block</label>
+        <select id="schSlotPreset${seq}" ${isSleep?'disabled':''}>${opts||'<option value="">No saved blocks yet</option>'}</select>
+      </div>
+      <div class="sch-field" id="schSlotSubjectWrap${seq}">
+        <label>Subject</label>
+        <input type="text" id="schSlotSubject${seq}" list="schSubjectOptions" value="${escHtml(slot&&slot.subject?slot.subject:'')}" placeholder="e.g. Physics" ${isSleep?'disabled':''}>
+      </div>
+      <div class="sch-field">
+        <label>Start</label>
+        <input type="time" id="schSlotStart${seq}" value="${startValue}" data-auto="${isAuto}" oninput="onScheduleSlotStartEdited(${seq});updateAmPmPreview(${seq},'Start')" title="Auto-filled from the previous slot's end time + break. Edit freely — it'll stop following once you change it.">
+        <div class="sch-hint" id="schSlotStartAmPm${seq}">${formatTimeDisplay(startValue)}</div>
+      </div>
+      <div class="sch-field">
+        <label>End</label>
+        <input type="time" id="schSlotEnd${seq}" value="${slot?slot.end_time.slice(0,5):''}" oninput="onScheduleSlotTimingChanged(${seq});updateAmPmPreview(${seq},'End')">
+        <div class="sch-hint" id="schSlotEndAmPm${seq}">${formatTimeDisplay(slot?slot.end_time.slice(0,5):'')}</div>
+      </div>
+      <div class="sch-field">
+        <label>Break (min)</label>
+        <input type="number" min="0" id="schSlotBreak${seq}" value="${slot?slot.break_after_minutes:0}" oninput="onScheduleSlotTimingChanged(${seq})">
+      </div>
+      <button type="button" class="sch-remove-btn" title="Remove slot" onclick="requestRemoveSlotRow(${seq})">✕</button>
     </div>
-    <div style="flex:1;min-width:140px;" id="schSlotPresetWrap${seq}">
-      <label style="font-size:0.7rem;color:var(--muted);">Block</label><br>
-      <select id="schSlotPreset${seq}" style="width:100%;" ${isSleep?'disabled':''}>${opts||'<option value="">No saved blocks yet</option>'}</select>
-    </div>
-    <div style="flex:1;min-width:120px;" id="schSlotSubjectWrap${seq}">
-      <label style="font-size:0.7rem;color:var(--muted);">Subject</label><br>
-      <input type="text" id="schSlotSubject${seq}" list="schSubjectOptions" value="${escHtml(slot&&slot.subject?slot.subject:'')}" placeholder="e.g. Physics" style="width:100%;" ${isSleep?'disabled':''}>
-    </div>
-    <div>
-      <label style="font-size:0.7rem;color:var(--muted);">Start</label><br>
-      <input type="time" id="schSlotStart${seq}" value="${startValue}" data-auto="${isAuto}" oninput="onScheduleSlotStartEdited(${seq});updateAmPmPreview(${seq},'Start')" title="Auto-filled from the previous slot's end time + break. Edit freely — it'll stop following once you change it.">
-      <div style="font-size:0.68rem;color:var(--muted);margin-top:0.2rem;" id="schSlotStartAmPm${seq}">${formatTimeDisplay(startValue)}</div>
-    </div>
-    <div>
-      <label style="font-size:0.7rem;color:var(--muted);">End</label><br>
-      <input type="time" id="schSlotEnd${seq}" value="${slot?slot.end_time.slice(0,5):''}" oninput="onScheduleSlotTimingChanged(${seq});updateAmPmPreview(${seq},'End')">
-      <div style="font-size:0.68rem;color:var(--muted);margin-top:0.2rem;" id="schSlotEndAmPm${seq}">${formatTimeDisplay(slot?slot.end_time.slice(0,5):'')}</div>
-    </div>
-    <div>
-      <label style="font-size:0.7rem;color:var(--muted);">Break after (min)</label><br>
-      <input type="number" min="0" id="schSlotBreak${seq}" value="${slot?slot.break_after_minutes:0}" style="width:80px;" oninput="onScheduleSlotTimingChanged(${seq})">
-    </div>
-    <button type="button" class="btn btn-ghost btn-sm" onclick="requestRemoveSlotRow(${seq})">Remove</button>
   </div>`;
+}
+
+// Keeps each card's "Slot N" badge in sync with its actual position after
+// rows are added/removed - the seq counter itself is internal and never
+// reused, so it can't be used directly as the display number.
+function renumberScheduleSlots(){
+  [...document.getElementById('schSlots').children].forEach((row,i)=>{
+    const badge=row.querySelector('.sch-slot-num');
+    if(badge) badge.textContent = `Slot ${i+1}`;
+  });
 }
 
 function toggleSleepSlotFields(seq){
   const isSleep=document.getElementById(`schSlotSleep${seq}`).checked;
   document.getElementById(`schSlotPreset${seq}`).disabled=isSleep;
   document.getElementById(`schSlotSubject${seq}`).disabled=isSleep;
+  document.getElementById(`schSlotRow${seq}`)?.classList.toggle('is-sleep', isSleep);
 }
 
 function requestRemoveSlotRow(seq){
   const row=document.getElementById(`schSlotRow${seq}`);
   const orig=originalScheduleSlotsById[row.dataset.origId];
   if(orig && orig.is_sleep){
-    openScheduleGate(null, ()=>row.remove(), 250, 'sleep slot');
+    openScheduleGate(null, ()=>{ row.remove(); renumberScheduleSlots(); }, 250, 'sleep slot');
   } else {
     row.remove();
+    renumberScheduleSlots();
   }
 }
 
@@ -1411,6 +1488,7 @@ function addScheduleSlotRow(slot){
     }
   }
   document.getElementById('schSlots').insertAdjacentHTML('beforeend', slotRowHtml(seq, schedulePresetsCache, slot, defaultStart));
+  renumberScheduleSlots();
 }
 async function openScheduleBuilder(existing){
   const { data: presets } = await sb.from('focus_lock_presets').select('id,name').eq('user_id', myUserId).order('name');
