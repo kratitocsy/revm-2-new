@@ -587,6 +587,26 @@ async fn run_guard_tick(
         closed.extend(killed_apps);
     }
 
+    // Whitelist mode's stronger promise: allowed apps aren't just spared,
+    // they're expected to stay open - bring one back if the person closed
+    // it themselves or it crashed mid-session. No-op in blacklist mode
+    // and when the allow list is empty (see sync_and_relaunch_whitelisted).
+    let mut relaunched_apps: Vec<String> = Vec::new();
+    if blocked.mode == app_guard::AppMode::Whitelist {
+        relaunched_apps = app_guard::sync_and_relaunch_whitelisted(app, &blocked.apps);
+        if !relaunched_apps.is_empty() {
+            eprintln!("app_guard: relaunched allowed apps: {relaunched_apps:?}");
+            notify(
+                app,
+                "RevM2 - App reopened",
+                &format!(
+                    "{} was closed during your session and has been reopened - it's on your allow list.",
+                    relaunched_apps.join(", ")
+                ),
+            );
+        }
+    }
+
     // Always on, independent of the user's own blacklist/whitelist - see
     // app_guard::kill_shell_processes for why.
     let killed_shells = app_guard::kill_shell_processes();
@@ -597,6 +617,8 @@ async fn run_guard_tick(
 
     let status_text = if !closed.is_empty() {
         format!("RevM2 - closed: {}", closed.join(", "))
+    } else if !relaunched_apps.is_empty() {
+        format!("RevM2 - reopened: {}", relaunched_apps.join(", "))
     } else if let Some((name, remaining)) = soonest_grace {
         format!("RevM2 - {name} extension missing, {remaining}s until blocked")
     } else {

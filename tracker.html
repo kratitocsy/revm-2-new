@@ -1049,11 +1049,12 @@ async function startSelectedBlockPreset(){
   const endsAt = preset.duration_minutes ? new Date(Date.now()+preset.duration_minutes*60000).toISOString() : null;
   const presetMode = preset.mode==='whitelist' ? 'whitelist' : 'blacklist';
   const presetApps = preset.apps || [];
+  const presetAppsMode = preset.apps_mode==='whitelist' ? 'whitelist' : 'blacklist';
 
   const { error } = await sb.from('focus_lock_sessions').insert({
     user_id: myUserId, block_name: preset.name, sites: preset.sites,
     mode: presetMode, youtube_rules: preset.youtube_rules || null,
-    apps: presetApps,
+    apps: presetApps, apps_mode: presetAppsMode,
     ends_at: endsAt, unlimited: !preset.duration_minutes, source: 'web'
   });
   if(error){
@@ -1062,7 +1063,7 @@ async function startSelectedBlockPreset(){
   }
 
   if(isDesktopApp()){
-    try{ await window.__TAURI__.core.invoke('set_blocked_apps', {apps: presetApps}); }
+    try{ await window.__TAURI__.core.invoke('set_blocked_apps', {apps: presetApps, mode: presetAppsMode}); }
     catch(e){ console.error('RM2 desktop invoke error (set_blocked_apps):', e); }
   }
   sendToExtension({ type:'RM2_START_SESSION', payload:{ blockName:preset.name, sites:preset.sites, durationMinutes: preset.duration_minutes || null, mode:presetMode, youtubeRules: preset.youtube_rules || null } });
@@ -1075,11 +1076,11 @@ async function startSelectedBlockPreset(){
 async function pollBlockStatusForDesktop(){
   if(!myUserId) return;
   const { data } = await sb.from('focus_lock_sessions')
-    .select('apps, ends_at').eq('user_id', myUserId).eq('active', true).maybeSingle();
+    .select('apps, apps_mode, ends_at').eq('user_id', myUserId).eq('active', true).maybeSingle();
   if(isDesktopApp()){
     try{ await window.__TAURI__.core.invoke('set_session_active', {active: !!data, endsAt: data?.ends_at || null}); }
     catch(e){ console.error('RM2 desktop invoke error (poll):', e); }
-    try{ await window.__TAURI__.core.invoke('set_blocked_apps', {apps: data?.apps || []}); }
+    try{ await window.__TAURI__.core.invoke('set_blocked_apps', {apps: data?.apps || [], mode: data?.apps_mode==='whitelist' ? 'whitelist' : 'blacklist'}); }
     catch(e){ console.error('RM2 desktop invoke error (set_blocked_apps):', e); }
   }
 }

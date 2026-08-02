@@ -6,6 +6,8 @@
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use sysinfo::System;
+use tauri::AppHandle;
+use tauri_plugin_store::StoreExt;
 
 /// Mirrors the `apps_mode` check constraint on focus_lock_sessions /
 /// focus_lock_presets in Supabase ('blacklist' | 'whitelist'). Serialized
@@ -48,13 +50,16 @@ pub type SharedBlockList = Arc<Mutex<BlockedApps>>;
 
 /// Processes we refuse to touch even in whitelist mode ("close everything
 /// except these"), because killing them takes down the whole desktop
-/// session rather than just an app the user meant to step away from.
-/// This is deliberately broader than the picker's skip_prefixes below -
-/// that list only trims noise from a UI the user is choosing FROM, this
-/// one is a hard safety net for logic that kills things automatically.
-/// Best-effort: it covers core Windows shell/session processes, not every
-/// third-party background agent (antivirus, GPU driver helpers, etc.) -
-/// those can still be added to the allow list by the user if needed.
+/// session, destabilizes the OS, or breaks hardware (display/audio/
+/// network) rather than just closing an app the user meant to step away
+/// from. This is deliberately broader than the picker's skip_prefixes
+/// below - that list only trims noise from a UI the user is choosing
+/// FROM, this one is a hard safety net for logic that kills things
+/// automatically. Covers core Windows shell/session processes, built-in
+/// antivirus, GPU/display driver helpers, and core networking/servicing -
+/// still best-effort, not exhaustive across every vendor's background
+/// agent, but the common/critical ones are named explicitly rather than
+/// left to whatever the user happened to also add to their allow list.
 const NEVER_KILL_PREFIXES: &[&str] = &[
     "svchost", "system", "idle", "registry", "runtime", "dwm", "csrss",
     "wininit", "winlogon", "smss", "lsass", "services", "conhost",
@@ -73,6 +78,26 @@ const NEVER_KILL_PREFIXES: &[&str] = &[
     // leaving the window blank/dead and unable to ever report the
     // session as over.
     "msedgewebview2",
+    // Windows Defender / built-in antivirus - killing these mid-scan or
+    // mid-realtime-protection is a stability/security regression far
+    // worse than anything gained by "blocking" them.
+    "msmpeng", "nissrv", "mpcmdrun", "securityhealthservice",
+    "windowsdefender",
+    // GPU/display driver helper processes. These aren't optional UI you
+    // can safely close - on some driver versions killing them mid-session
+    // has taken the display driver down with them (black screen / forced
+    // re-login), which is a much worse outcome than the app staying open.
+    "nvcontainer", "nvdisplay.container", "nvwmi64",
+    "igfxem", "igfxtray", "igfxhk", "igfxext",
+    "amdrsserv", "radeonsoftware", "atieclxx", "atiesrxx",
+    // Core networking/Bluetooth/audio stack - killing these can drop wifi,
+    // Bluetooth peripherals, or all system audio for the rest of the
+    // session, none of which is what "block distracting apps" means.
+    "wlanext", "bthudtask", "audiosrv", "rtkaudservice", "rtkauduservice64",
+    // Windows Update / servicing - not urgent to kill, and interrupting a
+    // servicing operation mid-write is the kind of thing that produces a
+    // corrupted update rather than a "blocked" one.
+    "trustedinstaller", "tiworker", "wuauclt", "usoclient",
 ];
 
 /// A running process, for the "pick which apps to block" UI. We surface
@@ -224,14 +249,15 @@ fn kill_blacklisted(apps: &[String]) -> Vec<String> {
 }
 
 fn kill_not_whitelisted(allowed: &[String]) -> Vec<String> {
-    // An empty allow list almost certainly means "haven't picked apps
-    // yet" rather than "block literally everything" - not touching
-    // anything is the safer failure mode, same spirit as the empty-list
-    // no-op in the blacklist branch above.
-    if allowed.is_empty() {
-        return Vec::new();
-    }
-
+    // Previously this treated an empty allow list as "user hasn't picked
+    // apps yet" and no-op'd, on the assumption that's the only way an
+    // empty list could arrive here. That's no longer true: blocks.html's
+    // UI refuses to start a whitelist block with zero apps picked, but
+    // the schedule-tick Edge Function's sleep slot deliberately sends
+    // apps:[] under whitelist mode to mean "allow nothing, close
+    // everything" (see supabase/functions/schedule-tick/index.ts). So an
+    // empty list here is now a real, intentional "block all apps" -
+    // fall through to the normal kill loop below instead of skipping it.
     let browser_names: Vec<&'static str> = crate::browser_guard::supported_browsers()
         .into_iter()
         .flat_map(|t| t.process_names.iter().copied())
@@ -263,4 +289,95 @@ fn kill_not_whitelisted(allowed: &[String]) -> Vec<String> {
         }
     }
     killed.into_iter().collect()
+}
+
+// Persists the real executable path of every allowed app we've ever seen
+// running, so a later relaunch (below) works even after the desktop app
+// itself has restarted since that app was last open.
+const APP_PATHS_STORE: &str = "revm2-app-paths.json";
+const APP_PATHS_KEY: &str = "known_app_paths"; // lowercased process name -> full exe path
+
+/// Whitelist mode's stronger promise: an allowed app isn't just spared
+/// from being killed, it's actively expected to stay running - if the
+/// user closes one themselves mid-session (or it crashes), this brings
+/// it back. Two passes over the process list:
+///   1. For every allowed app that IS currently running, record/update
+///      its real executable path in the on-disk store, so we still know
+///      where to find it if it later disappears - including across the
+///      desktop app's own restarts.
+///   2. For every allowed app that is NOT currently running, relaunch it
+///      from the most recently known path, if we have one.
+///
+/// Best-effort, not a guarantee: an allowed app that has never been seen
+/// running - typed in manually rather than picked from the running-apps
+/// list, or picked but not actually launched even once since - has no
+/// known path yet and is silently skipped. Same "can't act on what we
+/// don't know" reasoning as the rest of this module; nothing here can
+/// discover an install location it's never observed in memory.
+pub fn sync_and_relaunch_whitelisted(app: &AppHandle, allowed: &[String]) -> Vec<String> {
+    if allowed.is_empty() {
+        return Vec::new();
+    }
+
+    let store = match app.store(APP_PATHS_STORE) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("app_guard: failed to open app-paths store: {e}");
+            return Vec::new();
+        }
+    };
+    let mut known_paths: std::collections::HashMap<String, String> = store
+        .get(APP_PATHS_KEY)
+        .and_then(|v| serde_json::from_value(v).ok())
+        .unwrap_or_default();
+
+    let mut sys = System::new_all();
+    sys.refresh_processes();
+
+    let mut running_lower = std::collections::HashSet::new();
+    let mut paths_changed = false;
+    for process in sys.processes().values() {
+        let name = process.name(); // &str in sysinfo 0.30
+        if !allowed.iter().any(|a| a.eq_ignore_ascii_case(name)) {
+            continue;
+        }
+        let lower = name.to_lowercase();
+        running_lower.insert(lower.clone());
+
+        // exe() can come back None (permissions, some system processes) -
+        // don't overwrite a previously-known-good path with nothing.
+        if let Some(exe_path) = process.exe() {
+            if !exe_path.as_os_str().is_empty() {
+                if let Some(path_str) = exe_path.to_str() {
+                    if known_paths.get(&lower).map(String::as_str) != Some(path_str) {
+                        known_paths.insert(lower, path_str.to_string());
+                        paths_changed = true;
+                    }
+                }
+            }
+        }
+    }
+
+    if paths_changed {
+        store.set(APP_PATHS_KEY, serde_json::json!(known_paths));
+        if let Err(e) = store.save() {
+            eprintln!("app_guard: failed to save known app paths: {e}");
+        }
+    }
+
+    let mut relaunched = Vec::new();
+    for app_name in allowed {
+        let lower = app_name.to_lowercase();
+        if running_lower.contains(&lower) {
+            continue; // already running, nothing to do
+        }
+        if let Some(path) = known_paths.get(&lower) {
+            match std::process::Command::new(path).spawn() {
+                Ok(_) => relaunched.push(app_name.clone()),
+                Err(e) => eprintln!("app_guard: failed to relaunch {app_name} from {path}: {e}"),
+            }
+        }
+        // else: never seen running this app - no known path, can't relaunch.
+    }
+    relaunched
 }
