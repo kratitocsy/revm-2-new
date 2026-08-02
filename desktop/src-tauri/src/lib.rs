@@ -2,6 +2,7 @@ mod app_guard;
 mod browser_guard;
 mod gate_guard;
 mod heartbeat;
+mod native_poll;
 mod session_bridge;
 mod taskmgr_backstop;
 mod taskmgr_guard;
@@ -192,15 +193,15 @@ pub struct BackstopFireAt(pub Arc<std::sync::atomic::AtomicI64>);
 pub struct BrowserGraceTracker(pub Mutex<HashMap<String, i64>>);
 
 #[tauri::command]
-fn set_session_active(
+async fn set_session_active(
     app: AppHandle,
-    state: tauri::State<SessionState>,
-    blocked_apps: tauri::State<app_guard::SharedBlockList>,
-    grace_tracker: tauri::State<Arc<BrowserGraceTracker>>,
-    heartbeat_state: tauri::State<Arc<heartbeat::HeartbeatState>>,
-    quit_item: tauri::State<MenuItem<tauri::Wry>>,
-    last_sync: tauri::State<LastSyncState>,
-    backstop_fire_at: tauri::State<BackstopFireAt>,
+    state: tauri::State<'_, SessionState>,
+    blocked_apps: tauri::State<'_, app_guard::SharedBlockList>,
+    grace_tracker: tauri::State<'_, Arc<BrowserGraceTracker>>,
+    heartbeat_state: tauri::State<'_, Arc<heartbeat::HeartbeatState>>,
+    quit_item: tauri::State<'_, MenuItem<tauri::Wry>>,
+    last_sync: tauri::State<'_, LastSyncState>,
+    backstop_fire_at: tauri::State<'_, BackstopFireAt>,
     active: bool,
     // Optional and independent of `active` - callers that don't yet know
     // the real end time (e.g. the optimistic active:true fired right at
@@ -210,12 +211,48 @@ fn set_session_active(
     // that case.
     ends_at: Option<String>,
 ) -> Result<(), String> {
-    // Any call at all - true or false - proves the web page's poll is
-    // still alive and reaching us. This is what the watchdog checks for
-    // staleness, independent of whatever `active` value came in.
-    last_sync.0.store(now_ts(), Ordering::SeqCst);
+    apply_session_state(
+        &app,
+        &state.0,
+        blocked_apps.inner(),
+        grace_tracker.inner(),
+        heartbeat_state.inner(),
+        quit_item.inner(),
+        &last_sync.0,
+        &backstop_fire_at.0,
+        active,
+        ends_at,
+    )
+    .await;
+    Ok(())
+}
 
-    let was_active = state.0.swap(active, Ordering::SeqCst);
+// The actual logic behind set_session_active, pulled out so
+// native_poll.rs's fallback Supabase poll can drive the exact same state
+// machine as the webview's own poll - the two are meant to be
+// indistinguishable to everything downstream (browser_guard, app_guard,
+// the close/quit lock, the taskmgr backstop). See native_poll.rs's module
+// doc for why a second caller of this exists at all.
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn apply_session_state(
+    app: &AppHandle,
+    state: &Arc<AtomicBool>,
+    blocked_apps: &app_guard::SharedBlockList,
+    grace_tracker: &Arc<BrowserGraceTracker>,
+    heartbeat_state: &Arc<heartbeat::HeartbeatState>,
+    quit_item: &MenuItem<tauri::Wry>,
+    last_sync: &Arc<std::sync::atomic::AtomicI64>,
+    backstop_fire_at: &Arc<std::sync::atomic::AtomicI64>,
+    active: bool,
+    ends_at: Option<String>,
+) {
+    // Any call at all - true or false - proves whichever poll called this
+    // (webview or native) is still alive and reaching us. This is what the
+    // watchdog checks for staleness, independent of whatever `active`
+    // value came in.
+    last_sync.store(now_ts(), Ordering::SeqCst);
+
+    let was_active = state.swap(active, Ordering::SeqCst);
     write_session_lock(active);
 
     // Session genuinely ending (the normal path, or the watchdog below) -
@@ -268,7 +305,7 @@ fn set_session_active(
             None => None,
         };
         if let Some(fire_at) = fire_at {
-            let prev = backstop_fire_at.0.swap(fire_at, Ordering::SeqCst);
+            let prev = backstop_fire_at.swap(fire_at, Ordering::SeqCst);
             if prev != fire_at {
                 if let Err(e) = taskmgr_backstop::schedule(fire_at) {
                     eprintln!("taskmgr_backstop: failed to schedule: {e}");
@@ -284,7 +321,7 @@ fn set_session_active(
         // pollBlockStatusForDesktop) and most of the time there's no
         // active session at all, meant spawning schtasks.exe every 5
         // seconds forever during ordinary idle use.
-        let prev = backstop_fire_at.0.swap(0, Ordering::SeqCst);
+        let prev = backstop_fire_at.swap(0, Ordering::SeqCst);
         if prev != 0 {
             if let Err(e) = taskmgr_backstop::cancel() {
                 eprintln!("taskmgr_backstop: failed to cancel: {e}");
@@ -305,15 +342,13 @@ fn set_session_active(
     // redundant start-while-already-active, shouldn't re-trigger it).
     if active && !was_active {
         let app = app.clone();
-        let blocked_apps = blocked_apps.inner().clone();
-        let grace_tracker = grace_tracker.inner().clone();
-        let heartbeat_state = heartbeat_state.inner().clone();
+        let blocked_apps = blocked_apps.clone();
+        let grace_tracker = grace_tracker.clone();
+        let heartbeat_state = heartbeat_state.clone();
         tauri::async_runtime::spawn(async move {
             run_guard_tick(&app, &blocked_apps, &grace_tracker, &heartbeat_state).await;
         });
     }
-
-    Ok(())
 }
 
 // Manual override, independent of session state - lets the frontend (or
@@ -324,6 +359,32 @@ fn set_session_active(
 #[tauri::command]
 fn set_taskmgr_disabled(disabled: bool) -> Result<(), String> {
     taskmgr_guard::set_disabled(disabled)
+}
+
+// Called by shared.js's syncNativeAuthToken (see requireAuth()) so
+// native_poll.rs's fallback poll has a current Supabase access token to
+// work with, independent of whatever the webview's own poll is doing.
+// Safe to call redundantly - every call just overwrites the cached value,
+// and shared.js does call it redundantly on purpose (once after every
+// requireAuth(), and again on every onAuthStateChange event, including
+// token refreshes).
+#[tauri::command]
+fn sync_native_auth(
+    auth_state: tauri::State<Arc<native_poll::AuthState>>,
+    user_id: String,
+    access_token: String,
+    supabase_url: String,
+    supabase_anon_key: String,
+) -> Result<(), String> {
+    if let Ok(mut guard) = auth_state.0.lock() {
+        *guard = Some(native_poll::AuthInfo {
+            user_id,
+            access_token,
+            supabase_url,
+            supabase_anon_key,
+        });
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -389,6 +450,17 @@ fn get_blocked_apps(app: tauri::AppHandle) -> Result<BlockedAppsInfo, String> {
 fn set_blocked_apps(
     app: tauri::AppHandle,
     blocked: tauri::State<app_guard::SharedBlockList>,
+    apps: Vec<String>,
+    mode: Option<String>,
+) -> Result<(), String> {
+    apply_blocked_apps(&app, blocked.inner(), apps, mode)
+}
+
+// Shared by the tauri command above and native_poll.rs's fallback poll -
+// same reasoning as apply_session_state.
+pub(crate) fn apply_blocked_apps(
+    app: &tauri::AppHandle,
+    blocked: &app_guard::SharedBlockList,
     apps: Vec<String>,
     mode: Option<String>,
 ) -> Result<(), String> {
@@ -730,6 +802,11 @@ pub fn run() {
     // 0 = never notified yet; see CLOSE_NOTIFY_COOLDOWN_SECS above.
     let last_close_notify_ts = Arc::new(std::sync::atomic::AtomicI64::new(0));
     let exit_guard_session_active = session_active.clone();
+    // See native_poll.rs's module doc: the desktop app's own independent,
+    // OS-timer-driven check of Supabase, so schedule-driven blocks keep
+    // starting/ending correctly even when the webview's JS poll is
+    // throttled or paused (e.g. the monitor turning off).
+    let auth_state = Arc::new(native_poll::AuthState::new());
 
     // Starts listening immediately, independent of session state - the
     // extension heartbeats regardless of whether a focus session is
@@ -774,6 +851,7 @@ pub fn run() {
         .manage(gate_guard_state.clone())
         .manage(LastSyncState(last_sync.clone()))
         .manage(BackstopFireAt(backstop_fire_at.clone()))
+        .manage(auth_state.clone())
         .setup(move |app| {
             gate_guard_state.spawn_watchers(app.handle().clone());
 
@@ -891,6 +969,18 @@ pub fn run() {
                 backstop_fire_at.clone(),
             );
 
+            native_poll::spawn_native_session_poll(
+                app.handle().clone(),
+                session_active.clone(),
+                blocked_apps.clone(),
+                grace_tracker.clone(),
+                heartbeat_state.clone(),
+                quit_item.clone(),
+                last_sync.clone(),
+                backstop_fire_at.clone(),
+                auth_state.clone(),
+            );
+
             // Belt-and-braces alongside set_native_closable/set_closable
             // above: those hide/grey the close affordance, but this is
             // the real gate. Covers Alt+F4 and the taskbar icon's own
@@ -931,6 +1021,7 @@ pub fn run() {
             get_blocked_apps,
             set_blocked_apps,
             set_taskmgr_disabled,
+            sync_native_auth,
             gate_guard::gate_protection_start,
             gate_guard::gate_protection_stop
         ])

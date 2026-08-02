@@ -95,8 +95,38 @@ async function requireAuth(){
     const {data:{session}} = await sb.auth.getSession();
     if(!session){ window.location.href='login.html'; return null; }
     autoConnectDesktop(session.user.id); // no-op outside the desktop app
+    syncNativeAuthToken(session);
+    // Keeps the desktop app's own copy of the access token current as
+    // supabase-js refreshes it in the background, not just at page load -
+    // see syncNativeAuthToken's own doc comment for why this matters.
+    if(typeof window.__TAURI__ !== 'undefined'){
+      sb.auth.onAuthStateChange((_event, newSession)=>{ syncNativeAuthToken(newSession); });
+    }
     return session;
   }catch(e){ window.location.href='login.html'; return null; }
+}
+
+// Pushes the current Supabase access token to the desktop app's Rust
+// process (see the `sync_native_auth` command / native_poll.rs). The
+// desktop app's own enforcement otherwise depends entirely on THIS page's
+// setInterval(loadActiveBlock / pollBlockStatusForDesktop, 5000) poll to
+// learn when a schedule-driven block should start or end - and Chromium
+// (WebView2 on Windows included) deliberately throttles or pauses that
+// kind of timer once the window is treated as backgrounded, which can
+// happen just from the monitor turning off, even though nothing else
+// about the app or machine is actually asleep. Giving the Rust side its
+// own token lets it check Supabase directly on a native timer instead,
+// so enforcement keeps working through exactly that gap. Completely
+// inert outside the desktop app (window.__TAURI__ only exists there) and
+// safe to call redundantly - it only ever overwrites the cached token.
+function syncNativeAuthToken(session){
+  if(typeof window.__TAURI__ === 'undefined' || !window.__TAURI__.core || !session) return;
+  window.__TAURI__.core.invoke('sync_native_auth', {
+    userId: session.user.id,
+    accessToken: session.access_token,
+    supabaseUrl: REVM2_CONFIG.SUPABASE_URL,
+    supabaseAnonKey: REVM2_CONFIG.SUPABASE_ANON,
+  }).catch(e=>console.error('RM2 desktop invoke error (sync_native_auth):', e));
 }
 
 // Silently pairs this desktop app instance with the signed-in account, the
