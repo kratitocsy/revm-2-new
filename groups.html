@@ -414,6 +414,17 @@
         <div id="challengeList" class="card-body" style="padding:0.5rem 0.85rem;font-size:0.76rem;color:var(--muted);">Loading…</div>
       </div>
 
+      <!-- MATERIALS -->
+      <div class="card" style="margin-bottom:1rem;" id="materialsCard">
+        <div class="card-header">
+          <span class="card-title"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Materials</span>
+          <button class="btn btn-gold btn-sm" id="materialsUploadBtn" style="display:none;" onclick="openMaterialUpload()">+ Upload</button>
+        </div>
+        <input type="file" id="materialFileInput" accept=".pdf,image/*" style="display:none;" onchange="handleMaterialFileChosen(event)">
+        <div id="materialsUploadStatus" style="display:none;padding:0.5rem 0.85rem;font-size:0.72rem;color:var(--muted);"></div>
+        <div id="materialsList" class="card-body" style="padding:0.5rem 0.85rem;font-size:0.76rem;color:var(--muted);">Loading…</div>
+      </div>
+
       <div class="invite-box" id="inviteBox" style="display:none;">
         <span style="font-size:0.7rem;color:var(--muted);">Invite link:</span>
         <input id="inviteLinkInput" readonly>
@@ -503,6 +514,11 @@
 
 <script src="shared.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";</script>
+<script src="materials.js"></script>
+<script src="materials-viewer.js"></script>
 <script>
 const sb = window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL, REVM2_CONFIG.SUPABASE_ANON);
 // go() comes from shared.js now (adds the branded page-transition buffer)
@@ -717,6 +733,57 @@ async function openGroup(groupId){
   initCamChannel(groupId);
 }
 
+async function loadMaterialsList(){
+  const listEl = document.getElementById('materialsList');
+  if(!currentGroup){ return; }
+  const groupId = currentGroup.id;
+  try{
+    const items = await RevmMaterials.listGroupMaterials(groupId);
+    if(currentGroup?.id !== groupId) return; // user switched groups mid-fetch
+    if(!items.length){
+      listEl.innerHTML = '<div style="padding:0.4rem 0;">No materials uploaded yet.</div>';
+      return;
+    }
+    listEl.innerHTML = items.map(m => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div style="cursor:pointer;flex:1;min-width:0;" onclick="RevmMaterialsViewer.openMaterialViewer('${m.id}')">
+          <div style="color:var(--text,#eee);font-size:0.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(m.title)}</div>
+          <div style="font-size:0.68rem;color:var(--dim);">${m.page_count} page${m.page_count===1?'':'s'} · ${m.source_type.toUpperCase()}</div>
+        </div>
+        <button class="icon-btn" onclick="RevmMaterialsViewer.openMaterialViewer('${m.id}')" title="Read">Read</button>
+      </div>
+    `).join('');
+  }catch(e){
+    console.error(e);
+    listEl.innerHTML = '<div style="padding:0.4rem 0;color:var(--danger,#e66);">Could not load materials.</div>';
+  }
+}
+
+function openMaterialUpload(){
+  document.getElementById('materialFileInput').click();
+}
+
+async function handleMaterialFileChosen(evt){
+  const file = evt.target.files[0];
+  evt.target.value = ''; // allow re-picking the same file later
+  if(!file || !currentGroup) return;
+  const title = prompt('Title for this material:', file.name.replace(/\.[^.]+$/, ''));
+  if(title === null) return; // cancelled
+  const groupId = currentGroup.id;
+  const statusEl = document.getElementById('materialsUploadStatus');
+  statusEl.style.display = 'block';
+  const setStatus = (s) => { statusEl.textContent = s; };
+  try{
+    await RevmMaterials.uploadGroupMaterial(groupId, file, title || file.name, setStatus);
+    statusEl.style.display = 'none';
+    if(currentGroup?.id === groupId) loadMaterialsList();
+  }catch(e){
+    console.error(e);
+    setStatus('Upload failed: ' + (e.message || e));
+    setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+  }
+}
+
 function closeDetail(){
   document.getElementById('detailView').style.display='none';
   document.getElementById('listView').style.display='block';
@@ -741,6 +808,9 @@ function renderGroupDetail(){
   if(!isAdmin && g.my_role){
     actions.innerHTML = `<button class="btn btn-danger btn-sm" onclick="leaveGroup()">Leave group</button>`;
   }
+
+  document.getElementById('materialsUploadBtn').style.display = isAdmin ? 'inline-block' : 'none';
+  loadMaterialsList();
 
   document.getElementById('adminSettingsCard').style.display = isAdmin ? 'block' : 'none';
   document.getElementById('inviteBox').style.display = (isAdmin && g.visibility==='private') ? 'flex' : 'none';
