@@ -33,6 +33,33 @@
 .gd-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;margin-bottom:1rem;}
 .gd-back{font-size:0.7rem;color:var(--muted);text-decoration:none;cursor:pointer;}
 .gd-back:hover{color:var(--gold);}
+.gd-layout{display:flex;gap:1.25rem;align-items:flex-start;}
+.gd-sidebar{flex:0 0 168px;display:flex;flex-direction:column;gap:0.2rem;position:sticky;top:1rem;}
+.gd-nav-item{display:flex;align-items:center;gap:0.5rem;padding:0.55rem 0.7rem;font-size:0.78rem;color:var(--muted);background:transparent;border:1px solid transparent;cursor:pointer;text-align:left;border-radius:2px;transition:background 0.15s,color 0.15s,border-color 0.15s;}
+.gd-nav-item:hover{color:var(--text);background:var(--s2);}
+.gd-nav-item.active{color:var(--gold);background:rgba(212,175,55,0.08);border-color:rgba(212,175,55,0.3);}
+.gd-content{flex:1;min-width:0;}
+.gd-panel{display:none;}
+.gd-panel.active{display:block;}
+.analytics-vs-row{display:flex;align-items:center;gap:0.9rem;padding:0.7rem 0.85rem;border-bottom:1px solid var(--border);}
+.analytics-vs-row:last-child{border-bottom:none;}
+.analytics-vs-label{flex:0 0 108px;font-size:0.72rem;color:var(--muted);}
+.analytics-vs-bars{flex:1;display:flex;flex-direction:column;gap:0.3rem;}
+.analytics-vs-bar-track{position:relative;height:7px;background:var(--s2);border-radius:4px;overflow:hidden;}
+.analytics-vs-bar-fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px;}
+.analytics-vs-bar-fill.me{background:var(--gold);}
+.analytics-vs-bar-fill.avg{background:var(--dim);}
+.analytics-vs-nums{display:flex;justify-content:space-between;font-size:0.68rem;color:var(--dim);}
+.analytics-member-pick{display:flex;flex-wrap:wrap;gap:0.4rem;padding:0.6rem 0.85rem;border-bottom:1px solid var(--border);}
+.analytics-member-chip{padding:0.3rem 0.65rem;font-size:0.72rem;border:1px solid var(--border);background:var(--s2);color:var(--text);cursor:pointer;border-radius:2px;}
+.analytics-member-chip.active{border-color:var(--gold);color:var(--gold);background:rgba(212,175,55,0.08);}
+.lb-row{display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.85rem;border-bottom:1px solid var(--border);font-size:0.78rem;}
+.lb-row:last-child{border-bottom:none;}
+.lb-row.me{background:rgba(212,175,55,0.06);}
+.lb-rank{flex:0 0 24px;color:var(--dim);font-weight:600;}
+.lb-name{flex:1;min-width:0;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lb-hours{flex:0 0 auto;color:var(--gold);font-size:0.72rem;}
+@media (max-width:720px){.gd-layout{flex-direction:column;}.gd-sidebar{flex-direction:row;flex-wrap:wrap;position:static;width:100%;}.gd-nav-item{flex:1 1 auto;justify-content:center;}}
 .member-row{display:flex;align-items:center;gap:0.75rem;padding:0.65rem 0.85rem;border-bottom:1px solid var(--border);}
 .avatar{width:38px;height:38px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;color:var(--muted);flex-shrink:0;transition:all 0.3s;overflow:hidden;}
 .avatar.live{filter:saturate(1) grayscale(0);box-shadow:0 0 0 2px var(--gold),0 0 12px rgba(200,169,110,0.6);color:var(--gold);animation:pulseGlow 2s ease-in-out infinite;}
@@ -324,6 +351,18 @@
         </div>
       </div>
 
+      <div class="gd-layout">
+      <aside class="gd-sidebar" id="gdSidebar">
+        <button class="gd-nav-item active" data-gtab="overview" onclick="setGroupTab('overview',this)">Overview</button>
+        <button class="gd-nav-item" data-gtab="materials" onclick="setGroupTab('materials',this)">Materials</button>
+        <button class="gd-nav-item" data-gtab="leaderboard" onclick="setGroupTab('leaderboard',this)">Leaderboard</button>
+        <button class="gd-nav-item" data-gtab="analytics" onclick="setGroupTab('analytics',this)">Analytics</button>
+        <button class="gd-nav-item" data-gtab="challenges" onclick="setGroupTab('challenges',this)">Challenges</button>
+        <button class="gd-nav-item" data-gtab="members" onclick="setGroupTab('members',this)">Members</button>
+      </aside>
+      <div class="gd-content">
+
+      <div class="gd-panel active" id="gdPanel-overview">
       <!-- CURRENT FOCUS TIME -->
       <div class="card focus-card" id="focusCard">
         <div class="focus-top">
@@ -404,17 +443,10 @@
           </div>
         </div>
       </div>
-
-      <!-- CHALLENGE PANEL -->
-      <div class="card" style="margin-bottom:1rem;border-color:rgba(200,169,110,0.3);">
-        <div class="card-header">
-          <span class="card-title"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg> Challenges</span>
-          <button class="btn btn-gold btn-sm" onclick="openChallengeModal()">+ Give a Challenge</button>
-        </div>
-        <div id="challengeList" class="card-body" style="padding:0.5rem 0.85rem;font-size:0.76rem;color:var(--muted);">Loading…</div>
-      </div>
+      </div><!-- /gdPanel-overview -->
 
       <!-- MATERIALS -->
+      <div class="gd-panel" id="gdPanel-materials">
       <div class="card" style="margin-bottom:1rem;" id="materialsCard">
         <div class="card-header">
           <span class="card-title"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Materials</span>
@@ -424,7 +456,58 @@
         <div id="materialsUploadStatus" style="display:none;padding:0.5rem 0.85rem;font-size:0.72rem;color:var(--muted);"></div>
         <div id="materialsList" class="card-body" style="padding:0.5rem 0.85rem;font-size:0.76rem;color:var(--muted);">Loading…</div>
       </div>
+      </div><!-- /gdPanel-materials -->
 
+      <!-- LEADERBOARD -->
+      <div class="gd-panel" id="gdPanel-leaderboard">
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-header">
+          <span class="card-title"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M8 21h8M12 17v4M7 4h10v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5V4Z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/></svg> Leaderboard</span>
+          <select id="lbRangeSelect" onchange="loadGroupLeaderboard()" style="width:auto;font-size:0.7rem;">
+            <option value="7d">7 days</option>
+            <option value="30d" selected>30 days</option>
+            <option value="90d">90 days</option>
+            <option value="all">All time</option>
+          </select>
+        </div>
+        <div id="groupLeaderboardList" class="card-body" style="padding:0;">Loading…</div>
+      </div>
+      </div><!-- /gdPanel-leaderboard -->
+
+      <!-- ANALYTICS: me vs group average, and me vs any picked member -->
+      <div class="gd-panel" id="gdPanel-analytics">
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-header">
+          <span class="card-title"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg> Analytics — You vs the group</span>
+          <select id="anRangeSelect" onchange="loadGroupAnalytics()" style="width:auto;font-size:0.7rem;">
+            <option value="7d">7 days</option>
+            <option value="30d" selected>30 days</option>
+            <option value="90d">90 days</option>
+            <option value="all">All time</option>
+          </select>
+        </div>
+        <div class="card-body" style="padding:0.85rem;font-size:0.76rem;color:var(--muted);" id="anVsAverage">Loading…</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Compare with a member</span></div>
+        <div class="analytics-member-pick" id="anMemberPick"></div>
+        <div class="card-body" style="padding:0.85rem;font-size:0.76rem;color:var(--muted);" id="anVsMember">Pick a member above to compare.</div>
+      </div>
+      </div><!-- /gdPanel-analytics -->
+
+      <!-- CHALLENGE PANEL -->
+      <div class="gd-panel" id="gdPanel-challenges">
+      <div class="card" style="margin-bottom:1rem;border-color:rgba(200,169,110,0.3);">
+        <div class="card-header">
+          <span class="card-title"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg> Challenges</span>
+          <button class="btn btn-gold btn-sm" onclick="openChallengeModal()">+ Give a Challenge</button>
+        </div>
+        <div id="challengeList" class="card-body" style="padding:0.5rem 0.85rem;font-size:0.76rem;color:var(--muted);">Loading…</div>
+      </div>
+      </div><!-- /gdPanel-challenges -->
+
+      <!-- MEMBERS -->
+      <div class="gd-panel" id="gdPanel-members">
       <div class="invite-box" id="inviteBox" style="display:none;">
         <span style="font-size:0.7rem;color:var(--muted);">Invite link:</span>
         <input id="inviteLinkInput" readonly>
@@ -460,6 +543,10 @@
         <div class="card-header"><span class="card-title">Members</span><span class="gcard-sub" id="memberCount"></span></div>
         <div id="memberList"></div>
       </div>
+      </div><!-- /gdPanel-members -->
+
+      </div><!-- /gd-content -->
+      </div><!-- /gd-layout -->
     </div>
   </div>
 </div>
@@ -731,6 +818,22 @@ async function openGroup(groupId){
   startLiveGridTick();
   subscribeLivePresence(groupId);
   initCamChannel(groupId);
+  setGroupTab('overview', document.querySelector('.gd-nav-item[data-gtab="overview"]'));
+}
+
+/* ── GROUP-SPECIFIC SIDEBAR TABS ─────────────────────────── */
+let groupTabsLoaded = {};
+function setGroupTab(tab, btnEl){
+  document.querySelectorAll('.gd-nav-item').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.gd-panel').forEach(p=>p.classList.remove('active'));
+  (btnEl || document.querySelector(`.gd-nav-item[data-gtab="${tab}"]`))?.classList.add('active');
+  document.getElementById('gdPanel-'+tab)?.classList.add('active');
+  // lazy-load each tab's data the first time it's opened, and refresh
+  // leaderboard/analytics each time since hours change while studying
+  if(tab==='materials') loadMaterialsList();
+  if(tab==='leaderboard') loadGroupLeaderboard();
+  if(tab==='analytics') loadGroupAnalytics();
+  groupTabsLoaded[tab] = true;
 }
 
 async function loadMaterialsList(){
@@ -948,9 +1051,109 @@ async function transferAdmin(userId){
   loadMembers();
 }
 
-function viewAnalytics(userId){
-  // Phase 3 will build the full heatmap/streak view — placeholder hookup for now.
-  window.location.href = `analytics-user.html?user=${userId}&group=${currentGroup.id}`;
+/* ── LEADERBOARD TAB ─────────────────────────────────────── */
+async function loadGroupLeaderboard(){
+  if(!currentGroup) return;
+  const el = document.getElementById('groupLeaderboardList');
+  const range = document.getElementById('lbRangeSelect').value;
+  el.innerHTML = '<div style="padding:0.6rem 0.85rem;">Loading…</div>';
+  const { data, error } = await sb.rpc('leaderboard_group', { p_group_id: currentGroup.id, p_range: range, p_limit: 50 });
+  if(error || !data){ el.innerHTML = '<div style="padding:0.6rem 0.85rem;color:var(--danger,#e66);">Could not load leaderboard.</div>'; return; }
+  lastLeaderboardData = data;
+  if(!data.length){ el.innerHTML = '<div style="padding:0.6rem 0.85rem;color:var(--dim);">No study hours logged yet in this range.</div>'; return; }
+  el.innerHTML = data.map(r => `
+    <div class="lb-row ${r.is_me?'me':''}">
+      <span class="lb-rank">#${r.rank}</span>
+      <span class="lb-name">${escHtml(r.username)}${r.is_me?' (you)':''}</span>
+      <span class="lb-hours">${r.hours}h</span>
+    </div>
+  `).join('');
+}
+
+/* ── ANALYTICS TAB — you vs group average, and you vs any member ── */
+let lastLeaderboardData = null;
+async function loadGroupAnalytics(){
+  if(!currentGroup) return;
+  const range = document.getElementById('anRangeSelect').value;
+  const vsAvgEl = document.getElementById('anVsAverage');
+  const pickEl = document.getElementById('anMemberPick');
+  vsAvgEl.innerHTML = 'Loading…';
+  const { data, error } = await sb.rpc('leaderboard_group', { p_group_id: currentGroup.id, p_range: range, p_limit: 200 });
+  if(error || !data || !data.length){ vsAvgEl.innerHTML = 'Not enough data in this group yet.'; pickEl.innerHTML=''; return; }
+  analyticsGroupData = data;
+  const me_row = data.find(r=>r.is_me);
+  const others = data.filter(r=>!r.is_me);
+  const avgHours = data.reduce((s,r)=>s+Number(r.hours||0),0) / data.length;
+  const avgCoins = data.reduce((s,r)=>s+Number(r.coins||0),0) / data.length;
+  const myHours = Number(me_row?.hours || 0);
+  const myCoins = Number(me_row?.coins || 0);
+  const maxHours = Math.max(myHours, avgHours, 1);
+  const maxCoins = Math.max(myCoins, avgCoins, 1);
+  const rankLine = me_row ? `You're rank #${me_row.rank} of ${data.length} in this group.` : `You haven't logged study time in this range yet.`;
+  vsAvgEl.innerHTML = `
+    <div style="margin-bottom:0.6rem;color:var(--text);">${rankLine}</div>
+    <div class="analytics-vs-row" style="padding:0.4rem 0;border:none;">
+      <span class="analytics-vs-label">Study hours</span>
+      <div class="analytics-vs-bars">
+        <div class="analytics-vs-bar-track"><div class="analytics-vs-bar-fill me" style="width:${Math.min(100, myHours/maxHours*100)}%;"></div></div>
+        <div class="analytics-vs-bar-track"><div class="analytics-vs-bar-fill avg" style="width:${Math.min(100, avgHours/maxHours*100)}%;"></div></div>
+        <div class="analytics-vs-nums"><span style="color:var(--gold);">You: ${myHours.toFixed(1)}h</span><span>Group avg: ${avgHours.toFixed(1)}h</span></div>
+      </div>
+    </div>
+    <div class="analytics-vs-row" style="padding:0.4rem 0;border:none;">
+      <span class="analytics-vs-label">M² coins</span>
+      <div class="analytics-vs-bars">
+        <div class="analytics-vs-bar-track"><div class="analytics-vs-bar-fill me" style="width:${Math.min(100, myCoins/maxCoins*100)}%;"></div></div>
+        <div class="analytics-vs-bar-track"><div class="analytics-vs-bar-fill avg" style="width:${Math.min(100, avgCoins/maxCoins*100)}%;"></div></div>
+        <div class="analytics-vs-nums"><span style="color:var(--gold);">You: ${myCoins}</span><span>Group avg: ${Math.round(avgCoins)}</span></div>
+      </div>
+    </div>`;
+  pickEl.innerHTML = others.map(r => `<span class="analytics-member-chip" data-uid="${r.user_id}" onclick="compareWithMember('${r.user_id}',this)">${escHtml(r.username)}</span>`).join('') || '<span style="font-size:0.7rem;color:var(--dim);">No other members with logged hours yet.</span>';
+  document.getElementById('anVsMember').textContent = 'Pick a member above to compare.';
+}
+
+let analyticsGroupData = null;
+function compareWithMember(userId, chipEl){
+  document.querySelectorAll('.analytics-member-chip').forEach(c=>c.classList.remove('active'));
+  chipEl?.classList.add('active');
+  if(!analyticsGroupData) return;
+  const me_row = analyticsGroupData.find(r=>r.is_me);
+  const other = analyticsGroupData.find(r=>r.user_id===userId);
+  const el = document.getElementById('anVsMember');
+  if(!me_row || !other){ el.textContent = 'Could not load this comparison.'; return; }
+  const myHours = Number(me_row.hours||0), otHours = Number(other.hours||0);
+  const myCoins = Number(me_row.coins||0), otCoins = Number(other.coins||0);
+  const maxHours = Math.max(myHours, otHours, 1);
+  const maxCoins = Math.max(myCoins, otCoins, 1);
+  const lead = myHours===otHours ? "You're tied on hours." : (myHours>otHours ? `You're ahead by ${(myHours-otHours).toFixed(1)}h.` : `${escHtml(other.username)} is ahead by ${(otHours-myHours).toFixed(1)}h.`);
+  el.innerHTML = `
+    <div style="margin-bottom:0.6rem;color:var(--text);">You (rank #${me_row.rank}) vs ${escHtml(other.username)} (rank #${other.rank}) — ${lead}</div>
+    <div class="analytics-vs-row" style="padding:0.4rem 0;border:none;">
+      <span class="analytics-vs-label">Study hours</span>
+      <div class="analytics-vs-bars">
+        <div class="analytics-vs-bar-track"><div class="analytics-vs-bar-fill me" style="width:${Math.min(100, myHours/maxHours*100)}%;"></div></div>
+        <div class="analytics-vs-bar-track"><div class="analytics-vs-bar-fill avg" style="width:${Math.min(100, otHours/maxHours*100)}%;"></div></div>
+        <div class="analytics-vs-nums"><span style="color:var(--gold);">You: ${myHours.toFixed(1)}h</span><span>${escHtml(other.username)}: ${otHours.toFixed(1)}h</span></div>
+      </div>
+    </div>
+    <div class="analytics-vs-row" style="padding:0.4rem 0;border:none;">
+      <span class="analytics-vs-label">M² coins</span>
+      <div class="analytics-vs-bars">
+        <div class="analytics-vs-bar-track"><div class="analytics-vs-bar-fill me" style="width:${Math.min(100, myCoins/maxCoins*100)}%;"></div></div>
+        <div class="analytics-vs-bar-track"><div class="analytics-vs-bar-fill avg" style="width:${Math.min(100, otCoins/maxCoins*100)}%;"></div></div>
+        <div class="analytics-vs-nums"><span style="color:var(--gold);">You: ${myCoins}</span><span>${escHtml(other.username)}: ${otCoins}</span></div>
+      </div>
+    </div>`;
+}
+
+async function viewAnalytics(userId){
+  // Jumps to this group's Analytics tab and pre-selects the clicked member
+  // for a head-to-head comparison, instead of navigating away.
+  setGroupTab('analytics', document.querySelector('.gd-nav-item[data-gtab="analytics"]'));
+  if(!analyticsGroupData) await loadGroupAnalytics();
+  const chip = document.querySelector(`.analytics-member-chip[data-uid="${userId}"]`);
+  if(chip){ compareWithMember(userId, chip); chip.scrollIntoView({block:'nearest'}); }
+  else { document.getElementById('anVsMember').textContent = "This member hasn't logged study time in the selected range yet."; }
 }
 
 async function loadCoinBalance(){
