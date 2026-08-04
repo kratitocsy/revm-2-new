@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#c8a96e">
 <style>
-.gw{max-width:980px;margin:0 auto;padding:1.5rem;}
+.gw{width:100%;padding:1.5rem 2rem;box-sizing:border-box;}
 .gw-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:1.25rem;}
 .gw-tabs{display:flex;gap:0.4rem;margin-bottom:1.25rem;}
 .gw-tab{padding:0.45rem 0.9rem;font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;border:1px solid var(--border2);background:var(--s1);color:var(--muted);cursor:pointer;font-family:var(--font);}
@@ -33,26 +33,39 @@
 .gd-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;margin-bottom:1rem;}
 .gd-back{font-size:0.7rem;color:var(--muted);text-decoration:none;cursor:pointer;}
 .gd-back:hover{color:var(--gold);}
-.gd-layout{position:relative;}
+.gd-layout{}
+/* Full-height fixed drawer, styled to match the main app .sidebar
+   exactly (same width/background/border/typography) rather than a
+   small floating box — it's a second-level sidebar for whichever
+   group you're inside, not an isolated widget. */
 .gd-sidebar{
-  flex:0 0 168px;display:flex;flex-direction:column;gap:0.2rem;
-  position:absolute;left:0;top:0;z-index:6;width:172px;
-  background:var(--black);border:1px solid var(--border);padding:0.4rem;
-  transform:translateX(-115%);transition:transform 0.22s ease;
+  display:flex;flex-direction:column;
+  position:fixed;left:0;top:0;bottom:0;z-index:55;width:216px;
+  background:var(--black);border-right:1px solid var(--border);
+  transform:translateX(-100%);transition:transform 0.22s ease;
 }
 .gd-sidebar.hover-open,.gd-sidebar.mobile-open{
   transform:translateX(0);
-  box-shadow:16px 0 40px rgba(0,0,0,0.55);
+  box-shadow:24px 0 48px rgba(0,0,0,0.55);
 }
+.gd-sidebar-header{padding:1.1rem 1rem 0.9rem;border-bottom:1px solid var(--border);}
+.gd-sidebar-header .gd-back{display:block;margin-bottom:0.5rem;}
+.gd-sidebar-header .gd-sb-name{font-size:0.95rem;font-weight:700;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.gd-sidebar-nav{padding:0.75rem 0;flex:1;overflow-y:auto;}
 .gd-sidebar-hover-zone{display:none;}
 @media(min-width:769px){
-  .gd-sidebar-hover-zone{display:block;position:absolute;left:0;top:0;bottom:0;width:14px;z-index:5;}
+  .gd-sidebar-hover-zone{display:block;position:fixed;left:14px;top:0;bottom:0;width:14px;z-index:54;}
 }
 .gd-hamburger-btn{display:none;}
-.gd-nav-item{display:flex;align-items:center;gap:0.5rem;padding:0.55rem 0.7rem;font-size:0.78rem;color:var(--muted);background:transparent;border:1px solid transparent;cursor:pointer;text-align:left;border-radius:2px;transition:background 0.15s,color 0.15s,border-color 0.15s;}
-.gd-nav-item:hover{color:var(--text);background:var(--s2);}
-.gd-nav-item.active{color:var(--gold);background:rgba(212,175,55,0.08);border-color:rgba(212,175,55,0.3);}
-.gd-content{flex:1;min-width:0;}
+.gd-nav-item{
+  display:flex;align-items:center;gap:0.6rem;width:100%;
+  padding:0.6rem 1rem;font-size:0.78rem;font-weight:500;letter-spacing:0.01em;
+  color:var(--muted);background:transparent;border:none;border-left:2px solid transparent;
+  cursor:pointer;text-align:left;transition:all 0.15s;
+}
+.gd-nav-item:hover{color:var(--text);background:rgba(255,255,255,0.02);}
+.gd-nav-item.active{color:var(--gold);border-left-color:var(--gold);background:var(--gold-dim);}
+.gd-content{width:100%;}
 .gd-panel{display:none;}
 .gd-panel.active{display:block;}
 .analytics-vs-row{display:flex;align-items:center;gap:0.9rem;padding:0.7rem 0.85rem;border-bottom:1px solid var(--border);}
@@ -379,12 +392,18 @@
       <div class="gd-sidebar-backdrop" id="gdSidebarBackdrop" onclick="closeGroupSidebar()"></div>
       <button class="gd-hamburger-btn" onclick="openGroupSidebar()">☰ Sections</button>
       <aside class="gd-sidebar" id="gdSidebar">
-        <button class="gd-nav-item active" data-gtab="overview" onclick="setGroupTab('overview',this)">Overview</button>
-        <button class="gd-nav-item" data-gtab="materials" onclick="setGroupTab('materials',this)">Materials</button>
-        <button class="gd-nav-item" data-gtab="leaderboard" onclick="setGroupTab('leaderboard',this)">Leaderboard</button>
-        <button class="gd-nav-item" data-gtab="analytics" onclick="setGroupTab('analytics',this)">Analytics</button>
-        <button class="gd-nav-item" data-gtab="challenges" onclick="setGroupTab('challenges',this)">Challenges</button>
-        <button class="gd-nav-item" data-gtab="members" onclick="setGroupTab('members',this)">Members</button>
+        <div class="gd-sidebar-header">
+          <a class="gd-back" onclick="closeDetail()">← Back to groups</a>
+          <div class="gd-sb-name" id="gdSidebarName"></div>
+        </div>
+        <nav class="gd-sidebar-nav">
+          <button class="gd-nav-item active" data-gtab="overview" onclick="setGroupTab('overview',this)">Overview</button>
+          <button class="gd-nav-item" data-gtab="materials" onclick="setGroupTab('materials',this)">Materials</button>
+          <button class="gd-nav-item" data-gtab="leaderboard" onclick="setGroupTab('leaderboard',this)">Leaderboard</button>
+          <button class="gd-nav-item" data-gtab="analytics" onclick="setGroupTab('analytics',this)">Analytics</button>
+          <button class="gd-nav-item" data-gtab="challenges" onclick="setGroupTab('challenges',this)">Challenges</button>
+          <button class="gd-nav-item" data-gtab="members" onclick="setGroupTab('members',this)">Members</button>
+        </nav>
       </aside>
       <div class="gd-content">
 
@@ -879,13 +898,12 @@ function closeGroupSidebar(){
 }
 function initGdSidebarHoverReveal(){
   const sidebar = document.getElementById('gdSidebar');
-  const layout = document.querySelector('.gd-layout');
-  if(!sidebar || !layout) return;
+  if(!sidebar) return;
   if(document.getElementById('gdSidebarHoverZone')) return; // idempotent
   const zone = document.createElement('div');
   zone.id = 'gdSidebarHoverZone';
   zone.className = 'gd-sidebar-hover-zone';
-  layout.appendChild(zone);
+  document.body.appendChild(zone); // fixed to the viewport, like the main sidebar's own hover zone
   let closeTimer = null;
   function reveal(){ clearTimeout(closeTimer); sidebar.classList.add('hover-open'); }
   function scheduleHide(){ clearTimeout(closeTimer); closeTimer = setTimeout(()=>sidebar.classList.remove('hover-open'), 180); }
@@ -964,6 +982,7 @@ function closeDetail(){
 function renderGroupDetail(){
   const g = currentGroup;
   document.getElementById('gdName').textContent = g.name;
+  document.getElementById('gdSidebarName').textContent = g.name;
   document.getElementById('gdMeta').textContent = `${g.visibility==='public'?'Public':'Private'} · limit ${g.member_limit} · day resets ${fmtHour(g.day_reset_hour)}`;
 
   const isAdmin = g.my_role === 'admin';
