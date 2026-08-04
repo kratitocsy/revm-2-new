@@ -49,22 +49,40 @@
   box-shadow:24px 0 48px rgba(0,0,0,0.55);
 }
 .gd-sidebar-header{padding:1.1rem 1rem 0.9rem;border-bottom:1px solid var(--border);}
-.gd-sidebar-header .gd-back{display:block;margin-bottom:0.5rem;}
-.gd-sidebar-header .gd-sb-name{font-size:0.95rem;font-weight:700;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.gd-sidebar-header .gd-back{display:block;margin-bottom:0.5rem;font-size:0.76rem;}
+.gd-sidebar-header .gd-sb-name{font-size:1.02rem;font-weight:700;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .gd-sidebar-nav{padding:0.75rem 0;flex:1;overflow-y:auto;}
+.gd-nav-section{
+  padding:0.55rem 1rem 0.3rem;
+  font-size:0.66rem;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--dim);
+}
 .gd-sidebar-hover-zone{display:none;}
 @media(min-width:769px){
   .gd-sidebar-hover-zone{display:block;position:fixed;left:14px;top:0;bottom:0;width:14px;z-index:54;}
 }
 .gd-hamburger-btn{display:none;}
 .gd-nav-item{
-  display:flex;align-items:center;gap:0.6rem;width:100%;
-  padding:0.6rem 1rem;font-size:0.78rem;font-weight:500;letter-spacing:0.01em;
+  display:flex;align-items:center;gap:0.65rem;width:100%;
+  padding:0.68rem 1rem;font-size:0.87rem;font-weight:500;letter-spacing:0.01em;
   color:var(--muted);background:transparent;border:none;border-left:2px solid transparent;
   cursor:pointer;text-align:left;transition:all 0.15s;
 }
 .gd-nav-item:hover{color:var(--text);background:rgba(255,255,255,0.02);}
 .gd-nav-item.active{color:var(--gold);border-left-color:var(--gold);background:var(--gold-dim);}
+.gd-nav-icon{width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+.gd-nav-icon svg{width:16px;height:16px;}
+.gd-nav-badge{
+  margin-left:auto;background:var(--danger,#f87171);color:#fff;
+  font-size:0.62rem;font-weight:700;line-height:1;
+  min-width:16px;height:16px;border-radius:9px;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:0 4px;flex-shrink:0;
+}
+.gd-sidebar-footer{padding:0.9rem 1rem 1.1rem;border-top:1px solid var(--border);}
+.gd-sf-stat{display:flex;align-items:center;justify-content:space-between;font-size:0.74rem;color:var(--muted);padding:0.2rem 0;}
+.gd-sf-stat b{color:var(--gold);font-weight:700;}
+.gd-sf-role{font-size:0.68rem;color:var(--dim);letter-spacing:0.04em;text-transform:uppercase;margin-top:0.35rem;}
 .gd-content{width:100%;}
 .gd-panel{display:none;}
 .gd-panel.active{display:block;}
@@ -398,14 +416,20 @@
           <div class="gd-sb-name" id="gdSidebarName"></div>
         </div>
         <nav class="gd-sidebar-nav">
-          <button class="gd-nav-item active" data-gtab="overview" onclick="setGroupTab('overview',this)">Overview</button>
-          <button class="gd-nav-item" data-gtab="materials" onclick="setGroupTab('materials',this)">Materials</button>
-          <button class="gd-nav-item" data-gtab="leaderboard" onclick="setGroupTab('leaderboard',this)">Leaderboard</button>
-          <button class="gd-nav-item" data-gtab="analytics" onclick="setGroupTab('analytics',this)">Analytics</button>
-          <button class="gd-nav-item" data-gtab="challenges" onclick="setGroupTab('challenges',this)">Challenges</button>
-          <button class="gd-nav-item" data-gtab="members" onclick="setGroupTab('members',this)">Members</button>
-          <button class="gd-nav-item" onclick="openGroupChatFromSidebar()">Chat</button>
+          <div class="gd-nav-section">Group</div>
+          <button class="gd-nav-item active" data-gtab="overview" onclick="setGroupTab('overview',this)"><span class="gd-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1 3-3 4.5-3 8a3 3 0 0 0 6 0c1.5 1 2 2.8 2 4.3A6.3 6.3 0 0 1 5.5 14C5.5 8 12 6 12 2Z"/></svg></span>Overview</button>
+          <button class="gd-nav-item" data-gtab="chat" onclick="openGroupChatFromSidebar()"><span class="gd-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c0 4.14-3.98 7.5-8.5 7.5-1.06 0-2.07-.18-3-.52L4 20l1.18-3.98A7.3 7.3 0 0 1 3.5 12C3.5 7.86 7.48 4.5 12 4.5S21 7.86 21 12z"/></svg></span>Chat<span class="gd-nav-badge" id="gdChatBadge" style="display:none;"></span></button>
+          <button class="gd-nav-item" data-gtab="materials" onclick="setGroupTab('materials',this)"><span class="gd-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>Materials</button>
+          <button class="gd-nav-item" data-gtab="leaderboard" onclick="setGroupTab('leaderboard',this)"><span class="gd-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5V4Z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/></svg></span>Leaderboard</button>
+          <button class="gd-nav-item" data-gtab="analytics" onclick="setGroupTab('analytics',this)"><span class="gd-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></span>Analytics</button>
+          <button class="gd-nav-item" data-gtab="challenges" onclick="setGroupTab('challenges',this)"><span class="gd-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg></span>Challenges<span class="gd-nav-badge" id="gdChallengesBadge" style="display:none;"></span></button>
+          <button class="gd-nav-item" data-gtab="members" onclick="setGroupTab('members',this)"><span class="gd-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7.5" r="3.5"/><path d="M17.5 11a3.5 3.5 0 1 0 0-7"/><path d="M22 21v-1.5a4 4 0 0 0-3-3.87"/></svg></span>Members</button>
         </nav>
+        <div class="gd-sidebar-footer">
+          <div class="gd-sf-stat">Members <b id="gdSfMembers">—</b></div>
+          <div class="gd-sf-stat">Your balance <b id="gdSfCoins">—</b></div>
+          <div class="gd-sf-role" id="gdSfRole"></div>
+        </div>
       </aside>
       <div class="gd-content">
 
@@ -475,27 +499,6 @@
 
       </div><!-- /gdPanel-overview -->
 
-      <!-- GROUP CHAT — lives outside the tab panels (as a right-side tray,
-           hidden until toggled) so it stays reachable from every section,
-           not just Overview. Opened from the call-controls-bar icon or
-           the "Chat" item in the group sidebar. -->
-      <div class="gc-tray-backdrop" id="gcTrayBackdrop" onclick="toggleGroupChatTray(false)"></div>
-      <div class="card" id="groupChatCard">
-        <div class="card-header">
-          <span class="card-title"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M21 12c0 4.14-3.98 7.5-8.5 7.5-1.06 0-2.07-.18-3-.52L4 20l1.18-3.98A7.3 7.3 0 0 1 3.5 12C3.5 7.86 7.48 4.5 12 4.5S21 7.86 21 12z"/></svg> Group Chat</span>
-          <button class="gc-tray-close" onclick="toggleGroupChatTray(false)" title="Close" aria-label="Close">&times;</button>
-        </div>
-        <div class="card-body" style="padding:0;">
-          <div class="gc-scroll" id="gcScroll"><div class="gc-empty" id="gcEmpty">No messages yet — say hi 👋</div></div>
-          <div class="gc-composer">
-            <textarea id="gcInput" class="gc-textarea" placeholder="Message the group…" rows="1" oninput="gcAutoGrow(this)" onkeydown="gcHandleKeydown(event)"></textarea>
-            <button class="gc-send-btn" id="gcSendBtn" onclick="sendGroupChatMessage()" disabled title="Send">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
-            </button>
-          </div>
-        </div>
-      </div>
-
       <!-- MATERIALS -->
       <div class="gd-panel" id="gdPanel-materials">
       <div class="card" style="margin-bottom:1rem;" id="materialsCard">
@@ -505,6 +508,9 @@
         </div>
         <input type="file" id="materialFileInput" accept=".pdf,image/*" style="display:none;" onchange="handleMaterialFileChosen(event)">
         <div id="materialsUploadStatus" style="display:none;padding:0.5rem 0.85rem;font-size:0.72rem;color:var(--muted);"></div>
+        <div style="padding:0.6rem 0.85rem 0;">
+          <input type="text" id="materialsSearchInput" placeholder="Search materials…" oninput="filterMaterialsList()" style="width:100%;">
+        </div>
         <div id="materialsList" class="card-body" style="padding:0.5rem 0.85rem;font-size:0.76rem;color:var(--muted);">Loading…</div>
       </div>
       </div><!-- /gdPanel-materials -->
@@ -597,6 +603,26 @@
       </div><!-- /gdPanel-members -->
 
       </div><!-- /gd-content -->
+
+      <!-- GROUP CHAT — lives outside the tab panels so it's reachable as a
+           slide-in tray from any section (call tray button or sidebar Chat
+           item), never inline in the page flow. -->
+      <div class="gc-tray-backdrop" id="gcTrayBackdrop" onclick="toggleGroupChatTray(false)"></div>
+      <div class="card" style="margin-bottom:1rem;" id="groupChatCard">
+        <div class="card-header">
+          <span class="card-title"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M21 12c0 4.14-3.98 7.5-8.5 7.5-1.06 0-2.07-.18-3-.52L4 20l1.18-3.98A7.3 7.3 0 0 1 3.5 12C3.5 7.86 7.48 4.5 12 4.5S21 7.86 21 12z"/></svg> Group Chat</span>
+          <button class="gc-tray-close" onclick="toggleGroupChatTray(false)" title="Close" aria-label="Close">&times;</button>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <div class="gc-scroll" id="gcScroll"><div class="gc-empty" id="gcEmpty">No messages yet — say hi 👋</div></div>
+          <div class="gc-composer">
+            <textarea id="gcInput" class="gc-textarea" placeholder="Message the group…" rows="1" oninput="gcAutoGrow(this)" onkeydown="gcHandleKeydown(event)"></textarea>
+            <button class="gc-send-btn" id="gcSendBtn" onclick="sendGroupChatMessage()" disabled title="Send">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
       </div><!-- /gd-layout -->
     </div>
   </div>
@@ -856,6 +882,7 @@ async function openGroup(groupId){
 
   document.getElementById('listView').style.display='none';
   document.getElementById('detailView').style.display='block';
+  suppressMainSidebarHover(true); // inside a group now — only the group sidebar should hover-open
   renderGroupDetail();
   loadVgPrefs(groupId);
   await loadMembers();
@@ -864,6 +891,7 @@ async function openGroup(groupId){
   await loadLiveGrid();
   await loadGroupChat(groupId);
   subscribeGroupChat(groupId);
+  refreshChatUnreadBadge();
   renderFocusCard();
   startFocusTick();
   startLiveGridTick();
@@ -888,13 +916,6 @@ function setGroupTab(tab, btnEl){
   if(window.innerWidth <= 768) closeGroupSidebar(); // drawer: pick a section, drawer tucks away
 }
 
-function openGroupChatFromSidebar(){
-  // Chat is a right-side tray, not a tab panel — it doesn't get an
-  // .active state in the sidebar, it just opens over whatever tab is showing.
-  toggleGroupChatTray(true);
-  if(window.innerWidth <= 768) closeGroupSidebar();
-}
-
 /* Group sidebar as a drawer — mirrors the main app .sidebar behavior
    in shared.js: hidden by default, on desktop it slides out while the
    cursor rests on a thin hover-zone glued to the content's left edge
@@ -909,6 +930,20 @@ function closeGroupSidebar(){
   document.getElementById('gdSidebar')?.classList.remove('mobile-open');
   document.getElementById('gdSidebarBackdrop')?.classList.remove('active');
 }
+/* Only one left-edge sidebar should ever be able to hover-open at a time.
+   shared.js wires up a #sidebarHoverZone trigger strip for the MAIN app
+   sidebar on every page, including this one — so while a specific group is
+   open, both that zone AND this page's own .gd-sidebar-hover-zone sit on
+   top of each other and both sidebars can pop out together. Hide the main
+   zone (and force-close the main sidebar if it happened to be open) for as
+   long as the user is inside a group; restore it the moment they go back
+   to the groups home list via closeDetail(). */
+function suppressMainSidebarHover(suppress){
+  const zone = document.getElementById('sidebarHoverZone');
+  if(zone) zone.style.display = suppress ? 'none' : '';
+  if(suppress) document.querySelector('.sidebar')?.classList.remove('hover-open');
+}
+
 function initGdSidebarHoverReveal(){
   const sidebar = document.getElementById('gdSidebar');
   if(!sidebar) return;
@@ -928,30 +963,45 @@ function initGdSidebarHoverReveal(){
 document.addEventListener('DOMContentLoaded', initGdSidebarHoverReveal);
 window.addEventListener('resize', () => { if(window.innerWidth > 768) closeGroupSidebar(); });
 
+let _materialsCache = [];
 async function loadMaterialsList(){
   const listEl = document.getElementById('materialsList');
   if(!currentGroup){ return; }
   const groupId = currentGroup.id;
+  const searchEl = document.getElementById('materialsSearchInput');
+  if(searchEl) searchEl.value = '';
   try{
     const items = await RevmMaterials.listGroupMaterials(groupId);
     if(currentGroup?.id !== groupId) return; // user switched groups mid-fetch
-    if(!items.length){
-      listEl.innerHTML = '<div style="padding:0.4rem 0;">No materials uploaded yet.</div>';
-      return;
-    }
-    listEl.innerHTML = items.map(m => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.06);">
-        <div style="cursor:pointer;flex:1;min-width:0;" onclick="RevmMaterialsViewer.openMaterialViewer('${m.id}')">
-          <div style="color:var(--text,#eee);font-size:0.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(m.title)}</div>
-          <div style="font-size:0.68rem;color:var(--dim);">${m.page_count} page${m.page_count===1?'':'s'} · ${m.source_type.toUpperCase()}</div>
-        </div>
-        <button class="icon-btn" onclick="RevmMaterialsViewer.openMaterialViewer('${m.id}')" title="Read">Read</button>
-      </div>
-    `).join('');
+    _materialsCache = items;
+    renderMaterialsList(items);
   }catch(e){
     console.error(e);
     listEl.innerHTML = '<div style="padding:0.4rem 0;color:var(--danger,#e66);">Could not load materials.</div>';
   }
+}
+
+function renderMaterialsList(items){
+  const listEl = document.getElementById('materialsList');
+  if(!items.length){
+    listEl.innerHTML = `<div style="padding:0.4rem 0;">${_materialsCache.length ? 'No materials match your search.' : 'No materials uploaded yet.'}</div>`;
+    return;
+  }
+  listEl.innerHTML = items.map(m => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <div style="cursor:pointer;flex:1;min-width:0;" onclick="RevmMaterialsViewer.openMaterialViewer('${m.id}')">
+        <div style="color:var(--text,#eee);font-size:0.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(m.title)}</div>
+        <div style="font-size:0.68rem;color:var(--dim);">${m.page_count} page${m.page_count===1?'':'s'} · ${m.source_type.toUpperCase()}</div>
+      </div>
+      <button class="icon-btn" onclick="RevmMaterialsViewer.openMaterialViewer('${m.id}')" title="Read">Read</button>
+    </div>
+  `).join('');
+}
+
+function filterMaterialsList(){
+  const q = document.getElementById('materialsSearchInput').value.trim().toLowerCase();
+  if(!q){ renderMaterialsList(_materialsCache); return; }
+  renderMaterialsList(_materialsCache.filter(m => m.title.toLowerCase().includes(q)));
 }
 
 function openMaterialUpload(){
@@ -982,6 +1032,7 @@ async function handleMaterialFileChosen(evt){
 function closeDetail(){
   document.getElementById('detailView').style.display='none';
   document.getElementById('listView').style.display='block';
+  suppressMainSidebarHover(false); // back on groups home — main app sidebar can hover-open again
   toggleGroupChatTray(false);
   stopFocusTick();
   stopLiveGridTick();
@@ -1068,6 +1119,10 @@ async function loadMembers(){
   if(error){ document.getElementById('memberList').innerHTML = ''; return; }
 
   document.getElementById('memberCount').textContent = `${data.length} / ${currentGroup.member_limit}`;
+  const sfMembers = document.getElementById('gdSfMembers');
+  if(sfMembers) sfMembers.textContent = `${data.length} / ${currentGroup.member_limit}`;
+  const sfRole = document.getElementById('gdSfRole');
+  if(sfRole) sfRole.textContent = currentGroup.my_role ? currentGroup.my_role : '';
 
   // batch-fetch display names, today's totals, tags — kept simple via a couple of queries
   const userIds = data.map(m=>m.user_id);
@@ -1252,6 +1307,8 @@ async function viewAnalytics(userId){
 async function loadCoinBalance(){
   const { data } = await sb.from('user_wallets').select('coins').eq('user_id',me.id).single();
   document.getElementById('gdCoinBal').innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg> ${(data?.coins||0).toLocaleString()} M²`;
+  const sfCoins = document.getElementById('gdSfCoins');
+  if(sfCoins) sfCoins.textContent = `${(data?.coins||0).toLocaleString()} M²`;
 }
 
 let challengeSelected = [];
@@ -1260,6 +1317,8 @@ async function loadChallenges(){
     .select('*, challenge_participants(user_id,coins_pledged,result,coins_won)')
     .eq('group_id',currentGroup.id).order('created_at',{ascending:false}).limit(10);
   const el = document.getElementById('challengeList');
+  const pendingCount = (data||[]).filter(c => c.status==='open' && !(c.challenge_participants||[]).some(p=>p.user_id===me.id)).length;
+  renderChallengesBadge(pendingCount);
   if(!data?.length){ el.innerHTML=`<span style="color:var(--dim);">No challenges yet — throw down the first one.</span>`; return; }
   el.innerHTML = data.map(c=>{
     const pool = (c.challenge_participants||[]).reduce((s,p)=>s+(p.coins_pledged||0),0);
@@ -2482,10 +2541,57 @@ function subscribeGroupChat(groupId){
   if(groupChatChannel) sb.removeChannel(groupChatChannel);
   groupChatChannel = sb.channel(`group-chat-${groupId}`)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` },
-      ({ new: row }) => { renderGroupChatMessage(row); gcScrollToBottom(); })
+      ({ new: row }) => {
+        renderGroupChatMessage(row);
+        gcScrollToBottom();
+        // Tray already open = message is seen as it arrives, no badge needed.
+        // Tray closed and it's not our own message = count it as unread.
+        const trayOpen = document.getElementById('groupChatCard')?.classList.contains('gc-tray-open');
+        if(!trayOpen && row.sender_id !== me.id){ _chatUnread++; renderChatBadge(); }
+      })
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` },
       ({ new: row }) => { gcPatchDeleted(row); })
     .subscribe();
+}
+
+/* ── CHAT UNREAD BADGE ────────────────────────────────────────
+   Backed by group_members.last_read_at (stamped via the
+   mark_group_chat_read RPC whenever the tray opens). Seeded once
+   per group open, then kept live by the realtime INSERT handler
+   above rather than re-querying on every message. */
+let _chatUnread = 0;
+function renderChatBadge(){
+  const el = document.getElementById('gdChatBadge');
+  if(!el) return;
+  el.style.display = _chatUnread > 0 ? 'inline-flex' : 'none';
+  el.textContent = _chatUnread > 9 ? '9+' : String(_chatUnread);
+}
+async function refreshChatUnreadBadge(){
+  if(!currentGroup) return;
+  const { data } = await sb.from('group_members').select('last_read_at')
+    .eq('group_id', currentGroup.id).eq('user_id', me.id).single();
+  const since = data?.last_read_at || '1970-01-01';
+  const { count } = await sb.from('group_messages').select('id', { count: 'exact', head: true })
+    .eq('group_id', currentGroup.id).neq('sender_id', me.id).is('deleted_at', null).gt('created_at', since);
+  _chatUnread = count || 0;
+  renderChatBadge();
+}
+async function markGroupChatRead(){
+  if(!currentGroup) return;
+  _chatUnread = 0;
+  renderChatBadge();
+  await sb.rpc('mark_group_chat_read', { p_group_id: currentGroup.id });
+}
+
+/* ── CHALLENGES PENDING BADGE ──────────────────────────────────
+   "Pending" = open challenges in this group you haven't joined yet
+   (the ones still showing a Join button in the Challenges tab). Piggybacks
+   on the same data loadChallenges() already fetches — see there. */
+function renderChallengesBadge(count){
+  const el = document.getElementById('gdChallengesBadge');
+  if(!el) return;
+  el.style.display = count > 0 ? 'inline-flex' : 'none';
+  el.textContent = count > 9 ? '9+' : String(count);
 }
 
 function gcDayLabel(iso){
@@ -2559,6 +2665,15 @@ function gcScrollToBottom(){
    repositions that SAME card — same messages, same channel, same
    composer — as a slide-in panel so it's reachable from the call
    tray without leaving the grid. No separate chat instance. */
+/* Sidebar "Chat" item: unlike the other nav items this doesn't switch
+   panels (chat lives outside the tab flow as a tray) — it just opens the
+   tray and, on mobile, tucks the drawer away like a normal tab pick. Doesn't
+   touch .active state on the panels/nav so the underlying tab stays put. */
+function openGroupChatFromSidebar(){
+  toggleGroupChatTray(true);
+  if(window.innerWidth <= 768) closeGroupSidebar();
+}
+
 function toggleGroupChatTray(forceOpen){
   const card = document.getElementById('groupChatCard');
   const backdrop = document.getElementById('gcTrayBackdrop');
@@ -2568,7 +2683,7 @@ function toggleGroupChatTray(forceOpen){
   card.classList.toggle('gc-tray-open', open);
   if(backdrop) backdrop.classList.toggle('show', open);
   if(btn) btn.classList.toggle('active', open);
-  if(open){ gcScrollToBottom(); document.getElementById('gcInput')?.focus(); }
+  if(open){ gcScrollToBottom(); document.getElementById('gcInput')?.focus(); markGroupChatRead(); }
 }
 
 function gcAutoGrow(el){

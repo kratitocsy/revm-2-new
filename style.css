@@ -86,9 +86,9 @@ body{
 }
 .sidebar-nav{padding:0.75rem 0;flex:1;overflow-y:auto;}
 .nav-item{
-  display:flex;align-items:center;gap:0.6rem;
-  padding:0.6rem 1rem;color:var(--muted);
-  text-decoration:none;font-size:0.78rem;font-weight:500;
+  display:flex;align-items:center;gap:0.65rem;
+  padding:0.68rem 1rem;color:var(--muted);
+  text-decoration:none;font-size:0.87rem;font-weight:500;
   letter-spacing:0.01em;transition:all 0.15s;cursor:pointer;
   border-left:2px solid transparent;user-select:none;
 }
@@ -101,11 +101,11 @@ body{
 }
 .nav-item:hover{color:var(--text);background:rgba(255,255,255,0.02);}
 .nav-item.active{color:var(--gold);border-left-color:var(--gold);background:var(--gold-dim);}
-.nav-icon{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
-.nav-icon svg{width:15px;height:15px;}
+.nav-icon{width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+.nav-icon svg{width:16px;height:16px;}
 .nav-section{
-  padding:0.5rem 1rem 0.25rem;
-  font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;
+  padding:0.55rem 1rem 0.3rem;
+  font-size:0.66rem;letter-spacing:0.12em;text-transform:uppercase;
   color:var(--dim);margin-top:0.5rem;
 }
 .sidebar-footer{
