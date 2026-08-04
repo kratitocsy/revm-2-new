@@ -90,8 +90,14 @@ async function _mvPageUrl(materialId, pageNumber) {
 
 function _mvSetLoading(on) {
   document.getElementById('mv-loading')?.classList.toggle('show', on);
-  document.getElementById('mv-prev-btn').disabled = on || _mvState.index === 0;
-  document.getElementById('mv-next-btn').disabled = on || _mvState.index === _mvState.pages.length - 1;
+  // Boundary state should reflect the page we're actually heading to (the
+  // queued target while busy, otherwise the current index) rather than
+  // hard-disabling on every "busy" tick — a disabled button swallows the
+  // click event entirely, which is exactly what made taps during a page
+  // turn feel like they were being ignored.
+  const effectiveIndex = (_mvState.busy && _mvState.pendingIndex !== null) ? _mvState.pendingIndex : _mvState.index;
+  document.getElementById('mv-prev-btn').disabled = effectiveIndex === 0;
+  document.getElementById('mv-next-btn').disabled = effectiveIndex === _mvState.pages.length - 1;
   document.getElementById('mv-jump-btn').disabled = on;
 }
 
@@ -143,11 +149,18 @@ function _mvPlayPageFlip(oldSrc, direction) {
  * one that was actually requested last — the image looked "stuck". Every
  * call now stamps a request id AND sets a busy flag so a page turn can't
  * even be kicked off again until the current one (fetch + flip animation)
- * has actually finished. */
+ * has actually finished.
+ *
+ * Taps that land while busy are no longer dropped — they're captured in
+ * state.pendingIndex and automatically played once the in-flight render
+ * finishes (see the drain at the bottom of this function), so a quick
+ * flurry of taps doesn't feel "stuck" and only catches up several taps
+ * later. */
 async function _mvRenderPage(index) {
   const state = _mvState;
   const myReq = ++state.reqId;
   state.busy = true;
+  state.pendingIndex = null; // this call supersedes any earlier queued target
   _mvSetLoading(true);
 
   let url;
@@ -184,14 +197,30 @@ async function _mvRenderPage(index) {
   document.getElementById('mv-page-indicator').textContent = `${index + 1} / ${state.pages.length}`;
   document.getElementById('mv-jump-input').value = index + 1;
   _mvSetLoading(false);
+
+  // Drain any navigation that was requested (and queued) while this render
+  // was in flight, so taps made mid-animation aren't lost — the viewer
+  // catches up to the last-requested page automatically.
+  if (state.pendingIndex !== null && state.pendingIndex !== state.index) {
+    const next = state.pendingIndex;
+    state.pendingIndex = null;
+    _mvRenderPage(next);
+  }
 }
 
-function _mvNext() { if (_mvState && !_mvState.busy && _mvState.index < _mvState.pages.length - 1) _mvRenderPage(_mvState.index + 1); }
-function _mvPrev() { if (_mvState && !_mvState.busy && _mvState.index > 0) _mvRenderPage(_mvState.index - 1); }
+function _mvQueueOrRender(index) {
+  const state = _mvState;
+  if (!state || index < 0 || index > state.pages.length - 1 || index === state.index) return;
+  if (state.busy) { state.pendingIndex = index; return; }
+  _mvRenderPage(index);
+}
+
+function _mvNext() { if (_mvState) _mvQueueOrRender((_mvState.busy && _mvState.pendingIndex !== null ? _mvState.pendingIndex : _mvState.index) + 1); }
+function _mvPrev() { if (_mvState) _mvQueueOrRender((_mvState.busy && _mvState.pendingIndex !== null ? _mvState.pendingIndex : _mvState.index) - 1); }
 function _mvJumpTo(pageNum) {
-  if (!_mvState || _mvState.busy) return;
+  if (!_mvState) return;
   const idx = Math.min(Math.max(1, pageNum), _mvState.pages.length) - 1;
-  if (idx !== _mvState.index) _mvRenderPage(idx);
+  _mvQueueOrRender(idx);
 }
 
 function _mvKeyHandler(e) {
@@ -409,7 +438,7 @@ async function openMaterialViewer(materialId) {
   window.addEventListener('blur', _mvVisibilityHandler);
   window.addEventListener('focus', _mvVisibilityHandler);
 
-  _mvState = { materialId, pages, index: 0, overlayEl: overlay, reqId: 0, busy: false, scale: 1, tx: 0, ty: 0 };
+  _mvState = { materialId, pages, index: 0, overlayEl: overlay, reqId: 0, busy: false, pendingIndex: null, scale: 1, tx: 0, ty: 0 };
   document.getElementById('mv-jump-input').max = pages.length;
   _mvInitZoomPan();
   await _mvRenderPage(0);
