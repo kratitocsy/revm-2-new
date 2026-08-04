@@ -33,8 +33,22 @@
 .gd-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;margin-bottom:1rem;}
 .gd-back{font-size:0.7rem;color:var(--muted);text-decoration:none;cursor:pointer;}
 .gd-back:hover{color:var(--gold);}
-.gd-layout{display:flex;gap:1.25rem;align-items:flex-start;}
-.gd-sidebar{flex:0 0 168px;display:flex;flex-direction:column;gap:0.2rem;position:sticky;top:1rem;}
+.gd-layout{position:relative;}
+.gd-sidebar{
+  flex:0 0 168px;display:flex;flex-direction:column;gap:0.2rem;
+  position:absolute;left:0;top:0;z-index:6;width:172px;
+  background:var(--black);border:1px solid var(--border);padding:0.4rem;
+  transform:translateX(-115%);transition:transform 0.22s ease;
+}
+.gd-sidebar.hover-open,.gd-sidebar.mobile-open{
+  transform:translateX(0);
+  box-shadow:16px 0 40px rgba(0,0,0,0.55);
+}
+.gd-sidebar-hover-zone{display:none;}
+@media(min-width:769px){
+  .gd-sidebar-hover-zone{display:block;position:absolute;left:0;top:0;bottom:0;width:14px;z-index:5;}
+}
+.gd-hamburger-btn{display:none;}
 .gd-nav-item{display:flex;align-items:center;gap:0.5rem;padding:0.55rem 0.7rem;font-size:0.78rem;color:var(--muted);background:transparent;border:1px solid transparent;cursor:pointer;text-align:left;border-radius:2px;transition:background 0.15s,color 0.15s,border-color 0.15s;}
 .gd-nav-item:hover{color:var(--text);background:var(--s2);}
 .gd-nav-item.active{color:var(--gold);background:rgba(212,175,55,0.08);border-color:rgba(212,175,55,0.3);}
@@ -59,7 +73,17 @@
 .lb-rank{flex:0 0 24px;color:var(--dim);font-weight:600;}
 .lb-name{flex:1;min-width:0;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .lb-hours{flex:0 0 auto;color:var(--gold);font-size:0.72rem;}
-@media (max-width:720px){.gd-layout{flex-direction:column;}.gd-sidebar{flex-direction:row;flex-wrap:wrap;position:static;width:100%;}.gd-nav-item{flex:1 1 auto;justify-content:center;}}
+@media(max-width:768px){
+  .gd-hamburger-btn{
+    display:flex;align-items:center;gap:0.4rem;
+    padding:0.45rem 0.7rem;margin-bottom:0.8rem;
+    background:var(--s1);border:1px solid var(--border);
+    color:var(--text);font-size:0.74rem;cursor:pointer;
+  }
+  .gd-sidebar{width:220px;z-index:160;}
+  .gd-sidebar-backdrop.active{display:block;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;}
+}
+.gd-sidebar-backdrop{display:none;}
 .member-row{display:flex;align-items:center;gap:0.75rem;padding:0.65rem 0.85rem;border-bottom:1px solid var(--border);}
 .avatar{width:38px;height:38px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;color:var(--muted);flex-shrink:0;transition:all 0.3s;overflow:hidden;}
 .avatar.live{filter:saturate(1) grayscale(0);box-shadow:0 0 0 2px var(--gold),0 0 12px rgba(200,169,110,0.6);color:var(--gold);animation:pulseGlow 2s ease-in-out infinite;}
@@ -352,6 +376,8 @@
       </div>
 
       <div class="gd-layout">
+      <div class="gd-sidebar-backdrop" id="gdSidebarBackdrop" onclick="closeGroupSidebar()"></div>
+      <button class="gd-hamburger-btn" onclick="openGroupSidebar()">☰ Sections</button>
       <aside class="gd-sidebar" id="gdSidebar">
         <button class="gd-nav-item active" data-gtab="overview" onclick="setGroupTab('overview',this)">Overview</button>
         <button class="gd-nav-item" data-gtab="materials" onclick="setGroupTab('materials',this)">Materials</button>
@@ -834,7 +860,42 @@ function setGroupTab(tab, btnEl){
   if(tab==='leaderboard') loadGroupLeaderboard();
   if(tab==='analytics') loadGroupAnalytics();
   groupTabsLoaded[tab] = true;
+  if(window.innerWidth <= 768) closeGroupSidebar(); // drawer: pick a section, drawer tucks away
 }
+
+/* Group sidebar as a drawer — mirrors the main app .sidebar behavior
+   in shared.js: hidden by default, on desktop it slides out while the
+   cursor rests on a thin hover-zone glued to the content's left edge
+   (or on the sidebar itself once open); on mobile/tablet it's opened
+   via a hamburger button and closed via a tap on the backdrop or a
+   tab pick. Scoped to this page (only groups.html has a gd-sidebar). */
+function openGroupSidebar(){
+  document.getElementById('gdSidebar')?.classList.add('mobile-open');
+  document.getElementById('gdSidebarBackdrop')?.classList.add('active');
+}
+function closeGroupSidebar(){
+  document.getElementById('gdSidebar')?.classList.remove('mobile-open');
+  document.getElementById('gdSidebarBackdrop')?.classList.remove('active');
+}
+function initGdSidebarHoverReveal(){
+  const sidebar = document.getElementById('gdSidebar');
+  const layout = document.querySelector('.gd-layout');
+  if(!sidebar || !layout) return;
+  if(document.getElementById('gdSidebarHoverZone')) return; // idempotent
+  const zone = document.createElement('div');
+  zone.id = 'gdSidebarHoverZone';
+  zone.className = 'gd-sidebar-hover-zone';
+  layout.appendChild(zone);
+  let closeTimer = null;
+  function reveal(){ clearTimeout(closeTimer); sidebar.classList.add('hover-open'); }
+  function scheduleHide(){ clearTimeout(closeTimer); closeTimer = setTimeout(()=>sidebar.classList.remove('hover-open'), 180); }
+  zone.addEventListener('mouseenter', reveal);
+  sidebar.addEventListener('mouseenter', reveal);
+  zone.addEventListener('mouseleave', scheduleHide);
+  sidebar.addEventListener('mouseleave', scheduleHide);
+}
+document.addEventListener('DOMContentLoaded', initGdSidebarHoverReveal);
+window.addEventListener('resize', () => { if(window.innerWidth > 768) closeGroupSidebar(); });
 
 async function loadMaterialsList(){
   const listEl = document.getElementById('materialsList');
