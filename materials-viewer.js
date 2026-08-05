@@ -13,8 +13,10 @@
 const MATERIALS_WORKER_URL_VIEWER = 'https://revm2-materials-proxy.kiaro2244.workers.dev';
 const MV_MIN_SCALE = 1;
 const MV_MAX_SCALE = 4;
+const MV_CACHE_TTL_MS = 45000; // signed view URLs are short-lived; don't trust a cached one forever
+const MV_PREFETCH_RADIUS = 1; // pages ahead/behind to keep warm
 
-let _mvState = null; // { materialId, pages, index, overlayEl, reqId, scale, tx, ty }
+let _mvState = null; // { materialId, pages, index, overlayEl, reqId, busy, pendingIndex, preloadCache, scale, tx, ty }
 
 function _mvInjectStyles() {
   if (document.getElementById('mv-styles')) return;
@@ -30,21 +32,53 @@ function _mvInjectStyles() {
       transition:transform 0.08s ease-out; }
     #mv-page-img.mv-panning { transition:none; cursor:grabbing; }
     #mv-page-img.mv-zoomed { cursor:grab; }
-    /* Kindle-style page-turn: the OUTGOING page is cloned into this layer and
+    /* iBooks-style page-turn: the OUTGOING page is cloned into this layer and
        rotated away about its spine edge (right edge for "next", left edge for
        "prev") while the incoming page — already the real #mv-page-img — sits
-       underneath and is revealed as the turning page rotates past. */
+       underneath and is revealed as the turning page rotates past. A shine
+       sweep + drop shadow + mid-turn "pinch" sell the illusion of a curling
+       sheet of paper rather than a flat card flip. */
     .mv-flip-page { position:absolute; top:0; left:0; width:100%; height:100%;
       object-fit:contain; backface-visibility:hidden; pointer-events:none;
       z-index:5; transform:rotateY(0deg); background:#000; }
+    .mv-flip-page::after{ content:''; position:absolute; inset:0; opacity:0;
+      transition:opacity 0.46s ease; pointer-events:none; }
     .mv-flip-page.mv-flip-next { transform-origin:right center; }
     .mv-flip-page.mv-flip-prev { transform-origin:left center; }
-    .mv-flip-page.mv-flip-animate-next { transition:transform 0.46s cubic-bezier(.45,0,.2,1); transform:rotateY(-160deg); }
-    .mv-flip-page.mv-flip-animate-prev { transition:transform 0.46s cubic-bezier(.45,0,.2,1); transform:rotateY(160deg); }
-    /* A soft sweeping shadow that tracks the curling edge, the same trick
-       Kindle/iBooks use to sell the illusion of a lifting sheet of paper. */
+    .mv-flip-page.mv-flip-next::after{
+      background:linear-gradient(100deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.22) 46%,
+        rgba(255,255,255,0.02) 54%, rgba(0,0,0,0.4) 82%, rgba(0,0,0,0.15) 100%); }
+    .mv-flip-page.mv-flip-prev::after{
+      background:linear-gradient(260deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.22) 46%,
+        rgba(255,255,255,0.02) 54%, rgba(0,0,0,0.4) 82%, rgba(0,0,0,0.15) 100%); }
+    .mv-flip-page.mv-flip-animate-next{
+      animation: mvFlipNext 0.5s cubic-bezier(.45,0,.2,1) forwards;
+      box-shadow:-18px 0 40px -6px rgba(0,0,0,0.55);
+      border-top-right-radius:3%; border-bottom-right-radius:3%; }
+    .mv-flip-page.mv-flip-animate-prev{
+      animation: mvFlipPrev 0.5s cubic-bezier(.45,0,.2,1) forwards;
+      box-shadow:18px 0 40px -6px rgba(0,0,0,0.55);
+      border-top-left-radius:3%; border-bottom-left-radius:3%; }
+    .mv-flip-page.mv-flip-animate-next::after,
+    .mv-flip-page.mv-flip-animate-prev::after{ opacity:1; }
+    /* The mid-turn scaleX pinch is what sells "curling sheet of paper"
+       instead of a flat card spinning on a hinge — the page appears to
+       narrow as it turns edge-on to the viewer, like a real page does. */
+    @keyframes mvFlipNext {
+      0%   { transform:rotateY(0deg) scaleX(1); }
+      55%  { transform:rotateY(-92deg) scaleX(0.9); }
+      100% { transform:rotateY(-160deg) scaleX(1); }
+    }
+    @keyframes mvFlipPrev {
+      0%   { transform:rotateY(0deg) scaleX(1); }
+      55%  { transform:rotateY(92deg) scaleX(0.9); }
+      100% { transform:rotateY(160deg) scaleX(1); }
+    }
+    /* A soft sweeping shadow cast onto the page underneath by the curling
+       sheet, the same trick Kindle/iBooks use to fake depth without a real
+       physics mesh. */
     .mv-flip-shade { position:absolute; top:0; width:60%; height:100%; z-index:6;
-      pointer-events:none; opacity:0; transition:opacity 0.46s ease; }
+      pointer-events:none; opacity:0; transition:opacity 0.5s ease; }
     .mv-flip-shade-next { right:0; background:linear-gradient(to left, rgba(0,0,0,0.5), rgba(0,0,0,0) 100%); }
     .mv-flip-shade-prev { left:0; background:linear-gradient(to right, rgba(0,0,0,0.5), rgba(0,0,0,0) 100%); }
     .mv-flip-shade.mv-flip-shade-on { opacity:1; }
@@ -86,6 +120,44 @@ async function _mvPageUrl(materialId, pageNumber) {
   if (!res.ok) throw new Error('Could not open this page.');
   const { token } = await res.json();
   return `${MATERIALS_WORKER_URL_VIEWER}/view/${token}`;
+}
+
+/* ── PREFETCH CACHE ───────────────────────────────────────────
+   Even with taps no longer getting dropped, every turn still did a full
+   mint-token + image-download round trip while the viewer waited — on a
+   slow connection or a cold worker that's a real, felt delay, not just a
+   dropped-click bug. Real e-readers turn instantly because the
+   neighbouring pages are already sitting in memory. This quietly keeps
+   the page before and after the current one preloaded so turning to them
+   is just the flip animation, no network wait. */
+async function _mvPrefetchPage(i) {
+  const state = _mvState;
+  if (!state || i < 0 || i >= state.pages.length) return;
+  const existing = state.preloadCache[i];
+  if (existing && (existing.status === 'loading' || (existing.status === 'ready' && Date.now() - existing.time < MV_CACHE_TTL_MS))) return;
+  state.preloadCache[i] = { status: 'loading' };
+  try {
+    const url = await _mvPageUrl(state.materialId, state.pages[i].page_number);
+    await new Promise(resolve => {
+      const pre = new Image();
+      pre.onload = resolve;
+      pre.onerror = resolve;
+      pre.src = url;
+    });
+    if (state.preloadCache[i]?.status === 'loading') state.preloadCache[i] = { status: 'ready', url, time: Date.now() };
+  } catch (e) {
+    delete state.preloadCache[i];
+  }
+}
+
+function _mvSchedulePrefetch(index) {
+  const state = _mvState;
+  if (!state) return;
+  for (let i = index - MV_PREFETCH_RADIUS; i <= index + MV_PREFETCH_RADIUS; i++) _mvPrefetchPage(i);
+  // Drop anything that's drifted out of range so the cache doesn't grow unbounded over a long reading session.
+  Object.keys(state.preloadCache).forEach(k => {
+    if (Math.abs(Number(k) - index) > MV_PREFETCH_RADIUS) delete state.preloadCache[k];
+  });
 }
 
 function _mvSetLoading(on) {
@@ -136,7 +208,7 @@ function _mvPlayPageFlip(oldSrc, direction) {
     requestAnimationFrame(() => {
       flip.classList.add(direction === 'next' ? 'mv-flip-animate-next' : 'mv-flip-animate-prev');
       shade.classList.add('mv-flip-shade-on');
-      flip.addEventListener('transitionend', finish, { once: true });
+      flip.addEventListener('animationend', finish, { once: true });
     });
     setTimeout(finish, 650); // safety net — never leave the clone stuck on screen
   });
@@ -164,24 +236,30 @@ async function _mvRenderPage(index) {
   _mvSetLoading(true);
 
   let url;
-  try {
-    url = await _mvPageUrl(state.materialId, state.pages[index].page_number);
-  } catch (e) {
-    console.error(e);
-    if (state.reqId === myReq) { state.busy = false; _mvSetLoading(false); }
-    return;
-  }
-  if (state.reqId !== myReq) return; // a newer page request has since started — drop this one
+  const cached = state.preloadCache[index];
+  const cacheHit = cached && cached.status === 'ready' && (Date.now() - cached.time < MV_CACHE_TTL_MS);
+  if (cacheHit) {
+    url = cached.url;
+  } else {
+    try {
+      url = await _mvPageUrl(state.materialId, state.pages[index].page_number);
+    } catch (e) {
+      console.error(e);
+      if (state.reqId === myReq) { state.busy = false; _mvSetLoading(false); }
+      return;
+    }
+    if (state.reqId !== myReq) return; // a newer page request has since started — drop this one
 
-  // Preload the actual image bytes before touching the DOM at all, so the
-  // page-turn reveal never uncovers a half-loaded / blank page.
-  await new Promise(resolve => {
-    const pre = new Image();
-    pre.onload = resolve;
-    pre.onerror = resolve;
-    pre.src = url;
-  });
-  if (state.reqId !== myReq) return;
+    // Preload the actual image bytes before touching the DOM at all, so the
+    // page-turn reveal never uncovers a half-loaded / blank page.
+    await new Promise(resolve => {
+      const pre = new Image();
+      pre.onload = resolve;
+      pre.onerror = resolve;
+      pre.src = url;
+    });
+    if (state.reqId !== myReq) return;
+  }
 
   const img = document.getElementById('mv-page-img');
   const direction = index > state.index ? 'next' : 'prev';
@@ -197,6 +275,7 @@ async function _mvRenderPage(index) {
   document.getElementById('mv-page-indicator').textContent = `${index + 1} / ${state.pages.length}`;
   document.getElementById('mv-jump-input').value = index + 1;
   _mvSetLoading(false);
+  _mvSchedulePrefetch(index);
 
   // Drain any navigation that was requested (and queued) while this render
   // was in flight, so taps made mid-animation aren't lost — the viewer
@@ -438,7 +517,7 @@ async function openMaterialViewer(materialId) {
   window.addEventListener('blur', _mvVisibilityHandler);
   window.addEventListener('focus', _mvVisibilityHandler);
 
-  _mvState = { materialId, pages, index: 0, overlayEl: overlay, reqId: 0, busy: false, pendingIndex: null, scale: 1, tx: 0, ty: 0 };
+  _mvState = { materialId, pages, index: 0, overlayEl: overlay, reqId: 0, busy: false, pendingIndex: null, preloadCache: {}, scale: 1, tx: 0, ty: 0 };
   document.getElementById('mv-jump-input').max = pages.length;
   _mvInitZoomPan();
   await _mvRenderPage(0);
