@@ -26,62 +26,21 @@ function _mvInjectStyles() {
     #mv-overlay { position:fixed; inset:0; background:#000; z-index:9999;
       display:flex; flex-direction:column; align-items:center; justify-content:center; }
     #mv-page-wrap { flex:1; width:100%; display:flex; align-items:center; justify-content:center;
-      overflow:hidden; position:relative; touch-action:none; perspective:1800px; }
+      overflow:hidden; position:relative; touch-action:none; }
     #mv-page-img { max-width:100%; max-height:100%; -webkit-touch-callout:none;
       -webkit-user-select:none; user-select:none; will-change:transform;
       transition:transform 0.08s ease-out; }
     #mv-page-img.mv-panning { transition:none; cursor:grabbing; }
     #mv-page-img.mv-zoomed { cursor:grab; }
-    /* iBooks-style page-turn: the OUTGOING page is cloned into this layer and
-       rotated away about its spine edge (right edge for "next", left edge for
-       "prev") while the incoming page — already the real #mv-page-img — sits
-       underneath and is revealed as the turning page rotates past. A shine
-       sweep + drop shadow + mid-turn "pinch" sell the illusion of a curling
-       sheet of paper rather than a flat card flip. */
-    .mv-flip-page { position:absolute; top:0; left:0; width:100%; height:100%;
-      object-fit:contain; backface-visibility:hidden; pointer-events:none;
-      z-index:5; transform:rotateY(0deg); background:#000; }
-    .mv-flip-page::after{ content:''; position:absolute; inset:0; opacity:0;
-      transition:opacity 0.46s ease; pointer-events:none; }
-    .mv-flip-page.mv-flip-next { transform-origin:right center; }
-    .mv-flip-page.mv-flip-prev { transform-origin:left center; }
-    .mv-flip-page.mv-flip-next::after{
-      background:linear-gradient(100deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.22) 46%,
-        rgba(255,255,255,0.02) 54%, rgba(0,0,0,0.4) 82%, rgba(0,0,0,0.15) 100%); }
-    .mv-flip-page.mv-flip-prev::after{
-      background:linear-gradient(260deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.22) 46%,
-        rgba(255,255,255,0.02) 54%, rgba(0,0,0,0.4) 82%, rgba(0,0,0,0.15) 100%); }
-    .mv-flip-page.mv-flip-animate-next{
-      animation: mvFlipNext 0.5s cubic-bezier(.45,0,.2,1) forwards;
-      box-shadow:-18px 0 40px -6px rgba(0,0,0,0.55);
-      border-top-right-radius:3%; border-bottom-right-radius:3%; }
-    .mv-flip-page.mv-flip-animate-prev{
-      animation: mvFlipPrev 0.5s cubic-bezier(.45,0,.2,1) forwards;
-      box-shadow:18px 0 40px -6px rgba(0,0,0,0.55);
-      border-top-left-radius:3%; border-bottom-left-radius:3%; }
-    .mv-flip-page.mv-flip-animate-next::after,
-    .mv-flip-page.mv-flip-animate-prev::after{ opacity:1; }
-    /* The mid-turn scaleX pinch is what sells "curling sheet of paper"
-       instead of a flat card spinning on a hinge — the page appears to
-       narrow as it turns edge-on to the viewer, like a real page does. */
-    @keyframes mvFlipNext {
-      0%   { transform:rotateY(0deg) scaleX(1); }
-      55%  { transform:rotateY(-92deg) scaleX(0.9); }
-      100% { transform:rotateY(-160deg) scaleX(1); }
-    }
-    @keyframes mvFlipPrev {
-      0%   { transform:rotateY(0deg) scaleX(1); }
-      55%  { transform:rotateY(92deg) scaleX(0.9); }
-      100% { transform:rotateY(160deg) scaleX(1); }
-    }
-    /* A soft sweeping shadow cast onto the page underneath by the curling
-       sheet, the same trick Kindle/iBooks use to fake depth without a real
-       physics mesh. */
-    .mv-flip-shade { position:absolute; top:0; width:60%; height:100%; z-index:6;
-      pointer-events:none; opacity:0; transition:opacity 0.5s ease; }
-    .mv-flip-shade-next { right:0; background:linear-gradient(to left, rgba(0,0,0,0.5), rgba(0,0,0,0) 100%); }
-    .mv-flip-shade-prev { left:0; background:linear-gradient(to right, rgba(0,0,0,0.5), rgba(0,0,0,0) 100%); }
-    .mv-flip-shade.mv-flip-shade-on { opacity:1; }
+    /* The diagonal page-curl itself is rendered frame-by-frame onto this
+       canvas (see _mvPlayPageCurl) rather than done in CSS — a real corner
+       curl needs per-pixel control over the fold line and a mirrored
+       "underside" of the paper, which isn't expressible as a single
+       transform. The canvas sits on top of #mv-page-img (already showing
+       the incoming page) and only paints the outgoing page's still-flat
+       and currently-curling regions; wherever the fold has already swept
+       past, nothing is drawn and the incoming page shows straight through. */
+    #mv-curl-canvas { position:absolute; inset:0; z-index:5; pointer-events:none; }
     #mv-tap-prev, #mv-tap-next { position:absolute; top:0; bottom:0; width:35%; cursor:pointer; }
     #mv-tap-prev { left:0; } #mv-tap-next { right:0; }
     #mv-loading { position:absolute; inset:0; display:none; align-items:center; justify-content:center;
@@ -173,46 +132,156 @@ function _mvSetLoading(on) {
   document.getElementById('mv-jump-btn').disabled = on;
 }
 
-/* Clones the outgoing page on top of the wrap and rotates it away about its
- * spine edge while the incoming page (already sitting in #mv-page-img
- * underneath) is revealed — the classic book/Kindle page-turn illusion.
- * Resolves once the animation is done (or immediately if the browser can't
- * do 3D transforms, via the transitionend safety-net timeout below). */
-function _mvPlayPageFlip(oldSrc, direction) {
+function _mvLoadImage(src) {
+  return new Promise(resolve => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => resolve(im);
+    im.src = src;
+  });
+}
+
+/* ── DIAGONAL PAGE CURL ───────────────────────────────────────
+ * A real corner curl (as opposed to the flat rotateY "card flip") needs
+ * per-region control that CSS transforms can't express: most of the page
+ * stays flat while a diagonal fold line sweeps from one corner to the
+ * opposite one, and the strip of paper actively rolling over has to show
+ * a mirrored "underside" with its own shading — that's rendered here on a
+ * canvas, frame by frame, rather than with a single transform.
+ *
+ * Geometry, per frame:
+ *  - A = the corner the turn starts from (bottom-right for "next",
+ *    bottom-left for "prev"), B = the opposite corner it sweeps toward.
+ *  - `d` = unit vector from A toward B; `proj` = how far along `d` a point
+ *    sits (0 at A, L at B).
+ *  - `foldPos` advances from 0 to L+rollRadius over the animation — it's
+ *    the leading edge of the fold.
+ *  - proj > foldPos            → still flat, unaffected: draw normally.
+ *  - foldPos-rollRadius..foldPos → the curling band: draw the page MIRRORED
+ *    about the fold line (its "underside"), shaded darkest at the crease.
+ *  - proj < foldPos-rollRadius → already turned past: draw nothing, so the
+ *    incoming page (already the live #mv-page-img underneath) shows through.
+ */
+function _mvPlayPageCurl(oldImgEl, direction) {
   return new Promise(resolve => {
     const wrap = document.getElementById('mv-page-wrap');
-    if (!wrap || !oldSrc) { resolve(); return; }
+    if (!wrap || !oldImgEl) { resolve(); return; }
 
-    const flip = document.createElement('img');
-    flip.src = oldSrc;
-    flip.draggable = false;
-    flip.alt = '';
-    flip.className = 'mv-flip-page ' + (direction === 'next' ? 'mv-flip-next' : 'mv-flip-prev');
-    wrap.appendChild(flip);
+    const rect = wrap.getBoundingClientRect();
+    const W = rect.width, H = rect.height;
+    if (!W || !H) { resolve(); return; }
+    const dpr = window.devicePixelRatio || 1;
+    const canvas = document.createElement('canvas');
+    canvas.id = 'mv-curl-canvas';
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    wrap.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
 
-    const shade = document.createElement('div');
-    shade.className = 'mv-flip-shade ' + (direction === 'next' ? 'mv-flip-shade-next' : 'mv-flip-shade-prev');
-    wrap.appendChild(shade);
+    // Contain-fit the source image within the wrap, matching how the live
+    // <img> (object-fit via max-width/max-height:100%) is centred — so the
+    // curl hugs the actual visible page edges, not the letterboxed wrap.
+    const nw = oldImgEl.naturalWidth || W, nh = oldImgEl.naturalHeight || H;
+    const fitScale = Math.min(W / nw, H / nh);
+    const drawW = nw * fitScale, drawH = nh * fitScale;
+    const offX = (W - drawW) / 2, offY = (H - drawH) / 2;
 
-    void flip.offsetWidth; // force a reflow so the transition below actually animates
+    const A = direction === 'next' ? { x: offX + drawW, y: offY + drawH } : { x: offX, y: offY + drawH };
+    const B = direction === 'next' ? { x: offX, y: offY } : { x: offX + drawW, y: offY };
+    const dx = B.x - A.x, dy = B.y - A.y;
+    const L = Math.hypot(dx, dy) || 1;
+    const d = { x: dx / L, y: dy / L };
+    const n = { x: -d.y, y: d.x };
+    const angle = Math.atan2(d.y, d.x);
+    const rollRadius = L * 0.22;
+    const BIG = Math.max(W, H) * 3;
 
+    function bandPolygon(p0, p1) {
+      return [[p0, -BIG], [p0, BIG], [p1, BIG], [p1, -BIG]].map(([p, off]) => ({
+        x: A.x + d.x * p + n.x * off,
+        y: A.y + d.y * p + n.y * off,
+      }));
+    }
+    function clipToPolygon(points) {
+      ctx.beginPath();
+      points.forEach((pt, i) => (i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y)));
+      ctx.closePath();
+      ctx.clip();
+    }
+    function fillGradientAlong(p0, p1, stops) {
+      const g0 = { x: A.x + d.x * p0, y: A.y + d.y * p0 };
+      const g1 = { x: A.x + d.x * p1, y: A.y + d.y * p1 };
+      const grad = ctx.createLinearGradient(g0.x, g0.y, g1.x, g1.y);
+      stops.forEach(([stop, color]) => grad.addColorStop(stop, color));
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    const DURATION = 560;
+    const start = performance.now();
     let settled = false;
     const finish = () => {
       if (settled) return;
       settled = true;
-      flip.remove();
-      shade.remove();
+      canvas.remove();
       resolve();
     };
 
-    requestAnimationFrame(() => {
-      flip.classList.add(direction === 'next' ? 'mv-flip-animate-next' : 'mv-flip-animate-prev');
-      shade.classList.add('mv-flip-shade-on');
-      flip.addEventListener('animationend', finish, { once: true });
-    });
-    setTimeout(finish, 650); // safety net — never leave the clone stuck on screen
+    function frame(now) {
+      const t = Math.min(1, (now - start) / DURATION);
+      const eased = 1 - Math.pow(1 - t, 2.2);
+      const foldPos = eased * (L + rollRadius);
+      const bandLow = foldPos - rollRadius;
+
+      ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, W, H);
+      ctx.clip();
+
+      // Still-flat region, untouched by the fold.
+      ctx.save();
+      clipToPolygon(bandPolygon(foldPos, BIG));
+      ctx.drawImage(oldImgEl, offX, offY, drawW, drawH);
+      ctx.restore();
+
+      // The curling band — mirrored about the fold line to look like the
+      // paper has rolled over to show its underside, plus crease shading.
+      ctx.save();
+      clipToPolygon(bandPolygon(bandLow, foldPos));
+      const foldPt = { x: A.x + d.x * foldPos, y: A.y + d.y * foldPos };
+      ctx.translate(foldPt.x, foldPt.y);
+      ctx.rotate(angle);
+      ctx.scale(-1, 1);
+      ctx.rotate(-angle);
+      ctx.translate(-foldPt.x, -foldPt.y);
+      ctx.globalAlpha = 0.94;
+      ctx.drawImage(oldImgEl, offX, offY, drawW, drawH);
+      ctx.globalAlpha = 1;
+      fillGradientAlong(bandLow, foldPos, [[0, 'rgba(0,0,0,0)'], [0.65, 'rgba(0,0,0,0.26)'], [1, 'rgba(0,0,0,0.5)']]);
+      ctx.restore();
+
+      // Soft shadow the curling sheet casts onto the newly revealed page
+      // just past the fold — the same depth trick Kindle/iBooks use.
+      ctx.save();
+      const shadowSpan = rollRadius * 0.6;
+      clipToPolygon(bandPolygon(bandLow - shadowSpan, bandLow));
+      fillGradientAlong(bandLow - shadowSpan, bandLow, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0.3)']]);
+      ctx.restore();
+
+      ctx.restore();
+
+      if (t < 1) requestAnimationFrame(frame);
+      else finish();
+    }
+    requestAnimationFrame(frame);
+    setTimeout(finish, DURATION + 250); // safety net — never leave the canvas stuck on screen
   });
 }
+
 
 /* Guarded against out-of-order responses: if the user taps next/prev
  * (or the tap zones) a couple of times before a fetch resolves, the page

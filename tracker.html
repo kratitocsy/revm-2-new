@@ -382,14 +382,15 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
              big cumulative clock above (also what RevMGrid/live grid reads); each
              row below shows just that subject's own studied time today. -->
         <div class="subj-timer-wrap" id="subjectTimerWrap" style="display:none;">
-          <div class="history-title">Tap a subject to start / switch — the clock above is your cumulative total today</div>
+          <div class="history-title">Tap a subject to start / switch — the clock above shows this session while running, your cumulative total for today while paused</div>
           <div class="subj-timer-list" id="subjectTimerList"></div>
           <div style="display:flex;gap:0.4rem;margin-top:0.6rem;align-items:center;">
             <input type="text" id="newSubjectInput" placeholder="Add a subject…" style="flex:1;" onkeydown="if(event.key==='Enter') addSubject()">
             <button class="btn btn-ghost btn-sm" onclick="addSubject()">+ Add</button>
           </div>
-          <div style="display:flex;justify-content:center;margin-top:0.9rem;">
+          <div style="display:flex;justify-content:center;gap:0.5rem;margin-top:0.9rem;">
             <button class="btn btn-ghost btn-sm" onclick="stopAllSubjectTimers()">■ Stop</button>
+            <button class="btn btn-ghost btn-sm" onclick="resetUnlimitedTimer()">↺ Reset</button>
           </div>
         </div>
 
@@ -1206,11 +1207,17 @@ function logSession(){
    own studied-today readout. Only one can run at a time (there's
    only one live study_sessions row per user, which is what feeds
    RevMGrid), so starting a new subject cleanly stops/logs whichever
-   one was running first. The big clock above stays cumulative —
-   it's today's total across every subject, not just the active
-   one — because logSession() commits the outgoing subject's elapsed
-   time into slog *before* the new subject starts at 0, so the sum
-   never jumps or resets when you switch. */
+   one was running first.
+
+   The big clock above is deliberately NOT the same number the whole
+   time: while a session is actively running it shows just THIS
+   session's elapsed time, starting fresh at 00:00 every time you hit
+   play (so it reads as "how long have I been at this, right now") —
+   and the moment you pause it flips to showing the cumulative total
+   studied today across every subject (todaysCommittedTotal(), which
+   logSession() keeps up to date). Each subject's own row underneath
+   always shows that subject's running cumulative total, live-updated
+   while it's the active one — that number never resets to 0. */
 function fmtClock(totalSecs){
   const t=Math.max(0,Math.floor(totalSecs));
   const h=Math.floor(t/3600), m=Math.floor((t%3600)/60).toString().padStart(2,'0'), s=(t%60).toString().padStart(2,'0');
@@ -1223,8 +1230,7 @@ function todaysCommittedTotal(){
   return Object.values(slog[timerDayStr]||{}).reduce((a,b)=>a+b,0);
 }
 function renderTimerDisplayCumulative(){
-  const total=todaysCommittedTotal()+(timerRunning?timerSecs:0);
-  const text=fmtClock(total);
+  const text = timerRunning ? fmtClock(timerSecs) : fmtClock(todaysCommittedTotal());
   document.getElementById('timerDisplay').textContent=text;
   document.title=timerRunning?`${text} — RevM²`:'RevM²';
 }
@@ -1329,6 +1335,32 @@ function stopAllSubjectTimers(){
   document.getElementById('timerDisplay').classList.remove('running');
   logSession();
   activeSubject=null;
+  renderSubjectTimerList();
+  renderTimerDisplayCumulative();
+}
+
+/* Distinct from Stop: Stop pauses and SAVES whatever was studied into
+   today's totals (via logSession). Reset throws the current in-progress
+   session away instead — useful for an accidental tap or a session you
+   don't want counted — and always leaves the big clock and every subject
+   row back at exactly what they were before this session started. */
+function resetUnlimitedTimer(){
+  if(!timerRunning || !sessStart){
+    // Nothing live to discard — still make sure the clock reflects today's
+    // committed total rather than being left on a stale number.
+    renderTimerDisplayCumulative();
+    return;
+  }
+  const elapsed=Math.round((Date.now()-sessStart)/1000);
+  if(elapsed>=5 && !confirm(`Discard the last ${fmtClock(elapsed)} on ${activeSubject||'this subject'}? It won't be added to today's total.`)) return;
+  clearInterval(timerIv);
+  stopRemoteSession(); // ends the live RevMGrid/study_sessions row without writing anything to slog
+  timerRunning=false;
+  sessStart=null;
+  timerSecs=0;
+  activeSubject=null;
+  document.getElementById('timerDisplay').classList.remove('running');
+  document.getElementById('timerLiveTag').style.display='none';
   renderSubjectTimerList();
   renderTimerDisplayCumulative();
 }
