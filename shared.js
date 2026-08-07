@@ -7,7 +7,19 @@
 /* ── SUPABASE CONFIG ─────────────────────────────────────── */
 const REVM2_CONFIG = {
   SUPABASE_URL:  'https://dhzjtjekbvxxsauzhadl.supabase.co',
-  SUPABASE_ANON: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoemp0amVrYnZ4eHNhdXpoYWRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzNjQ2NjUsImV4cCI6MjA5Nzk0MDY2NX0.2Uo36DtE7NpwW5wxOEwnmWjbXhHWXV-wf6qc7kXDtYE'
+  SUPABASE_ANON: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoemp0amVrYnZ4eHNhdXpoYWRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzNjQ2NjUsImV4cCI6MjA5Nzk0MDY2NX0.2Uo36DtE7NpwW5wxOEwnmWjbXhHWXV-wf6qc7kXDtYE',
+  /* ── Google Drive picker (materials import) ──────────────────────
+   * Needed only for the "Import from Drive" button on the Materials
+   * panel. Get these from a Google Cloud Console project:
+   *   1. APIs & Services → Library → enable "Google Picker API" and
+   *      "Google Drive API".
+   *   2. Credentials → Create API key → GOOGLE_API_KEY below.
+   *   3. Credentials → Create OAuth client ID (type: Web application),
+   *      add your app's origin(s) under "Authorized JavaScript origins"
+   *      → GOOGLE_CLIENT_ID below.
+   * Leave both empty to hide the Drive-import button entirely. */
+  GOOGLE_API_KEY:   '',
+  GOOGLE_CLIENT_ID: '',
 };
 
 /* ── EBBINGHAUS INTERVALS ────────────────────────────────── */

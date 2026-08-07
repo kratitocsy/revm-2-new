@@ -148,4 +148,105 @@ async function listGroupMaterials(groupId) {
   return data;
 }
 
-window.RevmMaterials = { uploadGroupMaterial, listGroupMaterials, MAX_UPLOAD_BYTES };
+/* ── ZIP ARCHIVES ──────────────────────────────────────────────────
+ * Requires JSZip on the page:
+ *   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+ * A .zip is just expanded client-side into its PDF/image entries, each
+ * of which then flows through the normal single-file upload pipeline.
+ */
+const ZIP_ENTRY_RE = /\.(pdf|jpe?g|png|webp)$/i;
+
+function isZipFile(file) {
+  return /\.zip$/i.test(file.name) || file.type === 'application/zip' || file.type === 'application/x-zip-compressed';
+}
+
+/** Expand a .zip File into an array of File objects for its PDF/image entries. */
+async function extractFilesFromZip(zipFile) {
+  if (typeof JSZip === 'undefined') {
+    throw new Error('ZIP support failed to load — refresh the page and try again.');
+  }
+  const zip = await JSZip.loadAsync(zipFile);
+  const entries = Object.values(zip.files)
+    .filter(e => !e.dir
+      && !e.name.startsWith('__MACOSX/')
+      && !e.name.split('/').pop().startsWith('.')
+      && ZIP_ENTRY_RE.test(e.name))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  if (!entries.length) throw new Error(`No PDF or image files found inside "${zipFile.name}".`);
+  const out = [];
+  for (const entry of entries) {
+    const blob = await entry.async('blob');
+    const name = entry.name.split('/').pop();
+    const ext = name.split('.').pop().toLowerCase();
+    const type = ext === 'pdf' ? 'application/pdf' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+    out.push(new File([blob], name, { type }));
+  }
+  return out;
+}
+
+/* ── BATCH UPLOAD ─────────────────────────────────────────────────
+ * Accepts a mix of plain PDFs/images and .zip archives (which are
+ * transparently expanded first) and uploads each as its own material,
+ * so the caller never has to drive the file picker one file at a time.
+ *
+ * @param {string} groupId
+ * @param {File[]} files
+ * @param {(status:string)=>void} onStatus
+ * @param {(file:File)=>string} [titleFor] - defaults to the filename minus extension
+ * @returns {Promise<{results:string[], errors:{file:string,error:string}[]}>}
+ */
+async function uploadGroupMaterials(groupId, files, onStatus = () => {}, titleFor = null) {
+  const expanded = [];
+  for (const f of files) {
+    if (isZipFile(f)) {
+      onStatus(`Unzipping ${f.name}…`);
+      expanded.push(...await extractFilesFromZip(f));
+    } else {
+      expanded.push(f);
+    }
+  }
+
+  const results = [];
+  const errors = [];
+  for (let i = 0; i < expanded.length; i++) {
+    const file = expanded[i];
+    const title = (titleFor ? titleFor(file) : null) || file.name.replace(/\.[^.]+$/, '');
+    const prefix = expanded.length > 1 ? `(${i + 1}/${expanded.length}) ${title}: ` : '';
+    try {
+      const materialId = await uploadGroupMaterial(groupId, file, title, (s) => onStatus(prefix + s));
+      results.push(materialId);
+    } catch (e) {
+      console.error(`Failed to upload ${file.name}:`, e);
+      errors.push({ file: file.name, error: e.message || String(e) });
+    }
+  }
+  onStatus(errors.length
+    ? `Done — ${results.length} uploaded, ${errors.length} failed.`
+    : `Done — ${results.length} uploaded.`);
+  return { results, errors };
+}
+
+/* ── GOOGLE DRIVE IMPORT ──────────────────────────────────────────
+ * The picker UI itself (auth + file selection) lives on the page, since
+ * it needs Google's Identity Services + Picker scripts and a client ID.
+ * This just turns a picked Drive file into a File object once the page
+ * already has a fileId/accessToken, so it can flow into uploadGroupMaterials.
+ */
+async function fetchDriveFileAsFile(fileId, fileName, mimeType, accessToken) {
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) throw new Error(`Could not download "${fileName}" from Drive (${res.status}).`);
+  const blob = await res.blob();
+  return new File([blob], fileName, { type: mimeType || blob.type || 'application/octet-stream' });
+}
+
+window.RevmMaterials = {
+  uploadGroupMaterial,
+  uploadGroupMaterials,
+  extractFilesFromZip,
+  isZipFile,
+  fetchDriveFileAsFile,
+  listGroupMaterials,
+  MAX_UPLOAD_BYTES,
+};

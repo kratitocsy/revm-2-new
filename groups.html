@@ -504,9 +504,14 @@
       <div class="card" style="margin-bottom:1rem;" id="materialsCard">
         <div class="card-header">
           <span class="card-title"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Materials</span>
-          <button class="btn btn-gold btn-sm" id="materialsUploadBtn" style="display:none;" onclick="openMaterialUpload()">+ Upload</button>
+          <div style="display:flex;gap:0.4rem;">
+            <button class="btn btn-gold btn-sm" id="materialsUploadBtn" style="display:none;" onclick="openMaterialUpload()" title="Upload PDFs, images, or a .zip of them — pick as many as you like at once">+ Upload</button>
+            <button class="btn btn-ghost btn-sm" id="materialsDriveBtn" style="display:none;" onclick="openDrivePicker()" title="Import PDFs from Google Drive">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M12 2v20M2 12h20"/></svg> Drive
+            </button>
+          </div>
         </div>
-        <input type="file" id="materialFileInput" accept=".pdf,image/*" style="display:none;" onchange="handleMaterialFileChosen(event)">
+        <input type="file" id="materialFileInput" accept=".pdf,image/*,.zip,application/zip" multiple style="display:none;" onchange="handleMaterialFileChosen(event)">
         <div id="materialsUploadStatus" style="display:none;padding:0.5rem 0.85rem;font-size:0.72rem;color:var(--muted);"></div>
         <div style="padding:0.6rem 0.85rem 0;">
           <input type="text" id="materialsSearchInput" placeholder="Search materials…" oninput="filterMaterialsList()" style="width:100%;">
@@ -681,6 +686,7 @@
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";</script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="materials.js"></script>
 <script src="materials-viewer.js"></script>
 <script>
@@ -1009,24 +1015,136 @@ function openMaterialUpload(){
 }
 
 async function handleMaterialFileChosen(evt){
-  const file = evt.target.files[0];
-  evt.target.value = ''; // allow re-picking the same file later
-  if(!file || !currentGroup) return;
-  const title = prompt('Title for this material:', file.name.replace(/\.[^.]+$/, ''));
-  if(title === null) return; // cancelled
+  const files = Array.from(evt.target.files || []);
+  evt.target.value = ''; // allow re-picking the same file(s) later
+  if(!files.length || !currentGroup) return;
+
+  // Single plain file (not a zip): keep the old "ask for a title" feel.
+  // Multiple files, or a zip full of pages, get filename-derived titles —
+  // stopping to prompt per file would defeat the point of batching.
+  let titleFor = null;
+  if(files.length === 1 && !RevmMaterials.isZipFile(files[0])){
+    const file = files[0];
+    const title = prompt('Title for this material:', file.name.replace(/\.[^.]+$/, ''));
+    if(title === null) return; // cancelled
+    titleFor = () => title || file.name;
+  }
+
+  await runMaterialsUpload(files, titleFor);
+}
+
+async function runMaterialsUpload(files, titleFor){
   const groupId = currentGroup.id;
   const statusEl = document.getElementById('materialsUploadStatus');
   statusEl.style.display = 'block';
   const setStatus = (s) => { statusEl.textContent = s; };
   try{
-    await RevmMaterials.uploadGroupMaterial(groupId, file, title || file.name, setStatus);
-    statusEl.style.display = 'none';
-    if(currentGroup?.id === groupId) loadMaterialsList();
+    const { results, errors } = await RevmMaterials.uploadGroupMaterials(groupId, files, setStatus, titleFor);
+    if(errors.length) console.error('Some materials failed to upload:', errors);
+    setTimeout(() => { statusEl.style.display = 'none'; }, errors.length ? 4000 : 800);
+    if(currentGroup?.id === groupId && results.length) loadMaterialsList();
   }catch(e){
     console.error(e);
     setStatus('Upload failed: ' + (e.message || e));
     setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
   }
+}
+
+/* ── Google Drive import ─────────────────────────────────────────
+ * Uses Google Identity Services (token client) + the Picker API.
+ * Both scripts are loaded lazily on first use so pages that never touch
+ * Drive import don't pay for them. Needs GOOGLE_API_KEY / GOOGLE_CLIENT_ID
+ * in shared.js — the Drive button is hidden entirely if those are unset. */
+let _driveApiLoaded = false, _drivePickerLoaded = false, _driveTokenClient = null, _driveAccessToken = null;
+
+function _loadScriptOnce(src){
+  return new Promise((resolve, reject) => {
+    if(document.querySelector(`script[src="${src}"]`)) return resolve();
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(s);
+  });
+}
+
+async function _ensureDriveScripts(){
+  await Promise.all([
+    _loadScriptOnce('https://accounts.google.com/gsi/client'),
+    _loadScriptOnce('https://apis.google.com/js/api.js'),
+  ]);
+  if(!_drivePickerLoaded){
+    await new Promise((resolve) => gapi.load('picker', () => { _drivePickerLoaded = true; resolve(); }));
+  }
+}
+
+function _getDriveAccessToken(){
+  return new Promise((resolve, reject) => {
+    if(!_driveTokenClient){
+      _driveTokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: REVM2_CONFIG.GOOGLE_CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/drive.readonly',
+        callback: (resp) => { if(resp.error) reject(resp); else resolve(resp.access_token); },
+      });
+    } else {
+      _driveTokenClient.callback = (resp) => { if(resp.error) reject(resp); else resolve(resp.access_token); };
+    }
+    _driveTokenClient.requestAccessToken({ prompt: _driveAccessToken ? '' : 'consent' });
+  });
+}
+
+async function openDrivePicker(){
+  if(!currentGroup) return;
+  if(!REVM2_CONFIG.GOOGLE_CLIENT_ID || !REVM2_CONFIG.GOOGLE_API_KEY){
+    alert('Google Drive import is not configured yet.');
+    return;
+  }
+  const statusEl = document.getElementById('materialsUploadStatus');
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Connecting to Google Drive…';
+  try{
+    await _ensureDriveScripts();
+    _driveAccessToken = await _getDriveAccessToken();
+
+    const view = new google.picker.DocsView(google.picker.ViewId.DOCS)
+      .setMimeTypes('application/pdf,image/jpeg,image/png,image/webp')
+      .setIncludeFolders(true)
+      .setSelectFolderEnabled(false);
+
+    const picker = new google.picker.PickerBuilder()
+      .setOAuthToken(_driveAccessToken)
+      .setDeveloperKey(REVM2_CONFIG.GOOGLE_API_KEY)
+      .addView(view)
+      .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+      .setCallback(_handleDrivePicked)
+      .build();
+    statusEl.style.display = 'none';
+    picker.setVisible(true);
+  }catch(e){
+    console.error(e);
+    statusEl.textContent = 'Could not open Google Drive: ' + (e.message || e);
+    setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+  }
+}
+
+async function _handleDrivePicked(data){
+  if(data.action !== google.picker.Action.PICKED) return;
+  if(!currentGroup) return;
+  const statusEl = document.getElementById('materialsUploadStatus');
+  statusEl.style.display = 'block';
+  const docs = data.docs || [];
+  const files = [];
+  try{
+    for(let i = 0; i < docs.length; i++){
+      const d = docs[i];
+      statusEl.textContent = `Downloading ${d.name} from Drive… (${i + 1}/${docs.length})`;
+      files.push(await RevmMaterials.fetchDriveFileAsFile(d.id, d.name, d.mimeType, _driveAccessToken));
+    }
+  }catch(e){
+    console.error(e);
+    statusEl.textContent = 'Drive download failed: ' + (e.message || e);
+    setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+    return;
+  }
+  await runMaterialsUpload(files, null);
 }
 
 function closeDetail(){
@@ -1057,6 +1175,7 @@ function renderGroupDetail(){
   }
 
   document.getElementById('materialsUploadBtn').style.display = isAdmin ? 'inline-block' : 'none';
+  document.getElementById('materialsDriveBtn').style.display = (isAdmin && REVM2_CONFIG.GOOGLE_CLIENT_ID) ? 'inline-flex' : 'none';
   loadMaterialsList();
 
   document.getElementById('adminSettingsCard').style.display = isAdmin ? 'block' : 'none';
