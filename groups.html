@@ -960,20 +960,40 @@ async function openGroup(groupId){
   suppressMainSidebarHover(true); // inside a group now — only the group sidebar should hover-open
   renderGroupDetail();
   loadVgPrefs(groupId);
-  await loadMembers();
-  await loadCoinBalance();
-  await loadChallenges();
-  await loadLiveGrid();
-  await loadGroupChat(groupId);
-  subscribeGroupChat(groupId);
-  refreshChatUnreadBadge();
+
+  // Timer/live-grid reconciliation goes FIRST and on its own, before any of
+  // the other panel loaders below. Previously this whole init ran as one
+  // sequential await chain (members -> coins -> challenges -> live grid ->
+  // chat -> ... -> reconcile), with no error handling anywhere in it. One
+  // throw partway through (a flaky request, a bad RPC response, anything)
+  // silently aborted everything after it — including reconcileMyFocusSession(),
+  // which is the only thing that replaces the hardcoded "0:00:00 / Not
+  // studying right now" placeholder markup with your actual running session.
+  // The result: a fully live, hours-long session in the database, but a
+  // timer that looks frozen because the code that would've shown it never
+  // got to run. Doing this first, isolated from the rest, means a failure
+  // anywhere else on the page can no longer take the timer down with it.
   renderFocusCard();
-  await reconcileMyFocusSession();
+  try{ await reconcileMyFocusSession(); }catch(e){ console.error('reconcileMyFocusSession failed:', e); }
+  try{ await loadLiveGrid(); }catch(e){ console.error('loadLiveGrid failed:', e); }
   startFocusTick();
   startLiveGridTick();
   subscribeLivePresence(groupId);
   startFocusReconcilePoll();
-  initCamChannel(groupId);
+
+  // Everything below is secondary panel data — each wrapped individually so
+  // one failing step (e.g. challenges) can't block the others (e.g. chat),
+  // the way a single unguarded chain would.
+  try{ await loadMembers(); }catch(e){ console.error('loadMembers failed:', e); }
+  try{ await loadCoinBalance(); }catch(e){ console.error('loadCoinBalance failed:', e); }
+  try{ await loadChallenges(); }catch(e){ console.error('loadChallenges failed:', e); }
+  try{
+    await loadGroupChat(groupId);
+    subscribeGroupChat(groupId);
+    refreshChatUnreadBadge();
+  }catch(e){ console.error('loadGroupChat failed:', e); }
+  try{ initCamChannel(groupId); }catch(e){ console.error('initCamChannel failed:', e); }
+
   setGroupTab('overview', document.querySelector('.gd-nav-item[data-gtab="overview"]'));
 }
 
