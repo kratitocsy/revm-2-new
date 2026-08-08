@@ -233,22 +233,35 @@
 .live-tile-avatar{width:52px;height:52px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:var(--muted);border:2px solid var(--border2);position:relative;transition:all 0.3s;overflow:hidden;cursor:pointer;}
 .live-tile-avatar.speaking{animation:speakPulse 1.05s ease-in-out infinite;}
 @keyframes speakPulse{0%,100%{box-shadow:0 0 0 3px rgba(56,189,248,0.28),0 0 12px rgba(56,189,248,0.4);}50%{box-shadow:0 0 0 6px rgba(56,189,248,0.5),0 0 22px rgba(56,189,248,0.8);}}
-/* Expandable tile lightbox — sizing adapts per device via the media query below */
-.tile-expand-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.82);display:none;align-items:center;justify-content:center;z-index:500;padding:1rem;}
+/* Full-screen speaker view — tapping any tile takes that person's camera
+   to the whole device screen (native Fullscreen API where available, a
+   fixed full-viewport layer everywhere else, e.g. iOS Safari which
+   doesn't support element-level fullscreen), with your OWN camera as a
+   small picture-in-picture corner over it, FaceTime/Meet-style. Everyone
+   else still rides along underneath as a row of tappable thumbnails. */
+.tile-expand-overlay{position:fixed;inset:0;background:#000;display:none;z-index:500;}
 .tile-expand-overlay.show{display:flex;}
-/* Speaker view — the focused person's video fills most of the box; everyone
-   else rides along underneath as a row of tappable thumbnails (Zoom-style),
-   so switching who's "big" never means leaving the call view. */
-.tile-expand-box{background:var(--s1);border:1px solid var(--border2);border-radius:16px;padding:1.1rem;display:flex;flex-direction:column;gap:0.8rem;position:relative;width:min(760px,94vw);max-height:92vh;}
-.tile-expand-media{width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--s2);border:1px solid var(--border2);position:relative;}
+.tile-expand-overlay:fullscreen,.tile-expand-overlay:-webkit-full-screen{background:#000;}
+.tile-expand-box{background:#000;display:flex;flex-direction:column;position:relative;width:100%;height:100%;}
+.tile-expand-media{flex:1;width:100%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#000;position:relative;min-height:0;}
 .tile-expand-media video{width:100%;height:100%;object-fit:cover;}
 .tile-expand-media video.self{transform:scaleX(-1);}
 .tile-expand-media .default-avatar-icon{width:26%;height:26%;color:var(--muted);}
 .tile-expand-media img.avatar-img{width:100%;height:100%;object-fit:cover;}
-.tile-expand-close{position:absolute;top:0.6rem;right:0.8rem;background:rgba(0,0,0,0.5);border:none;color:#fff;font-size:1.4rem;line-height:1;cursor:pointer;width:32px;height:32px;border-radius:50%;z-index:2;display:flex;align-items:center;justify-content:center;}
-.tile-expand-nametag{position:absolute;left:0.7rem;bottom:0.7rem;display:flex;align-items:center;gap:0.4rem;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:0.35rem 0.65rem;border-radius:8px;font-size:0.8rem;font-weight:700;color:#fff;z-index:2;}
+.tile-expand-close{position:absolute;top:calc(0.7rem + env(safe-area-inset-top));right:0.8rem;background:rgba(0,0,0,0.5);border:none;color:#fff;font-size:1.4rem;line-height:1;cursor:pointer;width:36px;height:36px;border-radius:50%;z-index:4;display:flex;align-items:center;justify-content:center;}
+.tile-expand-nametag{position:absolute;left:0.8rem;bottom:0.8rem;display:flex;align-items:center;gap:0.4rem;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:0.4rem 0.75rem;border-radius:9px;font-size:0.84rem;font-weight:700;color:#fff;z-index:2;}
 .tile-expand-nametag .hand-emoji{font-size:0.9rem;animation:handWave 1.2s ease-in-out infinite;display:inline-block;}
-.expand-thumb-strip{display:flex;gap:0.6rem;overflow-x:auto;padding:0.15rem 0.1rem;}
+/* Your own camera, floating over the focused person's full-screen feed */
+.tile-expand-selfpip{position:absolute;top:calc(0.8rem + env(safe-area-inset-top));right:0.8rem;width:104px;aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:var(--s2);border:2px solid rgba(255,255,255,0.35);box-shadow:0 4px 16px rgba(0,0,0,0.5);z-index:3;display:none;}
+.tile-expand-selfpip.show{display:block;}
+.tile-expand-selfpip video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);}
+.tile-expand-selfpip .default-avatar-icon{width:40%;height:40%;color:var(--muted);}
+@media (min-width:701px){ .tile-expand-selfpip{width:150px;} }
+/* Camera flip — only shown while it's YOUR feed full-screen and a second camera exists */
+.tile-expand-flipcam{position:absolute;top:calc(0.7rem + env(safe-area-inset-top));left:0.8rem;background:rgba(0,0,0,0.5);border:none;color:#fff;cursor:pointer;width:36px;height:36px;border-radius:50%;z-index:4;display:none;align-items:center;justify-content:center;}
+.tile-expand-flipcam.show{display:flex;}
+.tile-expand-flipcam svg{width:18px;height:18px;}
+.expand-thumb-strip{display:flex;gap:0.6rem;overflow-x:auto;padding:0.6rem 0.7rem calc(0.6rem + env(safe-area-inset-bottom));background:rgba(0,0,0,0.65);}
 .expand-thumb{display:flex;flex-direction:column;align-items:center;gap:0.3rem;flex-shrink:0;cursor:pointer;width:66px;}
 .expand-thumb-media{width:66px;height:66px;border-radius:12px;overflow:hidden;background:var(--s2);border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;position:relative;transition:border-color 0.15s,transform 0.15s;}
 .expand-thumb:hover .expand-thumb-media{border-color:var(--gold);transform:translateY(-2px);}
@@ -258,10 +271,6 @@
 .expand-thumb-media img.avatar-img{width:100%;height:100%;object-fit:cover;}
 .expand-thumb-hand{position:absolute;top:1px;right:1px;font-size:0.72rem;filter:drop-shadow(0 0 2px rgba(0,0,0,0.8));}
 .expand-thumb-name{font-size:0.6rem;color:var(--muted);max-width:66px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-@media (max-width:700px){
-  .tile-expand-box{width:96vw;padding:0.8rem;}
-  .tile-expand-media{aspect-ratio:4/5;}
-}
 /* Raise-hand badge shown on a live-grid tile */
 .live-tile-hand{position:absolute;top:1px;left:1px;font-size:0.7rem;background:rgba(0,0,0,0.6);border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;z-index:2;animation:handWave 1.2s ease-in-out infinite;}
 @keyframes handWave{0%,100%{transform:rotate(0deg);}25%{transform:rotate(-16deg);}75%{transform:rotate(16deg);}}
@@ -541,6 +550,9 @@
             <button class="cam-mic-btn" id="camMicBtn" onclick="toggleCamMic()" style="display:none;" title="Mute/unmute">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5v3.5M9 21h6"/></svg>
             </button>
+            <button class="cam-mic-btn" id="flipCamBtn" onclick="switchCamera()" style="display:none;" title="Switch camera">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+            </button>
             <button class="cam-mic-btn" id="deafenBtn" onclick="toggleDeafen()" style="display:none;" title="Quiet study — stop listening, keep your time recorded">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M7.5 12h9"/></svg>
             </button>
@@ -555,7 +567,11 @@
           <div class="tile-expand-overlay" id="tileExpandOverlay" onclick="closeTileExpand(event)">
             <div class="tile-expand-box" onclick="event.stopPropagation()">
               <button class="tile-expand-close" onclick="closeTileExpand()" title="Back to grid view" aria-label="Close">&times;</button>
+              <button class="tile-expand-flipcam" id="tileExpandFlipCam" onclick="switchCamera()" title="Switch camera">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+              </button>
               <div class="tile-expand-media" id="tileExpandMedia"></div>
+              <div class="tile-expand-selfpip" id="tileExpandSelfPip"></div>
               <div class="expand-thumb-strip" id="expandThumbStrip"></div>
             </div>
           </div>
@@ -1685,6 +1701,8 @@ let deafened = false;       // "quiet study" — stop hearing others while stayi
 let handRaised = false;     // raise-hand state, broadcast to everyone in the call
 let expandFocusUserId = null; // who's currently "big" in the speaker view overlay
 let localStream = null;
+let currentFacingMode = 'user'; // 'user' (front) | 'environment' (rear) — for switchCamera()
+let hasMultipleCameras = false; // detected once per call join, gates showing the flip-camera button
 const camPeers = {};        // user_id -> RTCPeerConnection
 const remoteStreams = {};   // user_id -> MediaStream
 const voiceAudioEls = {};   // user_id -> hidden <audio> element playing that peer's voice-only stream
@@ -1899,6 +1917,11 @@ function updateCamButtons(){
     mic.innerHTML = micOn ? SVG_MIC : SVG_MIC_OFF;
   }
 
+  // Flip-camera pill — only while video's on and the device actually has
+  // more than one camera to switch between.
+  const flipBtn = document.getElementById('flipCamBtn');
+  if(flipBtn) flipBtn.style.display = (joinedCam && hasMultipleCameras) ? 'flex' : 'none';
+
   // Quiet study pill — mutes what YOU hear from everyone else, independent of your
   // own mic. You stay in the grid and your study time keeps recording as normal.
   const deafenBtn = document.getElementById('deafenBtn');
@@ -1932,11 +1955,19 @@ function applyDeafenState(){
 async function toggleCamCall(){
   if(!joinedCam){
     try{
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      currentFacingMode = 'user';
+      localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode }, audio: true });
     } catch(e){
       alert('Could not access camera/mic. Check your browser permissions and try again.');
       return;
     }
+    // Only worth showing a flip-camera control if there's actually more
+    // than one to switch between (mobiles/tablets typically have 2+,
+    // most laptops/desktops have exactly 1).
+    try{
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      hasMultipleCameras = devices.filter(d => d.kind === 'videoinput').length > 1;
+    }catch(e){ hasMultipleCameras = false; }
     joinedCam = true;
     micOn = true;
     // If already voice-only, stop the voiceStream — video stream now carries audio
@@ -1967,6 +1998,38 @@ async function toggleCamCall(){
     }
   }
   updateCamButtons();
+  renderLiveGridDOM();
+}
+
+/* Flips between front/rear camera without dropping the call — grabs a new
+ * video-only stream for the other facing mode, swaps it into localStream
+ * (so every element already bound to that MediaStream, e.g. the live-grid
+ * tile and the full-screen self-PiP, updates on its own), and pushes the
+ * new track out to every connected peer via replaceTrack so nobody needs
+ * to renegotiate the connection. */
+async function switchCamera(){
+  if(!joinedCam || !localStream || !localStream.getVideoTracks().length) return;
+  const nextFacing = currentFacingMode === 'user' ? 'environment' : 'user';
+  let newStream;
+  try{
+    newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: nextFacing }, audio: false });
+  } catch(e){
+    console.error(e);
+    alert('Could not switch camera.');
+    return;
+  }
+  const newTrack = newStream.getVideoTracks()[0];
+  const oldTrack = localStream.getVideoTracks()[0];
+  Object.values(camPeers).forEach(pc => {
+    const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+    if(sender) sender.replaceTrack(newTrack).catch(()=>{});
+  });
+  if(oldTrack){ localStream.removeTrack(oldTrack); oldTrack.stop(); }
+  localStream.addTrack(newTrack);
+  currentFacingMode = nextFacing;
+  // Re-run whichever views currently show a live video element bound to
+  // localStream so they pick up the swapped track immediately.
+  if(expandFocusUserId) renderExpandMain(expandFocusUserId);
   renderLiveGridDOM();
 }
 
@@ -2272,18 +2335,34 @@ function vgOnSpeakingChange(){
 }
 
 /* ── Speaker view (expandable tile) ─────────────────────────────
-   Tapping/clicking any tile opens a Zoom-style focused view: that
-   person's video fills most of the box, their name (+ raised-hand
-   flag) sits over it, and everyone else rides underneath as a row
-   of small tappable squares — clicking one just swaps who's "big"
-   without closing the overlay. The × always returns to the plain
-   grid of squares. */
+   Tapping/clicking any tile takes that person's camera to the whole
+   device screen — the actual Fullscreen API where the browser supports
+   it (most Android/desktop browsers), and a fixed full-viewport layer
+   everywhere else (notably iOS Safari, which doesn't support
+   element-level fullscreen) so it still fills the screen either way.
+   Your own camera rides along as a small picture-in-picture corner over
+   it, and everyone else sits underneath as a row of tappable thumbnails
+   — tapping one just swaps who's "big" without leaving full-screen. The
+   × always returns to the plain grid of squares. */
 function expandTile(userId){
   expandFocusUserId = userId;
   renderExpandMain(userId);
   renderExpandThumbs(userId);
-  document.getElementById('tileExpandOverlay').classList.add('show');
+  const overlay = document.getElementById('tileExpandOverlay');
+  overlay.classList.add('show');
+  const req = overlay.requestFullscreen || overlay.webkitRequestFullscreen;
+  if(req) req.call(overlay).catch(()=>{}); // ignore rejection — the CSS fixed-overlay already covers the viewport either way
 }
+
+// If the user backs out of fullscreen via a system gesture (Esc, swipe-down,
+// back button) rather than tapping ×, tear the overlay down the same way.
+['fullscreenchange','webkitfullscreenchange'].forEach(evt => {
+  document.addEventListener(evt, () => {
+    const inFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
+    const overlay = document.getElementById('tileExpandOverlay');
+    if(!inFullscreen && overlay && overlay.classList.contains('show')) closeTileExpand();
+  });
+});
 
 function presenceFor(userId){
   const onCam = camActiveUsers.has(userId);
@@ -2317,6 +2396,29 @@ function renderExpandMain(userId){
   if(hasVideo && stream){
     const v = media.querySelector('video');
     if(v) v.srcObject = stream;
+  }
+
+  // Your own camera as a small corner PiP — only makes sense when you're
+  // NOT the one full-screened (otherwise the main feed already is you).
+  const pip = document.getElementById('tileExpandSelfPip');
+  if(pip){
+    const iHaveVideo = userId!==me.id && joinedCam && localStream && localStream.getVideoTracks().length>0;
+    pip.classList.toggle('show', iHaveVideo);
+    if(iHaveVideo){
+      pip.innerHTML = `<video autoplay playsinline muted></video>`;
+      pip.querySelector('video').srcObject = localStream;
+    } else {
+      pip.innerHTML = '';
+    }
+  }
+
+  // Flip-camera control: relevant whenever YOUR camera is live somewhere
+  // on screen (as the main feed or the PiP) and the device actually has
+  // more than one camera to switch between.
+  const flipBtn = document.getElementById('tileExpandFlipCam');
+  if(flipBtn){
+    const myCameraOnScreen = joinedCam && localStream && localStream.getVideoTracks().length>0;
+    flipBtn.classList.toggle('show', myCameraOnScreen && hasMultipleCameras);
   }
 }
 
@@ -2361,9 +2463,14 @@ function closeTileExpand(e){
   const v = media.querySelector('video');
   if(v) v.srcObject = null;
   media.innerHTML = '';
+  const pip = document.getElementById('tileExpandSelfPip');
+  if(pip){ pip.classList.remove('show'); pip.innerHTML=''; }
   const strip = document.getElementById('expandThumbStrip');
   if(strip) strip.innerHTML = '';
   expandFocusUserId = null;
+  if(document.fullscreenElement || document.webkitFullscreenElement){
+    (document.exitFullscreen || document.webkitExitFullscreen).call(document).catch(()=>{});
+  }
 }
 
 function teardownCamCall(){
@@ -2374,6 +2481,7 @@ function teardownCamCall(){
   stopSpeakingDetector(me.id);
   if(camChannel){ sb.removeChannel(camChannel); camChannel = null; }
   joinedCam = false; joinedVoice = false; camActiveUsers = new Set();
+  currentFacingMode = 'user'; hasMultipleCameras = false;
 }
 
 /* ── CURRENT FOCUS TIME + STUDYING NOW ──────────────────────
