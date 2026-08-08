@@ -2334,7 +2334,7 @@ function renderFocusCard(){
     timeEl.className = 'focus-time live';
     avEl.className = 'focus-avatar' + (state.paused_at ? ' paused-state' : '') + myAdminCls();
     avEl.innerHTML = avatarInner(me.id);
-    subEl.textContent = state.paused_at ? `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><rect x="7" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg> Paused · ${escHtml(state.subject||'—')}${state.isPrivate?' · Private':''}` : `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--danger);margin-right:0.3rem;vertical-align:1px;"></span>Live · ${escHtml(state.subject||'studying')}${state.isPrivate?' · Private':''}`;
+    subEl.innerHTML = state.paused_at ? `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><rect x="7" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg> Paused · ${escHtml(state.subject||'—')}${state.isPrivate?' · Hidden':''}` : `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--danger);margin-right:0.3rem;vertical-align:1px;"></span>Live · ${escHtml(state.subject||'studying')}${state.isPrivate?' · Hidden':''}`;
     fillEl.style.width = Math.min(100, (secs/3600)*100) + '%';
     ctrlEl.innerHTML = state.paused_at
       ? `<button class="btn btn-gold btn-sm" onclick="focusResume()">Resume</button><button class="icon-btn danger" onclick="focusStop()">Stop</button>`
@@ -2361,7 +2361,7 @@ function renderFocusCard(){
       </select>
       <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.7rem;color:var(--muted);font-weight:400;cursor:pointer;margin:0.3rem 0;">
         <input type="checkbox" id="focusSessionPrivate" style="width:auto;margin:0;">
-        Private — don't show live here or in my other groups
+        Hide from groups — session still runs, just won't show as live
       </label>
       <button class="btn btn-gold btn-sm" onclick="focusStart()">▶ Start Studying</button>`;
   }
