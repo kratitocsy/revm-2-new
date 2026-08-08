@@ -1702,6 +1702,16 @@ let vgPage       = 0;           // current page of the rotating (non-pinned) til
 const VG_PAGE_SIZE = 8;         // tiles per page, not counting the spotlight or pinned tiles
 const speakingUsers = new Set();
 
+// Whoever the spotlight picks by "currently speaking" sticks around for at
+// least this long before a *different* speaker is allowed to bump them —
+// without this, the big screen would whip to whoever spoke last every few
+// seconds in any normal back-and-forth conversation. Pinning someone (or
+// them going offline) still overrides it immediately — see vgTogglePin and
+// the "stillValid" check in renderVideoGridDOM.
+const VG_SPOTLIGHT_MIN_DWELL_MS = 2.5 * 60 * 1000; // 2.5 min
+let vgSpotlightUserId = null;
+let vgSpotlightLockedUntil = 0;
+
 function vgPrefKeys(groupId){
   return { pin: `revm2_vg_pinned_${groupId}`, hide: `revm2_vg_hidden_${groupId}` };
 }
@@ -1710,6 +1720,8 @@ function loadVgPrefs(groupId){
   try{ vgPinnedIds = new Set(JSON.parse(localStorage.getItem(pin) || '[]')); } catch(e){ vgPinnedIds = new Set(); }
   try{ vgHiddenIds = new Set(JSON.parse(localStorage.getItem(hide) || '[]')); } catch(e){ vgHiddenIds = new Set(); }
   vgPage = 0;
+  vgSpotlightUserId = null;
+  vgSpotlightLockedUntil = 0;
 }
 function saveVgPrefs(){
   if(!currentGroup) return;
@@ -1720,6 +1732,7 @@ function saveVgPrefs(){
 function vgTogglePin(userId, e){
   if(e) e.stopPropagation();
   if(vgPinnedIds.has(userId)) vgPinnedIds.delete(userId); else vgPinnedIds.add(userId);
+  vgSpotlightLockedUntil = 0; // let a fresh pin take the spotlight right away instead of waiting out the dwell timer
   saveVgPrefs();
   renderLiveGridDOM();
 }
@@ -2701,12 +2714,31 @@ function renderVideoGridDOM(withInfo, canInvite){
   const visible = withInfo.filter(r => !vgHiddenIds.has(r.user_id));
 
   // Pick the spotlight: whoever's currently talking, else a pinned member
-  // who's in the call, else whoever has their camera on, else nobody.
-  let spotlightRow =
-    visible.find(r => speakingUsers.has(r.user_id)) ||
-    visible.find(r => vgPinnedIds.has(r.user_id) && camActiveUsers.has(r.user_id)) ||
-    visible.find(r => vgMediaFor(r).hasVideo) ||
-    null;
+  // who's in the call, else whoever has their camera on, else nobody —
+  // but a speaking-based pick is "sticky" for VG_SPOTLIGHT_MIN_DWELL_MS so
+  // the big screen doesn't jump to a different person every time someone
+  // else briefly talks. A pin (vgTogglePin) or the locked person leaving
+  // the call both break the lock immediately.
+  const vgNow = Date.now();
+  let spotlightRow = null;
+  if(vgSpotlightUserId && vgNow < vgSpotlightLockedUntil){
+    spotlightRow = visible.find(r => r.user_id === vgSpotlightUserId) || null;
+  }
+  if(!spotlightRow){
+    const speakingRow = visible.find(r => speakingUsers.has(r.user_id));
+    spotlightRow = speakingRow ||
+      visible.find(r => vgPinnedIds.has(r.user_id) && camActiveUsers.has(r.user_id)) ||
+      visible.find(r => vgMediaFor(r).hasVideo) ||
+      null;
+    if(speakingRow){
+      // Freshly (re)confirmed via speaking — (re)start the dwell lock.
+      vgSpotlightUserId = speakingRow.user_id;
+      vgSpotlightLockedUntil = vgNow + VG_SPOTLIGHT_MIN_DWELL_MS;
+    } else {
+      vgSpotlightUserId = spotlightRow ? spotlightRow.user_id : null;
+      vgSpotlightLockedUntil = 0; // pinned/camera-on picks are already stable, no lock needed
+    }
+  }
 
   // Spotlight tile
   if(spotlightRow){
