@@ -900,9 +900,11 @@ async function openGroup(groupId){
   subscribeGroupChat(groupId);
   refreshChatUnreadBadge();
   renderFocusCard();
+  await reconcileMyFocusSession();
   startFocusTick();
   startLiveGridTick();
   subscribeLivePresence(groupId);
+  startFocusReconcilePoll();
   initCamChannel(groupId);
   setGroupTab('overview', document.querySelector('.gd-nav-item[data-gtab="overview"]'));
 }
@@ -1154,6 +1156,7 @@ function closeDetail(){
   suppressMainSidebarHover(false); // back on groups home — main app sidebar can hover-open again
   toggleGroupChatTray(false);
   stopFocusTick();
+  stopFocusReconcilePoll();
   stopLiveGridTick();
   if(presenceChannel){ sb.removeChannel(presenceChannel); presenceChannel=null; }
   if(myPresenceChannel){ sb.removeChannel(myPresenceChannel); myPresenceChannel=null; }
@@ -1502,7 +1505,9 @@ function subscribeLivePresence(groupId){
   if(myPresenceChannel) sb.removeChannel(myPresenceChannel);
   presenceChannel = sb.channel(`group-presence-${groupId}`)
     .on('postgres_changes', { event:'*', schema:'public', table:'study_sessions', filter:`group_id=eq.${groupId}` },
-      payload => { applyPresence(payload.new || payload.old); loadLiveGrid(); renderFocusCard(); })
+      payload => { const row = payload.new || payload.old;
+        applyPresence(row); loadLiveGrid();
+        if(row && row.user_id === me.id) reconcileMyFocusSession(); else renderFocusCard(); })
     .subscribe();
   // Postgres realtime filters only match equality, so `group_id=eq.${groupId}` can
   // never fire for a null-group_id session (started from tracker.html, or any other
@@ -1512,8 +1517,10 @@ function subscribeLivePresence(groupId){
   // exactly that case without spamming every group with everyone else's updates.
   myPresenceChannel = sb.channel(`my-presence-${groupId}-${me.id}`)
     .on('postgres_changes', { event:'*', schema:'public', table:'study_sessions', filter:`user_id=eq.${me.id}` },
-      payload => { const row = payload.new || payload.old; if(row && row.group_id != null) return; // already covered by the group-scoped channel above
-        applyPresence(row); loadLiveGrid(); renderFocusCard(); })
+      payload => { const row = payload.new || payload.old;
+        reconcileMyFocusSession(); // my own hero clock — server is truth, not the payload shape
+        if(row && row.group_id != null) return; // already covered by the group-scoped channel above
+        applyPresence(row); loadLiveGrid(); })
     .subscribe();
   refreshPresenceSnapshot(groupId);
 }
@@ -2254,6 +2261,45 @@ function teardownCamCall(){
      members tick a real stopwatch client-side between refreshes;
      idle members show today's total instead of nothing. */
 const FT_ACTIVE_KEY = 'revm2_active_session';
+
+/* ── CROSS-DEVICE RECONCILIATION ──────────────────────────────
+   renderFocusCard() only ever reads the LOCAL revm2_active_session cache
+   (Store/FT_ACTIVE_KEY) — fine when the timer was started from this exact
+   browser/app, but a session started elsewhere (tracker.html in a
+   different browser, the desktop app while this is open in a phone
+   browser, etc.) never touches this device's localStorage, so the hero
+   clock here kept showing "Not studying right now" even while a session
+   was genuinely live. This pulls the real state from study_sessions — the
+   actual source of truth — and reconciles the local cache to match it, in
+   either direction (picks up a session started elsewhere, and clears a
+   stale local one that's since ended elsewhere too). */
+async function reconcileMyFocusSession(){
+  if(!me) return;
+  const { data, error } = await sb.from('study_sessions')
+    .select('id,group_id,subject,started_at,paused_at,accumulated_paused_seconds')
+    .eq('user_id', me.id).is('ended_at', null).maybeSingle();
+  if(error){ console.error('reconcileMyFocusSession:', error.message); return; }
+  const local = Store.get(FT_ACTIVE_KEY);
+  if(data){
+    if(!local || local.id !== data.id || local.paused_at !== data.paused_at){
+      Store.set(FT_ACTIVE_KEY, { id:data.id, group_id:data.group_id, subject:data.subject,
+        started_at:data.started_at, paused_at:data.paused_at, accumPaused:data.accumulated_paused_seconds||0 });
+    }
+  } else if(local){
+    Store.del(FT_ACTIVE_KEY); // ended on whichever device actually stopped it
+  }
+  renderFocusCard();
+  syncFloatingWidget();
+}
+let focusReconcilePollHandle = null;
+function startFocusReconcilePoll(){
+  stopFocusReconcilePoll();
+  // Realtime handles the live case (see subscribeLivePresence); this is
+  // just a slow safety net for missed events / the brief window before a
+  // realtime subscription finishes connecting.
+  focusReconcilePollHandle = setInterval(reconcileMyFocusSession, 15000);
+}
+function stopFocusReconcilePoll(){ if(focusReconcilePollHandle) clearInterval(focusReconcilePollHandle); focusReconcilePollHandle = null; }
 
 function computeElapsed(state){
   if(!state) return 0;
