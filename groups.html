@@ -16,6 +16,70 @@
 .gw-tab.active{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
 .gw-search{display:flex;gap:0.5rem;margin-bottom:1.25rem;}
 .gw-search input{flex:1;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.55rem 0.85rem;font-family:var(--font);font-size:0.8rem;outline:none;}
+
+/* ── MATERIALS SEARCH — premium ── */
+.mat-search{position:relative;display:flex;align-items:center;}
+.mat-search svg.mat-search-icon{
+  position:absolute;left:0.8rem;width:14px;height:14px;flex-shrink:0;pointer-events:none;
+  color:var(--dim);transition:color 0.2s;
+}
+.mat-search input{
+  width:100%;background:linear-gradient(180deg,var(--black),#050608);
+  border:1px solid var(--border2);color:var(--text);
+  padding:0.68rem 2.35rem;font-family:var(--font);font-size:0.82rem;
+  letter-spacing:0.01em;border-radius:3px;outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;
+}
+.mat-search input::placeholder{color:var(--dim);}
+.mat-search:focus-within svg.mat-search-icon{color:var(--gold);}
+.mat-search input:focus{
+  border-color:var(--gold);
+  box-shadow:0 0 0 3px var(--gold-dim),0 2px 12px rgba(200,169,110,0.08);
+  background:var(--black);
+}
+.mat-search-clear{
+  position:absolute;right:0.55rem;width:19px;height:19px;border-radius:50%;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(255,255,255,0.06);border:none;color:var(--muted);
+  cursor:pointer;font-size:0.72rem;line-height:1;padding:0;transition:all 0.15s;
+}
+.mat-search-clear:hover{background:var(--gold-dim);color:var(--gold);}
+.mat-search-clear.show{display:flex;}
+
+/* ── MATERIALS LIST ROWS — premium ── */
+.mat-row{
+  display:flex;align-items:center;gap:0.7rem;padding:0.62rem 0.15rem;
+  border-bottom:1px solid rgba(255,255,255,0.05);transition:background 0.15s;
+}
+.mat-row:last-child{border-bottom:none;}
+.mat-row:hover{background:rgba(255,255,255,0.02);}
+.mat-row-icon{
+  width:32px;height:32px;flex-shrink:0;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.mat-row-icon svg{width:15px;height:15px;position:relative;z-index:1;}
+.mat-row-icon.mat-type-pdf{background:linear-gradient(160deg,rgba(235,87,87,0.22),rgba(235,87,87,0.08));border:1px solid rgba(235,87,87,0.35);color:#f2726e;}
+.mat-row-icon.mat-type-img{background:linear-gradient(160deg,rgba(79,143,247,0.22),rgba(79,143,247,0.08));border:1px solid rgba(79,143,247,0.35);color:#6fa8f5;}
+.mat-row-icon.mat-type-zip{background:linear-gradient(160deg,rgba(251,191,36,0.22),rgba(251,191,36,0.08));border:1px solid rgba(251,191,36,0.35);color:#f3c463;}
+.mat-row-icon::after{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);pointer-events:none;
+}
+.mat-row-body{flex:1;min-width:0;cursor:pointer;}
+.mat-row-title{
+  color:var(--text);font-size:0.82rem;font-weight:500;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.mat-row-meta{font-size:0.66rem;color:var(--dim);letter-spacing:0.02em;margin-top:0.1rem;}
+.mat-row-read{
+  flex-shrink:0;background:transparent;border:1px solid var(--border2);color:var(--muted);
+  font-size:0.66rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  padding:0.32rem 0.75rem;border-radius:2px;cursor:pointer;font-family:var(--font);
+  transition:all 0.15s;
+}
+.mat-row:hover .mat-row-read{border-color:var(--gold-border);color:var(--gold);}
+.mat-row-read:hover{background:var(--gold-dim)!important;border-color:var(--gold)!important;color:var(--gold)!important;}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.85rem;}
 .gcard{background:var(--s1);border:1px solid var(--border);padding:1rem;display:flex;flex-direction:column;gap:0.5rem;}
 .gcard-top{display:flex;align-items:center;justify-content:space-between;}
@@ -515,7 +579,11 @@
         <input type="file" id="materialFileInput" accept=".pdf,image/*,.zip,application/zip" multiple style="display:none;" onchange="handleMaterialFileChosen(event)">
         <div id="materialsUploadStatus" style="display:none;padding:0.5rem 0.85rem;font-size:0.72rem;color:var(--muted);"></div>
         <div style="padding:0.6rem 0.85rem 0;">
-          <input type="text" id="materialsSearchInput" placeholder="Search materials…" oninput="filterMaterialsList()" style="width:100%;">
+          <div class="mat-search">
+            <svg class="mat-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="materialsSearchInput" placeholder="Search materials…" oninput="filterMaterialsList()" autocomplete="off">
+            <button type="button" class="mat-search-clear" id="materialsSearchClear" onclick="clearMaterialsSearch()" title="Clear search">✕</button>
+          </div>
         </div>
         <div id="materialsList" class="card-body" style="padding:0.5rem 0.85rem;font-size:0.76rem;color:var(--muted);">Loading…</div>
       </div>
@@ -979,6 +1047,7 @@ async function loadMaterialsList(){
   const groupId = currentGroup.id;
   const searchEl = document.getElementById('materialsSearchInput');
   if(searchEl) searchEl.value = '';
+  document.getElementById('materialsSearchClear')?.classList.remove('show');
   try{
     const items = await RevmMaterials.listGroupMaterials(groupId);
     if(currentGroup?.id !== groupId) return; // user switched groups mid-fetch
@@ -990,6 +1059,19 @@ async function loadMaterialsList(){
   }
 }
 
+const MAT_TYPE_ICON = {
+  pdf: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+  zip: '<rect x="3" y="3" width="18" height="18" rx="1"/><path d="M12 3v3M12 9v2M12 14v2M12 19v2"/>',
+  img: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m21 15-5-5L5 21"/>',
+};
+function matTypeKey(sourceType){
+  return /pdf/i.test(sourceType) ? 'pdf' : /zip/i.test(sourceType) ? 'zip' : /image|img|png|jpe?g/i.test(sourceType) ? 'img' : 'pdf';
+}
+function matTypeIcon(sourceType){
+  const key = matTypeKey(sourceType);
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${MAT_TYPE_ICON[key]}</svg>`;
+}
+
 function renderMaterialsList(items){
   const listEl = document.getElementById('materialsList');
   if(!items.length){
@@ -997,20 +1079,31 @@ function renderMaterialsList(items){
     return;
   }
   listEl.innerHTML = items.map(m => `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.06);">
-      <div style="cursor:pointer;flex:1;min-width:0;" onclick="RevmMaterialsViewer.openMaterialViewer('${m.id}')">
-        <div style="color:var(--text,#eee);font-size:0.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(m.title)}</div>
-        <div style="font-size:0.68rem;color:var(--dim);">${m.page_count} page${m.page_count===1?'':'s'} · ${m.source_type.toUpperCase()}</div>
+    <div class="mat-row">
+      <div class="mat-row-icon mat-type-${matTypeKey(m.source_type)}">${matTypeIcon(m.source_type)}</div>
+      <div class="mat-row-body" onclick="RevmMaterialsViewer.openMaterialViewer('${m.id}')">
+        <div class="mat-row-title">${escHtml(m.title)}</div>
+        <div class="mat-row-meta">${m.page_count} page${m.page_count===1?'':'s'} · ${m.source_type.toUpperCase()}</div>
       </div>
-      <button class="icon-btn" onclick="RevmMaterialsViewer.openMaterialViewer('${m.id}')" title="Read">Read</button>
+      <button class="mat-row-read" onclick="RevmMaterialsViewer.openMaterialViewer('${m.id}')" title="Read">Read</button>
     </div>
   `).join('');
 }
 
 function filterMaterialsList(){
-  const q = document.getElementById('materialsSearchInput').value.trim().toLowerCase();
+  const input = document.getElementById('materialsSearchInput');
+  const clearBtn = document.getElementById('materialsSearchClear');
+  const q = input.value.trim().toLowerCase();
+  if(clearBtn) clearBtn.classList.toggle('show', q.length > 0);
   if(!q){ renderMaterialsList(_materialsCache); return; }
   renderMaterialsList(_materialsCache.filter(m => m.title.toLowerCase().includes(q)));
+}
+
+function clearMaterialsSearch(){
+  const input = document.getElementById('materialsSearchInput');
+  input.value = '';
+  filterMaterialsList();
+  input.focus();
 }
 
 function openMaterialUpload(){
