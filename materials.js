@@ -241,12 +241,45 @@ async function fetchDriveFileAsFile(fileId, fileName, mimeType, accessToken) {
   return new File([blob], fileName, { type: mimeType || blob.type || 'application/octet-stream' });
 }
 
+/**
+ * List every PDF sitting directly inside a picked Drive folder (top-level
+ * only — subfolders aren't recursed into, since the picker's job is "grab
+ * the PDFs in this folder", not a full recursive drive crawl). Paginated
+ * via nextPageToken since a folder can hold more than one page's worth.
+ * Non-PDF files in the folder (images, docs, whatever) are silently
+ * skipped — folder import is PDF-only by design; pick individual image
+ * files through the normal picker view if those are needed too.
+ *
+ * @returns {Promise<{id:string, name:string, mimeType:string}[]>}
+ */
+async function listPdfsInDriveFolder(folderId, accessToken) {
+  const out = [];
+  let pageToken = '';
+  do {
+    const params = new URLSearchParams({
+      q: `'${folderId}' in parents and mimeType='application/pdf' and trashed=false`,
+      fields: 'nextPageToken, files(id, name, mimeType)',
+      pageSize: '1000',
+    });
+    if (pageToken) params.set('pageToken', pageToken);
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) throw new Error(`Could not list folder contents from Drive (${res.status}).`);
+    const data = await res.json();
+    out.push(...(data.files || []));
+    pageToken = data.nextPageToken || '';
+  } while (pageToken);
+  return out;
+}
+
 window.RevmMaterials = {
   uploadGroupMaterial,
   uploadGroupMaterials,
   extractFilesFromZip,
   isZipFile,
   fetchDriveFileAsFile,
+  listPdfsInDriveFolder,
   listGroupMaterials,
   MAX_UPLOAD_BYTES,
 };

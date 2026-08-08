@@ -1239,7 +1239,7 @@ async function openDrivePicker(){
     const view = new google.picker.DocsView(google.picker.ViewId.DOCS)
       .setMimeTypes('application/pdf,image/jpeg,image/png,image/webp')
       .setIncludeFolders(true)
-      .setSelectFolderEnabled(false);
+      .setSelectFolderEnabled(true); // pick a whole folder to auto-import its PDFs, or still multi-select individual files as before
 
     const picker = new google.picker.PickerBuilder()
       .setOAuthToken(_driveAccessToken)
@@ -1257,17 +1257,57 @@ async function openDrivePicker(){
   }
 }
 
+const DRIVE_FOLDER_MIME = 'application/vnd.google-apps.folder';
+
 async function _handleDrivePicked(data){
   if(data.action !== google.picker.Action.PICKED) return;
   if(!currentGroup) return;
   const statusEl = document.getElementById('materialsUploadStatus');
   statusEl.style.display = 'block';
   const docs = data.docs || [];
+
+  // Picked items can be a mix of individual files and whole folders. Each
+  // folder gets expanded into its top-level PDFs (see listPdfsInDriveFolder
+  // — non-PDF files inside a folder are skipped, since folder import is
+  // PDF-only). Directly-picked files pass through unchanged, so someone
+  // can still hand-pick a specific image alongside a folder of PDFs.
+  let picked;
+  try{
+    picked = [];
+    for(const d of docs){
+      if(d.mimeType === DRIVE_FOLDER_MIME){
+        statusEl.textContent = `Scanning folder "${d.name}" for PDFs…`;
+        const pdfs = await RevmMaterials.listPdfsInDriveFolder(d.id, _driveAccessToken);
+        if(!pdfs.length){
+          statusEl.textContent = `No PDFs found in "${d.name}".`;
+        }
+        picked.push(...pdfs);
+      } else {
+        picked.push(d);
+      }
+    }
+  }catch(e){
+    console.error(e);
+    statusEl.textContent = 'Could not read Drive folder: ' + (e.message || e);
+    setTimeout(() => { statusEl.style.display = 'none'; }, 4000);
+    return;
+  }
+
+  if(!picked.length){
+    setTimeout(() => { statusEl.style.display = 'none'; }, 2500);
+    return;
+  }
+
   const files = [];
   try{
-    for(let i = 0; i < docs.length; i++){
-      const d = docs[i];
-      statusEl.textContent = `Downloading ${d.name} from Drive… (${i + 1}/${docs.length})`;
+    for(let i = 0; i < picked.length; i++){
+      const d = picked[i];
+      statusEl.textContent = `Downloading ${d.name} from Drive… (${i + 1}/${picked.length})`;
+      // Each file keeps its own Drive filename (minus extension, applied
+      // later by uploadGroupMaterials' default titleFor), so folder imports
+      // land as separate, independently-titled materials — never merged or
+      // linked into one combined entry just because they came from the same
+      // folder pick.
       files.push(await RevmMaterials.fetchDriveFileAsFile(d.id, d.name, d.mimeType, _driveAccessToken));
     }
   }catch(e){
