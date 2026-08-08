@@ -16,8 +16,8 @@
 const MATERIALS_WORKER_URL = 'https://revm2-materials-proxy.kiaro2244.workers.dev';
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50MB raw-file cap, tune as needed
 const PAGE_RENDER_SCALE = 2.0;   // ~200dpi equivalent - keeps small text/equations legible
-const PAGE_MAX_DIM = 2000;       // cap on long edge for plain image uploads
-const JPEG_QUALITY = 0.85;       // still compressed, but avoids visible artifacting on text edges
+const PAGE_MAX_DIM = 1800;       // cap on long edge for plain image uploads (trimmed from 2000 for storage)
+const JPEG_QUALITY = 0.80;       // trimmed from 0.85 for storage; still above visible-artifact threshold on text edges
 
 /** Page bytes go straight to B2 via the worker — never through Supabase Storage. */
 async function uploadPageToWorker(groupId, materialId, pageNumber, blob) {
