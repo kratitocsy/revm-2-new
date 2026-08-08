@@ -2276,14 +2276,14 @@ const FT_ACTIVE_KEY = 'revm2_active_session';
 async function reconcileMyFocusSession(){
   if(!me) return;
   const { data, error } = await sb.from('study_sessions')
-    .select('id,group_id,subject,started_at,paused_at,accumulated_paused_seconds')
+    .select('id,group_id,subject,started_at,paused_at,accumulated_paused_seconds,is_private')
     .eq('user_id', me.id).is('ended_at', null).maybeSingle();
   if(error){ console.error('reconcileMyFocusSession:', error.message); return; }
   const local = Store.get(FT_ACTIVE_KEY);
   if(data){
-    if(!local || local.id !== data.id || local.paused_at !== data.paused_at){
+    if(!local || local.id !== data.id || local.paused_at !== data.paused_at || local.isPrivate !== data.is_private){
       Store.set(FT_ACTIVE_KEY, { id:data.id, group_id:data.group_id, subject:data.subject,
-        started_at:data.started_at, paused_at:data.paused_at, accumPaused:data.accumulated_paused_seconds||0 });
+        started_at:data.started_at, paused_at:data.paused_at, accumPaused:data.accumulated_paused_seconds||0, isPrivate:data.is_private });
     }
   } else if(local){
     Store.del(FT_ACTIVE_KEY); // ended on whichever device actually stopped it
@@ -2334,7 +2334,7 @@ function renderFocusCard(){
     timeEl.className = 'focus-time live';
     avEl.className = 'focus-avatar' + (state.paused_at ? ' paused-state' : '') + myAdminCls();
     avEl.innerHTML = avatarInner(me.id);
-    subEl.textContent = state.paused_at ? `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><rect x="7" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg> Paused · ${escHtml(state.subject||'—')}` : `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--danger);margin-right:0.3rem;vertical-align:1px;"></span>Live · ${escHtml(state.subject||'studying')}`;
+    subEl.textContent = state.paused_at ? `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><rect x="7" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg> Paused · ${escHtml(state.subject||'—')}${state.isPrivate?' · Private':''}` : `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--danger);margin-right:0.3rem;vertical-align:1px;"></span>Live · ${escHtml(state.subject||'studying')}${state.isPrivate?' · Private':''}`;
     fillEl.style.width = Math.min(100, (secs/3600)*100) + '%';
     ctrlEl.innerHTML = state.paused_at
       ? `<button class="btn btn-gold btn-sm" onclick="focusResume()">Resume</button><button class="icon-btn danger" onclick="focusStop()">Stop</button>`
@@ -2359,6 +2359,10 @@ function renderFocusCard(){
         <option value="Physics">Physics</option><option value="Chemistry">Chemistry</option>
         <option value="Maths">Maths</option><option value="Other">Other</option>
       </select>
+      <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.7rem;color:var(--muted);font-weight:400;cursor:pointer;margin:0.3rem 0;">
+        <input type="checkbox" id="focusSessionPrivate" style="width:auto;margin:0;">
+        Private — don't show live here or in my other groups
+      </label>
       <button class="btn btn-gold btn-sm" onclick="focusStart()">▶ Start Studying</button>`;
   }
 }
@@ -2372,9 +2376,10 @@ function syncFloatingWidget(){ if(window.initFloatingTimer) window.initFloatingT
 async function focusStart(){
   const sel = document.getElementById('focusSubjectSel');
   const subject = sel ? sel.value : null;
-  const { data, error } = await sb.rpc('rpc_start_study_session', { p_group_id: currentGroup.id, p_subject: subject });
+  const isPrivate = document.getElementById('focusSessionPrivate')?.checked || false;
+  const { data, error } = await sb.rpc('rpc_start_study_session', { p_group_id: currentGroup.id, p_subject: subject, p_is_private: isPrivate });
   if(error){ alert(error.message || 'Could not start session.'); return; }
-  Store.set(FT_ACTIVE_KEY, { id:data.id, group_id:data.group_id, subject:data.subject, started_at:data.started_at, paused_at:null, accumPaused:0 });
+  Store.set(FT_ACTIVE_KEY, { id:data.id, group_id:data.group_id, subject:data.subject, started_at:data.started_at, paused_at:null, accumPaused:0, isPrivate:data.is_private });
   renderFocusCard(); syncFloatingWidget(); loadLiveGrid();
 }
 async function focusPause(){
