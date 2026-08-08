@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>RevM² — Tracker</title>
+<title>RevM² — Timer</title>
 <link rel="stylesheet" href="style.css">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png" type="image/png">
@@ -167,13 +167,13 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
     <a class="sidebar-logo" href="index.html"><div class="rm2-logo" data-size="small"></div></a>
     <nav class="sidebar-nav">
       <div class="nav-section">Study</div>
-      <div class="nav-item active" onclick="showPage('tracker',this)"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 11h6M9 15h6"/></svg></span>Tracker</div>
+      <div class="nav-item" onclick="go('tracker.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 11h6M9 15h6"/></svg></span>Tracker</div>
       <div class="nav-item" onclick="go('groups.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7.5" r="3.5"/><path d="M17.5 11a3.5 3.5 0 1 0 0-7"/><path d="M22 21v-1.5a4 4 0 0 0-3-3.87"/></svg></span>Study Groups</div>
       <div class="nav-item" onclick="go('partners.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="7" cy="5" r="2.3"/><path d="M4 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><circle cx="17" cy="5" r="2.3"/><path d="M14 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><path d="M10 14.5h4"/></svg></span>Study Partners<span class="nav-badge" id="navPartnersBadge" style="display:none;"></span></div>
       <div class="nav-item" onclick="go('store.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg></span>M² Store</div>
       <div class="nav-item" onclick="go('revhead.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M12 2c1 3-3 4.5-3 8a3 3 0 0 0 6 0c1.5 1 2 2.8 2 4.3A6.3 6.3 0 0 1 5.5 14C5.5 8 12 6 12 2Z"/></svg></span>Become a RevHead</div>
-      <div class="nav-item" onclick="go('timer.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M7 3h10M7 21h10"/><path d="M8 3c0 4 3 5 4 6.5C13 8 16 7 16 3"/><path d="M8 21c0-4 3-5 4-6.5C13 16 16 17 16 21"/></svg></span>Study Timer</div>
-      <div class="nav-item" onclick="showPage('analytics',this)"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M4 20V13M12 20V8M20 20v-4"/><path d="M4 11l8-5 8 3"/></svg></span>Analytics</div>
+      <div class="nav-item active" onclick="showPage('timer',this)"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M7 3h10M7 21h10"/><path d="M8 3c0 4 3 5 4 6.5C13 8 16 7 16 3"/><path d="M8 21c0-4 3-5 4-6.5C13 16 16 17 16 21"/></svg></span>Study Timer</div>
+      <div class="nav-item" onclick="go('tracker.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M4 20V13M12 20V8M20 20v-4"/><path d="M4 11l8-5 8 3"/></svg></span>Analytics</div>
       <div class="nav-section">Tools</div>
 
       <div class="nav-item" onclick="go('college.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M2 8.5 12 4l10 4.5-10 4.5-10-4.5z"/><path d="M6 10.7v4.3c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-4.3"/><path d="M22 8.5v6"/></svg></span>College Predictor</div>
@@ -197,7 +197,7 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
     <!-- TOPBAR -->
     <div class="topbar">
       <button class="hamburger-btn" onclick="openMobileSidebar()" aria-label="Open menu">☰</button>
-      <div><div class="topbar-title" id="pageTitle">Revision Tracker</div><div class="topbar-sub" id="pageSub">Loading...</div></div>
+      <div><div class="topbar-title" id="pageTitle">Study Timer</div><div class="topbar-sub" id="pageSub">Loading...</div></div>
       <div class="topbar-right">
         <span class="badge-track" id="topTrack">—</span>
         <span class="badge-day" id="dayBadge">Day —</span>
@@ -205,7 +205,7 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
     </div>
 
     <!-- ═══ TRACKER PAGE ═══ -->
-    <div class="inner-page active" id="page-tracker">
+    <div class="inner-page" id="page-tracker">
 
       <!-- HOW-TO-USE GUIDE STRIP — auto-shown every time the Tracker is opened -->
       <div id="guideStrip" style="background:var(--s1);border-bottom:1px solid var(--border);padding:1.1rem 1.25rem;">
@@ -346,7 +346,7 @@ td{padding:0.48rem 0.6rem;vertical-align:middle;}
     </div>
 
     <!-- ═══ TIMER PAGE ═══ -->
-    <div class="inner-page" id="page-timer">
+    <div class="inner-page active" id="page-timer">
       <div class="timer-wrap">
         <div class="eyebrow">// Study Timer</div>
         <h2 style="font-size:1.3rem;font-weight:900;color:var(--white);text-transform:uppercase;letter-spacing:-0.02em;margin-bottom:1.25rem">Deep Work Mode</h2>
