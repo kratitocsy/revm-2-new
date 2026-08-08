@@ -335,7 +335,7 @@ async function _mvRenderPage(index) {
   const oldSrc = img.getAttribute('src');
   img.src = url; // new page is the real content, sitting ready underneath the flip clone
 
-  if (oldSrc) await _mvPlayPageFlip(oldSrc, direction);
+  if (oldSrc) await _mvPlayPageCurl(oldSrc, direction);
   if (state.reqId !== myReq) return; // superseded mid-animation — let the newer call take it from here
 
   state.index = index;
