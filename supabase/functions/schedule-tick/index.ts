@@ -202,15 +202,38 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (existingRun) continue; // already handled today, incl. paid-unlock case
 
-      // Don't stomp on a block the person started themselves (manual or a
-      // different schedule) - schedules only fill in when nothing's running.
+      // The schedule always wins. Previously this skipped starting the
+      // slot's block entirely whenever ANY session was already active -
+      // which meant a person could start their own easy-exit block (e.g.
+      // from the Tracker timer) right as a strict no_early_unlock slot was
+      // about to fire, and the real schedule block would never start for
+      // the rest of that slot. Now: end whatever's running (manual, timer,
+      // or a different schedule) and let this slot's own preset - lock
+      // setting included - take over, same as it would at the top of a
+      // fresh slot with nothing running.
       const { data: activeSession } = await db
         .from("focus_lock_sessions")
         .select("id")
         .eq("user_id", schedule.user_id)
         .eq("active", true)
         .maybeSingle();
-      if (activeSession) continue;
+      if (activeSession) {
+        await db
+          .from("focus_lock_sessions")
+          .update({ active: false, verified: true })
+          .eq("id", activeSession.id);
+
+        // End whatever study-timer row was riding along with the
+        // preempted session too - the auto-start step further below will
+        // open a fresh one under this slot if the subject matches.
+        const { data: activeStudySession } = await db
+          .from("study_sessions")
+          .select("id, started_at, paused_at, accumulated_paused_seconds")
+          .eq("user_id", schedule.user_id)
+          .is("ended_at", null)
+          .maybeSingle();
+        if (activeStudySession) await endStudySession(db, activeStudySession);
+      }
 
       let sessionParams: {
         block_name: string; sites: any; mode: string; youtube_rules: any;

@@ -1051,11 +1051,15 @@ async function startSelectedBlockPreset(){
   const presetMode = preset.mode==='whitelist' ? 'whitelist' : 'blacklist';
   const presetApps = preset.apps || [];
   const presetAppsMode = preset.apps_mode==='whitelist' ? 'whitelist' : 'blacklist';
+  // Same rule as blocks.html: no_early_unlock only sticks on a timed block -
+  // an unlimited one has no natural end to wait out, so the lock would be
+  // permanent with no unlock path at all.
+  const presetNoEarlyUnlock = !!preset.no_early_unlock && !!preset.duration_minutes;
 
   const { error } = await sb.from('focus_lock_sessions').insert({
     user_id: myUserId, block_name: preset.name, sites: preset.sites,
     mode: presetMode, youtube_rules: preset.youtube_rules || null,
-    apps: presetApps, apps_mode: presetAppsMode,
+    apps: presetApps, apps_mode: presetAppsMode, no_early_unlock: presetNoEarlyUnlock,
     ends_at: endsAt, unlimited: !preset.duration_minutes, source: 'web'
   });
   if(error){
