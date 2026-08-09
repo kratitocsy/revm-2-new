@@ -962,8 +962,18 @@ let iAmVerifiedRevHead = false;
 
 async function init(){
   RevM2Loader.show('Loading your groups…');
-  const { data: { session } } = await sb.auth.getSession();
-  if(!session){ window.location.href='login.html'; return; }
+  // requireAuth() (not a bare getSession check) matters specifically for
+  // the desktop app: it's what calls syncNativeAuthToken(), which is what
+  // native_poll.rs's Rust-side session poll needs to have ANY token to
+  // work with at all. Without it, sitting on this LiveGrid tab left the
+  // desktop app's enforcement silent - the native poll had no auth to
+  // query Supabase with, and this page has no loadActiveBlock-style poll
+  // of its own (that only exists on blocks.html/tracker.html) - so a
+  // block starting elsewhere went unenforced until the user happened to
+  // navigate to Blocks or Tracker, which push a token and immediately
+  // catch things up.
+  const session = await requireAuth();
+  if(!session) return; // requireAuth() already redirected to login.html
   me = session.user;
   RevM2Calls.init(sb, me.id);
   RevM2Notifications.init(sb, me.id);
