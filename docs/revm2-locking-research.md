@@ -166,3 +166,97 @@ not as parity with desktop. Revisit this file when desktop work is done.
   or design our own friction curve tied to `focus_lock_presets`.
 - Confirm current sideloading-restriction rollout status before building
   (this area moves fast; re-search closer to build time).
+
+---
+
+## Addendum (Aug 2026): Device Owner ceiling, default-vs-opt-in decision, Capacitor UI approach
+
+This section adds detail beyond the "Device Admin" row above — specifically
+the harder ceiling above it (**Device Owner**, not Device Admin), and locks
+in how it fits the product.
+
+### Device Admin vs Device Owner — these are different things
+
+The "Prevent circumventing the block" row above refers to **Device Admin**,
+a lightweight, revocable-anytime permission. **Device Owner** is a
+categorically stronger mode and deserves its own entry:
+
+- Only claimable on a device with **no Google account signed in** —
+  practically requires a factory reset (or a never-used device) before
+  setup, via QR/NFC provisioning during Android's initial setup wizard, or
+  `adb shell dpm set-device-owner` over a debug connection on a clean device.
+- Once granted, unlocks `setPackagesSuspended()` (other apps greyed out,
+  unlaunchable), `setLockTaskPackages()` (true kiosk pinning — Home/Recents
+  disabled, only our app runs), and the ability to restrict access to the
+  Settings app itself (including hiding the Accessibility/Uninstall
+  sub-screens that a user would otherwise use to escape).
+- **Cannot be triggered from inside our app.** No API lets an app silently
+  self-elevate to Device Owner — it only works through Android's own
+  device-setup flow on a device that isn't already in normal use. This is
+  intentional on Google's part: it's the same mechanism that (mis-used)
+  enables stalkerware, so Google deliberately gates it behind a flow a
+  device's actual owner has to walk through knowingly.
+- Exiting Device Owner mode later also requires another factory reset —
+  the cost is symmetric on the way in and the way out.
+- Not a Play Store policy fit for a consumer app used as installed — this
+  category of API is scoped for enterprise/education device management
+  (company fleets, school-issued tablets), not a personal study app
+  self-provisioning a user's own phone. Relevant to the "opt-in, own risk"
+  framing below, not to whether it's technically real (it is).
+
+### Decision: Tier 2+3 (Accessibility + Overlay + VPN) is the default for
+### every user; Device Owner is opt-in only, never gated behind session-start
+
+- Default experience for all RevM2 Android users = the "Revised target
+  feature set" already listed above (Accessibility overlay block + VPN site
+  blocking + Device Admin uninstall-resistance + Usage Access stats). This
+  needs no special disclosure beyond the standard in-app permission asks.
+- Device Owner is offered as a **separate, clearly-labeled "Advanced Lock"
+  path**, not a toggle inside a normal session flow, because it physically
+  can't be — it has to route the user out to Android's own setup wizard on
+  a freshly wiped/clean device.
+- Framing to users must be concrete, not a generic risk waiver: "requires a
+  full factory reset to enable, and another factory reset to undo; gives
+  RevM2 administrative control over the device including restricting
+  Settings and other apps." Position it for a **spare/study-only device**,
+  not a user's daily phone — most serious aspirants who'd want this already
+  have an old phone lying around, which sidesteps most of the real
+  downside of the opt-in.
+
+### UI approach: Capacitor, but genuinely mobile-native — not a website mirror
+
+Confirmed direction for the app shell itself (separate from the blocking
+plugin): don't just responsively shrink the desktop/web layout. Capacitor
+gives full control over what actually gets rendered, so build a real mobile
+shell:
+
+- `Capacitor.getPlatform()` / `isNativePlatform()` in `shared.js` to swap
+  desktop's sidebar nav for a bottom tab bar (Tracker / Groups / Timer /
+  Leaderboard / Profile) when running as the Android app specifically.
+- Native-feeling chrome via small Capacitor plugins: `@capacitor/status-bar`
+  (match app theme), `@capacitor/splash-screen`, `@capacitor/haptics` (tap
+  feedback), `@capacitor/keyboard` (proper keyboard push behavior for chat
+  input).
+- Touch-first redesigns of specific components that currently assume
+  hover/cursor input — presence grid, group sidebar icons, leaderboard
+  podium — swap hover-to-reveal for tap/swipe patterns, bottom sheets
+  instead of dropdown modals, `env(safe-area-inset-*)` throughout.
+- Underlying page logic (tracker, groups data, materials viewer, Supabase
+  realtime wiring) stays fully shared with web/desktop — only the
+  navigation shell and touch-interaction layer are mobile-specific.
+
+### Rough time estimate (solo dev, around school)
+
+| Phase | Days |
+|---|---|
+| Capacitor wrapper setup (existing `www/`, build + run on device) | 1–2 |
+| Mobile-native UI shell (bottom nav, touch redesigns, not just resizing) | 3–5 |
+| Accessibility Service + overlay block + Capacitor plugin bridge | 3–4 |
+| VpnService site blocking | 2–3 |
+| Permission-gating + friction/commitment layer (unlock-phrase pause, disable-triggers-cooldown, group visibility on broken sessions) | 2 |
+| Cross-device testing, OEM battery-optimization edge cases | 3–5 |
+| **Total** | **~17–26 working days (~5–7 calendar weeks solo)** |
+
+Fastest path to something real: Phases 1–2 alone (wrapper + mobile-native
+shell, no blocking yet) is a shippable v1 APK in under a week — Tier 2+3
+blocking can follow as a v1.1 once the base app is stable on real devices.
