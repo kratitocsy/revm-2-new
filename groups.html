@@ -289,6 +289,11 @@
 .invite-box{display:flex;gap:0.5rem;align-items:center;background:var(--s1);border:1px solid var(--border);padding:0.65rem 0.85rem;margin-bottom:1rem;}
 .invite-box input{flex:1;background:transparent;border:none;color:var(--muted);font-size:0.74rem;outline:none;}
 .empty-state{text-align:center;padding:2.5rem 1rem;color:var(--muted);font-size:0.8rem;}
+.share-focus-flash{animation:shareFocusFlash 2.2s ease-out;}
+@keyframes shareFocusFlash{
+  0%{box-shadow:0 0 0 2px var(--gold), 0 0 22px rgba(200,169,110,0.55);}
+  100%{box-shadow:0 0 0 0 rgba(200,169,110,0);}
+}
 
 /* ── CURRENT FOCUS TIME (hero card) ─────────────────────── */
 .focus-card{background:linear-gradient(150deg,var(--s1),var(--s2) 130%);border:1px solid var(--gold-border);padding:1.15rem 1.3rem;margin-bottom:1rem;}
@@ -651,8 +656,13 @@
       <!-- STUDYING NOW -->
       <div class="card" style="margin-bottom:1rem;">
         <div class="card-header studying-now-header">
-          <span class="card-title"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M12 2c1 3-3 4.5-3 8a3 3 0 0 0 6 0c1.5 1 2 2.8 2 4.3A6.3 6.3 0 0 1 5.5 14C5.5 8 12 6 12 2Z"/></svg> RevMGrid</span>
-          <span class="live-grid-sub" id="liveGridSub">—</span>
+          <span style="display:flex;align-items:center;gap:0.6rem;">
+            <span class="card-title"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M12 2c1 3-3 4.5-3 8a3 3 0 0 0 6 0c1.5 1 2 2.8 2 4.3A6.3 6.3 0 0 1 5.5 14C5.5 8 12 6 12 2Z"/></svg> RevMGrid</span>
+            <span class="live-grid-sub" id="liveGridSub">—</span>
+          </span>
+          <button class="icon-btn" onclick="shareGridLink()" title="Share this grid session">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5 15.4 6.7M8.6 13.5l6.8 3.8"/></svg>
+          </button>
         </div>
         <div class="card-body">
           <div class="live-grid" id="liveGrid"></div>
@@ -983,17 +993,103 @@ async function init(){
   const revheadRow = document.getElementById('cgRevheadRow');
   if(revheadRow) revheadRow.style.display = iAmVerifiedRevHead ? 'block' : 'none';
 
-  // private-group join via ?invite=<token> in the URL
-  const inviteToken = new URLSearchParams(location.search).get('invite');
-  if(inviteToken) await joinViaInvite(inviteToken);
+  // Shared links (group / RevMGrid session / challenge) all carry an
+  // ?invite=<token> and auto-join the group server-side via RPC — see
+  // rpc_join_via_invite. This replaces the old client-side table lookup,
+  // which silently failed for private groups: RLS only lets you SELECT a
+  // study_groups row if it's public or you're already a member, so a
+  // non-member could never resolve the invite token to a group in the
+  // first place. ?group=<id> is kept as a same-page fast-path/back-compat
+  // and as a fallback if the RPC call fails for some reason.
+  const params = new URLSearchParams(location.search);
+  const inviteToken = params.get('invite');
+  const focus = params.get('focus'); // 'grid' | 'challenge'
+  const challengeParam = params.get('challenge');
+  let targetGroupId = params.get('group');
+
+  if(inviteToken){
+    try{
+      const { data, error } = await sb.rpc('rpc_join_via_invite', { p_token: inviteToken });
+      if(error) throw error;
+      if(data) targetGroupId = data;
+    }catch(e){
+      console.error('invite join failed:', e);
+      if(!targetGroupId) alert(e.message || 'That invite link is invalid or expired.');
+    }
+  }
 
   await loadMyGroups();
   renderList();
   await renderRevheadBanner(myProfile);
 
-  const groupParam = new URLSearchParams(location.search).get('group');
-  if(groupParam) openGroup(groupParam);
+  if(targetGroupId){
+    await openGroup(targetGroupId);
+    if(focus==='grid') focusGridSection();
+    if(focus==='challenge' && challengeParam) focusChallengeCard(challengeParam);
+  }
   RevM2Loader.hide();
+}
+
+function buildShareLink({focus, challengeId} = {}){
+  const g = currentGroup;
+  const params = new URLSearchParams({ invite: g.invite_token, group: g.id });
+  if(focus) params.set('focus', focus);
+  if(challengeId) params.set('challenge', challengeId);
+  return `${location.origin}${location.pathname}?${params.toString()}`;
+}
+
+async function shareLinkGeneric(url, shareTitle, shareText){
+  if(navigator.share){
+    try{ await navigator.share({ title: shareTitle, text: shareText, url }); }
+    catch(e){ /* user cancelled the native share sheet — not an error */ }
+  } else {
+    await navigator.clipboard.writeText(url);
+    alert('Link copied — your browser doesn\'t support the native share sheet.');
+  }
+}
+
+function shareGridLink(){
+  if(!currentGroup) return;
+  shareLinkGeneric(
+    buildShareLink({focus:'grid'}),
+    currentGroup.name,
+    `Join the RevMGrid session in "${currentGroup.name}" on RevM²`
+  );
+}
+
+function focusGridSection(){
+  const card = document.getElementById('liveGrid')?.closest('.card');
+  if(!card) return;
+  card.scrollIntoView({behavior:'smooth', block:'center'});
+  card.classList.add('share-focus-flash');
+  setTimeout(()=>card.classList.remove('share-focus-flash'), 2200);
+}
+
+async function shareChallengeLink(challengeId, title){
+  if(!currentGroup) return;
+  shareLinkGeneric(
+    buildShareLink({focus:'challenge', challengeId}),
+    currentGroup.name,
+    `Join the "${title||'Study Challenge'}" challenge in "${currentGroup.name}" on RevM²`
+  );
+}
+
+function focusChallengeCard(challengeId){
+  // Challenges load async as part of openGroup(); poll briefly for the
+  // card to exist rather than racing loadChallenges().
+  let tries = 0;
+  const tryFocus = () => {
+    const card = document.getElementById('challenge-'+challengeId);
+    if(card){
+      setGroupTab('challenges', document.querySelector('.gd-nav-item[data-gtab="challenges"]'));
+      card.scrollIntoView({behavior:'smooth', block:'center'});
+      card.classList.add('share-focus-flash');
+      setTimeout(()=>card.classList.remove('share-focus-flash'), 2200);
+    } else if(tries++ < 20){
+      setTimeout(tryFocus, 150);
+    }
+  };
+  tryFocus();
 }
 
 async function loadMyGroups(){
@@ -1128,14 +1224,6 @@ async function joinPublicGroup(groupId){
   if(error){ alert('Could not join: '+error.message); return; }
   await loadMyGroups();
   openGroup(groupId);
-}
-
-async function joinViaInvite(token){
-  const { data: g, error } = await sb.from('study_groups').select('id,member_limit').eq('invite_token',token).single();
-  if(error || !g){ return; }
-  const { count } = await sb.from('group_members').select('*',{count:'exact',head:true}).eq('group_id',g.id);
-  if(count >= g.member_limit){ alert('This group is full.'); return; }
-  await sb.from('group_members').insert({ group_id:g.id, user_id:me.id, role:'member' }); // no-op if already a member (PK conflict)
 }
 
 function openCreateModal(){ document.getElementById('createModal').classList.add('show'); }
@@ -1540,9 +1628,7 @@ function renderGroupDetail(){
   const canShareGroup = g.visibility!=='private' || isAdmin;
   document.getElementById('shareBox').style.display = canShareGroup ? 'flex' : 'none';
   if(canShareGroup){
-    document.getElementById('shareLinkInput').value = g.visibility==='private'
-      ? `${location.origin}${location.pathname}?invite=${g.invite_token}`
-      : `${location.origin}${location.pathname}?group=${g.id}`;
+    document.getElementById('shareLinkInput').value = buildShareLink();
   }
   if(isAdmin){
     const lockedOfficial = !!g.is_official;
@@ -1553,7 +1639,7 @@ function renderGroupDetail(){
     const sel = document.getElementById('resetHourSelect');
     sel.innerHTML = Array.from({length:24},(_,h)=>`<option value="${h}" ${h===g.day_reset_hour?'selected':''}>${fmtHour(h)}</option>`).join('');
     if(g.visibility==='private'){
-      document.getElementById('inviteLinkInput').value = `${location.origin}${location.pathname}?invite=${g.invite_token}`;
+      document.getElementById('inviteLinkInput').value = buildShareLink();
     }
     if(lockedOfficial){
       const note = document.getElementById('officialNote');
@@ -2071,12 +2157,17 @@ async function loadChallenges(){
     const count = c.challenge_participants?.length||0;
     const status = c.status==='open'?`<span style="color:var(--gold);">LIVE</span>`:`<span style="color:var(--success);">Resolved</span>`;
     const inIt = (c.challenge_participants||[]).some(p=>p.user_id===me.id);
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:0.55rem 0;border-bottom:1px solid var(--border);">
+    return `<div id="challenge-${c.id}" style="display:flex;align-items:center;justify-content:space-between;padding:0.55rem 0;border-bottom:1px solid var(--border);">
       <div>
         <div style="font-size:0.8rem;font-weight:600;color:var(--white);">${escHtml(c.title||'Challenge')}</div>
         <div style="font-size:0.68rem;color:var(--muted);">${count} participants · <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg> ${pool.toLocaleString()} pot · ${status}</div>
       </div>
-      ${c.status==='open'&&!inIt?`<button class="btn btn-gold btn-sm" onclick="joinChallenge('${c.id}')">Join</button>`:''}
+      <div style="display:flex;align-items:center;gap:0.4rem;">
+        <button class="icon-btn" onclick="shareChallengeLink('${c.id}','${escAttr(c.title||'Study Challenge')}')" title="Share this challenge">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5 15.4 6.7M8.6 13.5l6.8 3.8"/></svg>
+        </button>
+        ${c.status==='open'&&!inIt?`<button class="btn btn-gold btn-sm" onclick="joinChallenge('${c.id}')">Join</button>`:''}
+      </div>
     </div>`;
   }).join('');
 }
