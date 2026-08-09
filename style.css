@@ -101,6 +101,9 @@ body{
 }
 .nav-item:hover{color:var(--text);background:rgba(255,255,255,0.02);}
 .nav-item.active{color:var(--gold);border-left-color:var(--gold);background:var(--gold-dim);}
+.nav-item-invite{color:var(--gold)!important;background:rgba(200,169,110,0.08);}
+.nav-item-invite:hover{background:rgba(200,169,110,0.16);}
+.nav-item-invite .nav-icon{filter:drop-shadow(0 0 4px rgba(212,175,55,0.6));}
 .nav-icon{width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
 .nav-icon svg{width:16px;height:16px;}
 .nav-section{

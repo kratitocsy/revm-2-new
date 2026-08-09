@@ -532,6 +532,7 @@
   <aside class="sidebar">
     <a class="sidebar-logo" href="index.html"><div class="rm2-logo" data-size="small"></div></a>
     <nav class="sidebar-nav">
+      <div class="nav-item nav-item-invite" onclick="goInvite()"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5 15.4 6.7M8.6 13.5l6.8 3.8"/></svg></span>Invite friends</div>
       <div class="nav-section">Study</div>
       <div class="nav-item" onclick="go('tracker.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 11h6M9 15h6"/></svg></span>Tracker</div>
       <div class="nav-item" onclick="go('timer.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M7 3h10M7 21h10"/><path d="M8 3c0 4 3 5 4 6.5C13 8 16 7 16 3"/><path d="M8 21c0-4 3-5 4-6.5C13 16 16 17 16 21"/></svg></span>Study Timer</div>
@@ -561,7 +562,13 @@
           <button class="gw-tab active" data-tab="mine" onclick="setTab('mine',this)">My Groups</button>
           <button class="gw-tab" data-tab="discover" onclick="setTab('discover',this)">Discover</button>
         </div>
-        <button class="btn btn-gold btn-sm" onclick="openCreateModal()">+ Create group</button>
+        <div style="display:flex;gap:0.5rem;">
+          <button class="btn btn-gold btn-sm" id="quickInviteBtn" onclick="openQuickInviteModal()">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:0.2rem;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5 15.4 6.7M8.6 13.5l6.8 3.8"/></svg>
+            Invite friends
+          </button>
+          <button class="btn btn-gold btn-sm" onclick="openCreateModal()">+ Create group</button>
+        </div>
       </div>
 
       <div id="revheadBannerMount"></div>
@@ -922,6 +929,18 @@
   </div>
 </div>
 
+<!-- QUICK INVITE MODAL -->
+<div class="modal-overlay" id="quickInviteModal">
+  <div class="modal">
+    <h3><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5 15.4 6.7M8.6 13.5l6.8 3.8"/></svg> Invite friends</h3>
+    <p style="font-size:0.74rem;color:var(--muted);margin-bottom:0.8rem;">Pick a group to invite into. Anyone with the link joins instantly — no approval needed.</p>
+    <div id="quickInviteList" style="display:flex;flex-direction:column;gap:0.5rem;max-height:min(50vh,340px);overflow-y:auto;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeQuickInviteModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- CHALLENGE MODAL -->
 <div class="modal-overlay" id="challengeModal">
   <div class="modal">
@@ -1022,6 +1041,8 @@ async function init(){
   renderList();
   await renderRevheadBanner(myProfile);
 
+  if(params.get('quickinvite')) openQuickInviteModal();
+
   if(targetGroupId){
     await openGroup(targetGroupId);
     if(focus==='grid') focusGridSection();
@@ -1030,8 +1051,8 @@ async function init(){
   RevM2Loader.hide();
 }
 
-function buildShareLink({focus, challengeId} = {}){
-  const g = currentGroup;
+function buildShareLink({group, focus, challengeId} = {}){
+  const g = group || currentGroup;
   const params = new URLSearchParams({ invite: g.invite_token, group: g.id });
   if(focus) params.set('focus', focus);
   if(challengeId) params.set('challenge', challengeId);
@@ -1186,8 +1207,13 @@ function groupCardHtml(g, joined){
     </div>
     <div class="gcard-sub">${escHtml(g.description||'No description')}</div>
     <div class="gcard-sub">${g.is_official ? `${(g.member_limit||0).toLocaleString()} cap` : `Limit: ${g.member_limit}`} · resets ${fmtHour(g.day_reset_hour)}</div>
-    <button class="btn ${joined?'btn-ghost':'btn-gold'} btn-sm" style="margin-top:0.3rem;"
-      onclick="${joined ? `openGroup('${g.id}')` : `joinPublicGroup('${g.id}')`}">${joined?'Open':'Join'}</button>
+    <div style="display:flex;gap:0.4rem;margin-top:0.3rem;">
+      <button class="btn ${joined?'btn-ghost':'btn-gold'} btn-sm" style="flex:1;"
+        onclick="${joined ? `openGroup('${g.id}')` : `joinPublicGroup('${g.id}')`}">${joined?'Open':'Join'}</button>
+      ${joined ? `<button class="icon-btn" onclick="event.stopPropagation();shareGroupCardLink('${g.id}')" title="Invite friends">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5 15.4 6.7M8.6 13.5l6.8 3.8"/></svg>
+      </button>` : ''}
+    </div>
   </div>`;
 }
 
@@ -1228,6 +1254,50 @@ async function joinPublicGroup(groupId){
 
 function openCreateModal(){ document.getElementById('createModal').classList.add('show'); }
 function closeCreateModal(){ document.getElementById('createModal').classList.remove('show'); }
+
+function openQuickInviteModal(){
+  renderQuickInviteList();
+  document.getElementById('quickInviteModal').classList.add('show');
+}
+function closeQuickInviteModal(){ document.getElementById('quickInviteModal').classList.remove('show'); }
+
+function renderQuickInviteList(){
+  const el = document.getElementById('quickInviteList');
+  if(!myGroups.length){
+    el.innerHTML = `<div class="empty-state">You're not in any groups yet. Create one, then come back to invite people.</div>`;
+    return;
+  }
+  el.innerHTML = myGroups.map(g=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:0.6rem;background:var(--s1);border:1px solid var(--border);padding:0.6rem 0.8rem;">
+      <div style="min-width:0;">
+        <div style="font-size:0.8rem;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(g.name)}</div>
+        <div style="font-size:0.66rem;color:var(--muted);">${g.visibility==='public'?'Public':'Private'}</div>
+      </div>
+      <div style="display:flex;gap:0.4rem;flex-shrink:0;">
+        <button class="icon-btn" onclick="copyGroupInviteLink('${g.id}')" title="Copy link">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        <button class="btn btn-gold btn-sm" onclick="shareGroupCardLink('${g.id}')">Share</button>
+      </div>
+    </div>`).join('');
+}
+
+function copyGroupInviteLink(groupId){
+  const g = myGroups.find(x=>x.id===groupId);
+  if(!g) return;
+  navigator.clipboard.writeText(buildShareLink({group:g}));
+  alert('Link copied.');
+}
+
+function shareGroupCardLink(groupId){
+  const g = myGroups.find(x=>x.id===groupId);
+  if(!g) return;
+  shareLinkGeneric(
+    buildShareLink({group:g}),
+    g.name,
+    `Study with me in "${g.name}" on RevM²`
+  );
+}
 
 /* ── GROUP DETAIL ───────────────────────────────────────── */
 async function openGroup(groupId){
