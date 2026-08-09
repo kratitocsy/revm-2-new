@@ -17,6 +17,38 @@
 .gw-search{display:flex;gap:0.5rem;margin-bottom:1.25rem;}
 .gw-search input{flex:1;background:var(--black);border:1px solid var(--border2);color:var(--text);padding:0.55rem 0.85rem;font-family:var(--font);font-size:0.8rem;outline:none;}
 
+/* ── ANNOUNCEMENT / RULES BANNER ── */
+.ann-banner{
+  display:flex;align-items:flex-start;gap:0.7rem;margin-bottom:1rem;padding:0.8rem 0.9rem;
+  background:linear-gradient(135deg,var(--gold-dim),rgba(200,169,110,0.04));
+  border:1px solid var(--gold-border);border-radius:6px;
+}
+.ann-icon{color:var(--gold);flex-shrink:0;margin-top:0.15rem;}
+.ann-body{flex:1;min-width:0;}
+.ann-label{font-size:0.65rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--gold);margin-bottom:0.25rem;}
+.ann-text{font-size:0.82rem;color:var(--text);line-height:1.5;white-space:pre-wrap;word-break:break-word;}
+.ann-edit-btn,.ann-dismiss-btn{
+  flex-shrink:0;width:24px;height:24px;border-radius:4px;border:none;background:transparent;
+  color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:0.75rem;transition:all 0.15s;
+}
+.ann-edit-btn:hover{background:var(--gold-dim);color:var(--gold);}
+.ann-dismiss-btn:hover{background:rgba(255,255,255,0.06);color:var(--text);}
+.ann-empty-admin{
+  display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;padding:0.65rem 0.9rem;
+  border:1px dashed var(--border2);border-radius:6px;color:var(--muted);font-size:0.78rem;
+  cursor:pointer;transition:all 0.15s;
+}
+.ann-empty-admin:hover{border-color:var(--gold-border);color:var(--gold);background:var(--gold-dim);}
+.ann-editor{margin-bottom:1rem;padding:0.8rem;background:var(--s1);border:1px solid var(--border2);border-radius:6px;}
+.ann-editor textarea{
+  width:100%;min-height:90px;background:var(--black);border:1px solid var(--border2);color:var(--text);
+  padding:0.6rem 0.7rem;font-family:var(--font);font-size:0.82rem;line-height:1.5;border-radius:4px;
+  outline:none;resize:vertical;transition:border-color 0.2s;
+}
+.ann-editor textarea:focus{border-color:var(--gold);}
+.ann-editor-actions{display:flex;justify-content:flex-end;gap:0.5rem;margin-top:0.6rem;}
+
 /* ── MATERIALS SEARCH — premium ── */
 .mat-search{position:relative;display:flex;align-items:center;}
 .mat-search svg.mat-search-icon{
@@ -273,6 +305,19 @@
 .expand-thumb-name{font-size:0.6rem;color:var(--muted);max-width:66px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 /* Raise-hand badge shown on a live-grid tile */
 .live-tile-hand{position:absolute;top:1px;left:1px;font-size:0.7rem;background:rgba(0,0,0,0.6);border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;z-index:2;animation:handWave 1.2s ease-in-out infinite;}
+
+/* ── STREAK FIRE — appears once today's continuous session passes a
+   couple hours, gets bigger/brighter at each tier. Sits just above
+   the avatar like a little "head on fire" badge. ── */
+.live-tile-fire{
+  position:absolute;top:-10px;left:50%;transform:translateX(-50%);
+  width:17px;height:17px;z-index:3;pointer-events:none;
+  filter:drop-shadow(0 0 4px rgba(251,146,60,0.65));
+  animation:fireFlicker 1.7s ease-in-out infinite;
+}
+.live-tile-fire.tier-2{width:21px;height:21px;top:-12px;filter:drop-shadow(0 0 6px rgba(251,146,60,0.75));}
+.live-tile-fire.tier-3{width:25px;height:25px;top:-14px;filter:drop-shadow(0 0 9px rgba(248,113,60,0.9));animation-duration:1.3s;}
+@keyframes fireFlicker{0%,100%{transform:translateX(-50%) scale(1) rotate(0deg);}50%{transform:translateX(-50%) scale(1.1) rotate(-3deg);}}
 @keyframes handWave{0%,100%{transform:rotate(0deg);}25%{transform:rotate(-16deg);}75%{transform:rotate(16deg);}}
 .cam-toggle-btn.hand-on{background:rgba(255,214,10,0.22);box-shadow:0 2px 14px rgba(255,214,10,0.35),inset 0 1px 1px rgba(255,255,255,0.18);color:#ffd60a;}
 .cam-toggle-btn.active{background:rgba(212,175,55,0.22);box-shadow:0 2px 14px rgba(212,175,55,0.35),inset 0 1px 1px rgba(255,255,255,0.18);color:var(--gold);}
@@ -308,7 +353,10 @@
 .cam-mic-btn.muted{background:rgba(255,214,10,0.20);color:#ffd60a;box-shadow:0 2px 8px rgba(255,214,10,0.32);}
 .cam-mic-btn.deafened{background:rgba(255,45,120,0.20);color:#ff2d78;box-shadow:0 2px 8px rgba(255,45,120,0.32);}
 /* control bar — sits below the grid, its own frosted panel so it reads as one unit */
-.call-controls-bar{display:flex;align-items:center;justify-content:center;gap:0.7rem;flex-wrap:wrap;margin-top:1.1rem;padding:0.7rem 1rem;background:rgba(255,255,255,0.025);border:1px solid var(--border2);border-radius:16px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);}
+.call-controls-bar{display:flex;align-items:center;justify-content:center;gap:0.7rem;flex-wrap:wrap;margin-top:1.1rem;padding:0.7rem 1rem;background:rgba(255,255,255,0.025);border:1px solid var(--border2);border-radius:16px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transition:opacity 0.35s ease,transform 0.35s ease;}
+.call-controls-bar.cc-autohide{opacity:0;transform:translateY(6px);pointer-events:none;}
+.vg-pager{transition:opacity 0.35s ease;}
+.video-grid-wrap.cc-autohide .vg-pager{opacity:0;pointer-events:none;}
 .studying-now-header{display:flex;flex-direction:column;align-items:flex-start;gap:0.3rem;}
 .live-tile-dot{position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;background:var(--dim);border:2px solid var(--s1);}
 .live-tile-dot.on{background:var(--success);}
@@ -508,6 +556,31 @@
       <div class="gd-content">
 
       <div class="gd-panel active" id="gdPanel-overview">
+      <!-- ANNOUNCEMENT / RULES -->
+      <div class="ann-banner" id="annBanner" style="display:none;">
+        <svg class="ann-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6l-4 4H4a1 1 0 0 0-1 1Z"/><path d="M16 8a5 5 0 0 1 0 8M19 5a9 9 0 0 1 0 14"/></svg>
+        <div class="ann-body">
+          <div class="ann-label">Group rules · <span id="annMeta"></span></div>
+          <div class="ann-text" id="annText"></div>
+        </div>
+        <button class="ann-edit-btn" id="annEditBtn" style="display:none;" onclick="toggleAnnEdit()" title="Edit rules">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        </button>
+        <button class="ann-dismiss-btn" id="annDismissBtn" onclick="dismissAnnBanner()" title="Dismiss">✕</button>
+      </div>
+      <div class="ann-empty-admin" id="annEmptyAdmin" style="display:none;" onclick="toggleAnnEdit()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Post rules or announcements for this group
+      </div>
+      <div class="ann-editor" id="annEditor" style="display:none;">
+        <textarea id="annEditorInput" placeholder="e.g. No off-topic chat during focus hours. Camera stays on during group calls. Be respectful — 1 warning before removal." maxlength="600"></textarea>
+        <div class="ann-editor-actions">
+          <button class="btn btn-ghost btn-sm" onclick="toggleAnnEdit()">Cancel</button>
+          <button class="btn btn-gold btn-sm" onclick="saveAnnouncement()">Save</button>
+          <button class="btn btn-ghost btn-sm" id="annClearBtn" style="display:none;color:var(--danger);" onclick="clearAnnouncement()">Clear</button>
+        </div>
+      </div>
+
       <!-- CURRENT FOCUS TIME -->
       <div class="card focus-card" id="focusCard">
         <div class="focus-top">
@@ -996,6 +1069,7 @@ async function openGroup(groupId){
   startLiveGridTick();
   subscribeLivePresence(groupId);
   startFocusReconcilePoll();
+  initAutoHideControls();
 
   // Everything below is secondary panel data — each wrapped individually so
   // one failing step (e.g. challenges) can't block the others (e.g. chat),
@@ -1339,6 +1413,7 @@ function renderGroupDetail(){
   document.getElementById('gdName').textContent = g.name;
   document.getElementById('gdSidebarName').textContent = g.name;
   document.getElementById('gdMeta').textContent = `${g.visibility==='public'?'Public':'Private'} · limit ${g.member_limit} · day resets ${fmtHour(g.day_reset_hour)}`;
+  renderAnnouncement();
 
   const isAdmin = g.my_role === 'admin';
   const actions = document.getElementById('gdActions');
@@ -1379,6 +1454,71 @@ async function updateGroupSetting(field, value){
   if(error){ alert('Update failed: '+error.message); return; }
   currentGroup[field] = value;
   renderGroupDetail();
+}
+
+/* ── ANNOUNCEMENT / RULES BANNER ──────────────────────────────
+   Admin-editable, pinned per group (study_groups.announcement_text).
+   Each member can dismiss it locally for that exact text — if the
+   admin later changes the wording, the dismissal doesn't carry over,
+   since a genuinely new rule shouldn't stay hidden just because an
+   old one was. */
+function annDismissKey(groupId, text){
+  return `revm2_ann_dismissed_${groupId}_${text ? text.length + ':' + text.slice(0,40) : ''}`;
+}
+function renderAnnouncement(){
+  const g = currentGroup;
+  const isAdmin = g.my_role === 'admin';
+  const banner = document.getElementById('annBanner');
+  const emptyAdmin = document.getElementById('annEmptyAdmin');
+  const editor = document.getElementById('annEditor');
+  const text = (g.announcement_text || '').trim();
+
+  document.getElementById('annEditBtn').style.display = isAdmin ? 'flex' : 'none';
+  editor.style.display = 'none';
+
+  if(text && !localStorage.getItem(annDismissKey(g.id, text))){
+    banner.style.display = 'flex';
+    emptyAdmin.style.display = 'none';
+    document.getElementById('annText').textContent = text;
+    const who = membersCache?.[g.announcement_updated_by] || null;
+    const when = g.announcement_updated_at ? new Date(g.announcement_updated_at).toLocaleDateString(undefined,{month:'short',day:'numeric'}) : '';
+    document.getElementById('annMeta').textContent = [who ? `by ${who}` : null, when].filter(Boolean).join(' · ');
+  } else {
+    banner.style.display = 'none';
+    emptyAdmin.style.display = isAdmin && !text ? 'flex' : 'none';
+  }
+}
+function toggleAnnEdit(){
+  const editor = document.getElementById('annEditor');
+  const showing = editor.style.display === 'block';
+  editor.style.display = showing ? 'none' : 'block';
+  if(!showing){
+    document.getElementById('annEditorInput').value = currentGroup.announcement_text || '';
+    document.getElementById('annClearBtn').style.display = currentGroup.announcement_text ? 'inline-block' : 'none';
+    document.getElementById('annEditorInput').focus();
+  }
+}
+async function saveAnnouncement(){
+  const text = document.getElementById('annEditorInput').value.trim();
+  const { error } = await sb.from('study_groups').update({
+    announcement_text: text || null,
+    announcement_updated_at: new Date().toISOString(),
+    announcement_updated_by: me.id,
+  }).eq('id', currentGroup.id);
+  if(error){ alert('Could not save: '+error.message); return; }
+  currentGroup.announcement_text = text || null;
+  currentGroup.announcement_updated_at = new Date().toISOString();
+  currentGroup.announcement_updated_by = me.id;
+  renderAnnouncement();
+}
+async function clearAnnouncement(){
+  if(!confirm('Remove the pinned rules/announcement for this group?')) return;
+  document.getElementById('annEditorInput').value = '';
+  await saveAnnouncement();
+}
+function dismissAnnBanner(){
+  localStorage.setItem(annDismissKey(currentGroup.id, currentGroup.announcement_text || ''), '1');
+  document.getElementById('annBanner').style.display = 'none';
 }
 
 function copyInvite(){
@@ -1431,6 +1571,7 @@ async function loadMembers(){
   membersCache = {}; avatarCache = {}; rolesCache = {}; usernameCache = {};
   userIds.forEach(id=>{ membersCache[id]=nameOf(id); avatarCache[id]=(profiles||[]).find(p=>p.id===id)?.avatar_url || null; usernameCache[id]=usernameOf(id); }); // reused by the live-grid render
   data.forEach(m=>{ rolesCache[m.user_id]=m.role; });
+  renderAnnouncement(); // re-render now that membersCache has names, so "by @who" in the banner is accurate
 
   // friend status vs. me, for the "Add friend" button on every row (best-effort — ignore if RPC not deployed yet)
   friendStatusCache = {};
@@ -1747,6 +1888,43 @@ const camPeers = {};        // user_id -> RTCPeerConnection
 const remoteStreams = {};   // user_id -> MediaStream
 const voiceAudioEls = {};   // user_id -> hidden <audio> element playing that peer's voice-only stream
 let camActiveUsers = new Set();
+
+/* ── AUTO-HIDE CALL CONTROLS ──────────────────────────────────
+   While in a call, the control bar (mic/cam/hand-raise/leave/etc.)
+   and the video-grid pager fade out after a few seconds of no
+   mouse/touch activity, and reappear the instant the pointer moves
+   or the screen is tapped — Zoom/Meet/YouTube-style, so the chrome
+   doesn't permanently crowd the video. Never auto-hides while the
+   pointer is actually resting over the controls themselves. */
+const CC_HIDE_DELAY_MS = 3000;
+let ccHideTimer = null;
+let ccHoveringControls = false;
+function ccShowControls(){
+  const bar = document.getElementById('callControlsBar');
+  const wrap = document.getElementById('videoGridWrap');
+  if(bar) bar.classList.remove('cc-autohide');
+  if(wrap) wrap.classList.remove('cc-autohide');
+  clearTimeout(ccHideTimer);
+  if(!wrap || !wrap.classList.contains('active')) return; // only re-arm the hide timer while actually in a call
+  ccHideTimer = setTimeout(()=>{
+    if(ccHoveringControls) return;
+    if(bar) bar.classList.add('cc-autohide');
+    if(wrap) wrap.classList.add('cc-autohide');
+  }, CC_HIDE_DELAY_MS);
+}
+function initAutoHideControls(){
+  const detailView = document.getElementById('detailView');
+  if(!detailView || detailView.dataset.ccBound) return;
+  detailView.dataset.ccBound = '1';
+  ['mousemove','touchstart','touchmove','click','keydown'].forEach(evt=>{
+    detailView.addEventListener(evt, ccShowControls, { passive:true });
+  });
+  const bar = document.getElementById('callControlsBar');
+  if(bar){
+    bar.addEventListener('mouseenter', ()=>{ ccHoveringControls = true; ccShowControls(); });
+    bar.addEventListener('mouseleave', ()=>{ ccHoveringControls = false; ccShowControls(); });
+  }
+}
 
 /* ── Video-grid (Zoom-style) state ────────────────────────────
    Pin/hide are per-group, per-device preferences (not synced to
@@ -2719,6 +2897,23 @@ const VOICE_ONLY_TILE_ICON = `<svg class="default-avatar-icon voice-wave-icon" v
 // "on device" studying), a desk clock when they're paused or simply not studying right now.
 const DEVICE_ICON_PHONE = `<svg class="default-avatar-icon device-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.2"/><path d="M9.5 6.3h5"/><path d="M11 18.2h2"/></svg>`;
 const DEVICE_ICON_DESK_CLOCK = `<svg class="default-avatar-icon device-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9.3" r="5.3"/><path d="M12 6.3v3l2.1 1.2"/><path d="M3.5 20h17"/><path d="M6.5 20v-2.5M17.5 20v-2.5"/></svg>`;
+// Studying-now glyph: a person seated at a desk with an open book — used for
+// anyone actively live. Idle/paused members get the empty-desk-and-chair
+// glyph below instead, so the roster reads "who's actually at their desk
+// right now" at a glance, the same way a bare chair vs. an occupied one does.
+const STUDY_ICON_ACTIVE = `<svg class="default-avatar-icon device-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5.2" r="2.2"/><path d="M9 12.5v-1a3 3 0 0 1 6 0v1"/><path d="M7 21v-5.5l2-3.2M17 21v-5.5l-2-3.2"/><path d="M4 17.5h7M9 15v6"/></svg>`;
+const STUDY_ICON_IDLE = `<svg class="default-avatar-icon device-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10V4.5h9"/><path d="M6 10h12l-1.4 8.5H7.4z"/><path d="M6 10 4 21M18 10l2 11"/></svg>`;
+// Streak-fire badge: shows once someone's continuous live session today
+// crosses a couple hours, growing brighter/bigger at each tier.
+const FIRE_ICON_SVG = `<svg viewBox="0 0 24 24" fill="url(#rm2FireGrad)" stroke="#fb923c" stroke-width="0.5"><defs><linearGradient id="rm2FireGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#f97316"/><stop offset="55%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#fde68a"/></linearGradient></defs><path d="M12 2c1.2 3.4-2.6 4.9-2.6 8.6a2.6 2.6 0 0 0 5.2 0c0-1.1-.5-1.9-.9-2.6 1.9 1.1 3.3 3.2 3.3 5.7A5 5 0 0 1 12 18.7a5 5 0 0 1-5-5c0-5.1 5-6.4 5-11.7Z"/></svg>`;
+const STREAK_FIRE_TIERS = [ [4*3600, 3], [2.5*3600, 2], [1.5*3600, 1] ]; // [seconds, tier] checked highest-first
+function streakFireHtml(elapsedSeconds){
+  const hit = STREAK_FIRE_TIERS.find(([secs]) => elapsedSeconds >= secs);
+  if(!hit) return '';
+  const [, tier] = hit;
+  const hrs = (elapsedSeconds/3600).toFixed(1);
+  return `<span class="live-tile-fire tier-${tier}" title="${hrs}h straight — on fire">${FIRE_ICON_SVG}</span>`;
+}
 
 // Renders a member's avatar: their purchased M² Store avatar image if they have one, otherwise
 // a state-aware device icon — phone if their timer is live right now, desk clock if not.
@@ -2726,7 +2921,7 @@ function avatarInner(userId, isLive){
   const url = avatarCache[userId];
   if(url) return `<img class="avatar-img" src="${escHtml(url)}" alt="">`;
   if(isLive===undefined) return DEFAULT_AVATAR_ICON; // member list / focus card: keep the generic person glyph
-  return isLive ? DEVICE_ICON_PHONE : DEVICE_ICON_DESK_CLOCK; // live grid: state-aware device glyph
+  return isLive ? STUDY_ICON_ACTIVE : STUDY_ICON_IDLE; // live grid: seated-and-studying vs. empty-desk glyph
 }
 
 async function loadLiveGrid(){
@@ -2771,11 +2966,15 @@ function renderLiveGridDOM(){
     grid.classList.add('vg-hidden');
     vgWrap.classList.add('active');
     renderVideoGridDOM(withInfo, canInvite);
+    ccShowControls(); // freshly entering/still in a call — show controls now and (re)start the auto-hide timer
   } else {
     if(vgWrap.classList.contains('active')){ document.getElementById('vgGrid').innerHTML=''; document.getElementById('vgSpotlight').innerHTML=''; delete document.getElementById('vgSpotlight').dataset.uid; }
     vgWrap.classList.remove('active');
     grid.classList.remove('vg-hidden');
     renderCircleGridDOM(grid, withInfo, canInvite);
+    clearTimeout(ccHideTimer);
+    document.getElementById('callControlsBar')?.classList.remove('cc-autohide');
+    vgWrap.classList.remove('cc-autohide');
   }
 }
 
@@ -2817,7 +3016,7 @@ function renderCircleGridDOM(grid, withInfo, canInvite){
     // Tile is tappable/clickable on every device — opens the larger expand view
     // (touch tap on mobile, click on desktop); sizing itself adapts via CSS media query.
     return `<div class="live-tile" title="${escHtml(title)}">
-      <div class="${avClass}" id="lt-av-${r.user_id}" onclick="expandTile('${r.user_id}')">${tileContent}<span class="${dotClass}"></span>${handRaisedFlag ? '<span class="live-tile-hand">✋</span>' : ''}</div>
+      <div class="${avClass}" id="lt-av-${r.user_id}" onclick="expandTile('${r.user_id}')">${tileContent}<span class="${dotClass}"></span>${r.is_live ? streakFireHtml(r.elapsed) : ''}${handRaisedFlag ? '<span class="live-tile-hand">✋</span>' : ''}</div>
       <div class="${nameClass}">${escHtml(name)}${isAdmin?' <span style="color:var(--cyan);">★</span>':''}${mediaIcons ? ' '+mediaIcons : ''}</div>
       <div class="${timeClass}" id="lt-time-${r.user_id}">${timeTxt}</div>
     </div>`;
@@ -2961,13 +3160,26 @@ let liveGridTickHandle = null;
 function tickLiveGrid(){
   liveTotalsData.forEach(r=>{
     if(r.is_live || r.is_paused){
-      const txt = fmtHMS(computeElapsedFromRow(r));
+      const elapsed = computeElapsedFromRow(r);
+      const txt = fmtHMS(elapsed);
       const circleEl = document.getElementById('lt-time-'+r.user_id);
       if(circleEl) circleEl.textContent = txt;
       const vgEl = document.getElementById('vg-time-'+r.user_id);
       if(vgEl) vgEl.textContent = txt;
       const spotlightTimer = document.querySelector('#vgSpotlight .vg-spotlight-timer');
       if(spotlightTimer && document.getElementById('vgSpotlight')?.dataset.uid === r.user_id) spotlightTimer.textContent = txt;
+      if(r.is_live){
+        const avEl = document.getElementById('lt-av-'+r.user_id);
+        if(avEl){
+          const wantHtml = streakFireHtml(elapsed);
+          const existing = avEl.querySelector('.live-tile-fire');
+          const existingHtml = existing ? existing.outerHTML : '';
+          if(wantHtml !== existingHtml){
+            if(existing) existing.remove();
+            if(wantHtml) avEl.insertAdjacentHTML('beforeend', wantHtml);
+          }
+        }
+      }
     }
   });
 }
