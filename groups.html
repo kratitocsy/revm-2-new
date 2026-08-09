@@ -49,6 +49,46 @@
 .ann-editor textarea:focus{border-color:var(--gold);}
 .ann-editor-actions{display:flex;justify-content:flex-end;gap:0.5rem;margin-top:0.6rem;}
 
+/* ── STATISTICS TAB ── */
+.stats-viewing-banner{
+  display:flex;align-items:center;justify-content:space-between;gap:0.6rem;
+  margin-bottom:0.85rem;padding:0.6rem 0.85rem;background:var(--gold-dim);
+  border:1px solid var(--gold-border);border-radius:6px;font-size:0.78rem;color:var(--text);
+}
+.stats-period-row{display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.85rem;}
+.stats-period-toggle{display:flex;background:var(--s1);border:1px solid var(--border2);border-radius:6px;overflow:hidden;}
+.stats-period-btn{
+  background:transparent;border:none;color:var(--muted);font-family:var(--font);
+  font-size:0.74rem;font-weight:600;padding:0.4rem 0.9rem;cursor:pointer;transition:all 0.15s;
+}
+.stats-period-btn.active{background:var(--gold-dim);color:var(--gold);}
+.stats-period-btn:hover:not(.active){color:var(--text);}
+.stats-date-nav{display:flex;align-items:center;gap:0.5rem;font-size:0.76rem;color:var(--muted);}
+.stats-date-nav .icon-btn{padding:0.25rem 0.6rem;}
+.stats-summary-card .card-body,.stats-summary-grid{padding:0.9rem;}
+.stats-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.9rem;}
+.stats-summary-item{display:flex;flex-direction:column;gap:0.15rem;}
+.stats-summary-label{font-size:0.65rem;color:var(--gold);text-transform:uppercase;letter-spacing:0.05em;font-weight:700;}
+.stats-summary-value{font-size:1.1rem;color:var(--text);font-weight:600;}
+.stats-bar-chart{display:flex;align-items:flex-end;gap:4px;padding:0.9rem;min-height:140px;}
+.stats-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:0.35rem;min-width:0;}
+.stats-bar-track{width:100%;max-width:26px;height:100px;display:flex;align-items:flex-end;background:rgba(255,255,255,0.03);border-radius:3px;overflow:hidden;}
+.stats-bar-fill{width:100%;background:linear-gradient(180deg,var(--gold),#8a6d3b);border-radius:3px 3px 0 0;min-height:2px;transition:height 0.3s ease;}
+.stats-bar-label{font-size:0.6rem;color:var(--dim);white-space:nowrap;}
+.stats-bar-val{font-size:0.58rem;color:var(--muted);white-space:nowrap;}
+.stats-donut-row{display:flex;align-items:center;gap:1.5rem;padding:0.9rem;flex-wrap:wrap;}
+.stats-donut{
+  width:130px;height:130px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;position:relative;
+}
+.stats-donut::after{content:'';position:absolute;inset:18px;border-radius:50%;background:var(--s2);}
+.stats-donut-center{position:relative;z-index:1;text-align:center;font-size:0.95rem;font-weight:700;color:var(--text);}
+.stats-donut-legend{display:flex;flex-direction:column;gap:0.5rem;font-size:0.76rem;}
+.stats-legend-row{display:flex;align-items:center;gap:0.5rem;}
+.stats-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.stats-legend-label{color:var(--text);min-width:52px;}
+.stats-legend-val{color:var(--muted);}
+
 /* ── MATERIALS SEARCH — premium ── */
 .mat-search{position:relative;display:flex;align-items:center;}
 .mat-search svg.mat-search-icon{
@@ -544,6 +584,7 @@
           <button class="gd-nav-item" data-gtab="materials" onclick="setGroupTab('materials',this)"><span class="gd-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>Materials</button>
           <button class="gd-nav-item" data-gtab="leaderboard" onclick="setGroupTab('leaderboard',this)"><span class="gd-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5V4Z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/></svg></span>Leaderboard</button>
           <button class="gd-nav-item" data-gtab="analytics" onclick="setGroupTab('analytics',this)"><span class="gd-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></span>Analytics</button>
+          <button class="gd-nav-item" data-gtab="statistics" onclick="setGroupTab('statistics',this); openStatistics(me.id);"><span class="gd-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="12" width="4" height="8" rx="1"/><rect x="10" y="7" width="4" height="13" rx="1"/><rect x="16" y="3" width="4" height="17" rx="1"/></svg></span>Statistics</button>
           <button class="gd-nav-item" data-gtab="challenges" onclick="setGroupTab('challenges',this)"><span class="gd-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg></span>Challenges<span class="gd-nav-badge" id="gdChallengesBadge" style="display:none;"></span></button>
           <button class="gd-nav-item" data-gtab="members" onclick="setGroupTab('members',this)"><span class="gd-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7.5" r="3.5"/><path d="M17.5 11a3.5 3.5 0 1 0 0-7"/><path d="M22 21v-1.5a4 4 0 0 0-3-3.87"/></svg></span>Members</button>
         </nav>
@@ -715,6 +756,37 @@
       </div>
       </div><!-- /gdPanel-analytics -->
 
+      <!-- STATISTICS -->
+      <div class="gd-panel" id="gdPanel-statistics">
+      <div class="stats-viewing-banner" id="statsViewingBanner" style="display:none;">
+        Viewing <span id="statsViewingName"></span>'s stats
+        <button class="icon-btn" onclick="openStatistics(me.id)">Back to my stats</button>
+      </div>
+      <div class="stats-period-row">
+        <div class="stats-period-toggle">
+          <button class="stats-period-btn active" data-period="day" onclick="setStatsPeriod('day')">Day</button>
+          <button class="stats-period-btn" data-period="week" onclick="setStatsPeriod('week')">Week</button>
+          <button class="stats-period-btn" data-period="month" onclick="setStatsPeriod('month')">Month</button>
+        </div>
+        <div class="stats-date-nav">
+          <button class="icon-btn" onclick="shiftStatsPeriod(-1)">‹</button>
+          <span id="statsDateLabel">—</span>
+          <button class="icon-btn" onclick="shiftStatsPeriod(1)">›</button>
+        </div>
+      </div>
+      <div class="card stats-summary-card">
+        <div class="stats-summary-grid" id="statsSummaryGrid">Loading…</div>
+      </div>
+      <div class="card" style="margin-top:0.85rem;">
+        <div class="card-header"><span class="card-title">Study time</span></div>
+        <div class="stats-bar-chart" id="statsBarChart"></div>
+      </div>
+      <div class="card" style="margin-top:0.85rem;">
+        <div class="card-header"><span class="card-title">Breakdown</span></div>
+        <div class="stats-donut-row" id="statsDonutRow"></div>
+      </div>
+      </div><!-- /gdPanel-statistics -->
+
       <!-- CHALLENGE PANEL -->
       <div class="gd-panel" id="gdPanel-challenges">
       <div class="card" style="margin-bottom:1rem;border-color:rgba(200,169,110,0.3);">
@@ -728,6 +800,12 @@
 
       <!-- MEMBERS -->
       <div class="gd-panel" id="gdPanel-members">
+      <div class="invite-box" id="shareBox" style="display:none;">
+        <span style="font-size:0.7rem;color:var(--muted);">Share this group:</span>
+        <input id="shareLinkInput" readonly>
+        <button class="icon-btn" onclick="copyShareLink()">Copy</button>
+        <button class="icon-btn" onclick="shareGroupLink()">Share</button>
+      </div>
       <div class="invite-box" id="inviteBox" style="display:none;">
         <span style="font-size:0.7rem;color:var(--muted);">Invite link:</span>
         <input id="inviteLinkInput" readonly>
@@ -1428,6 +1506,18 @@ function renderGroupDetail(){
 
   document.getElementById('adminSettingsCard').style.display = isAdmin ? 'block' : 'none';
   document.getElementById('inviteBox').style.display = (isAdmin && g.visibility==='private') ? 'flex' : 'none';
+  // Public groups: anyone can share, since anyone can already join anyway.
+  // Private groups: sharing the invite link stays admin-only, same as the
+  // invite box above — a private group is private by the admin's choice,
+  // and letting any member freely redistribute the join link would quietly
+  // undo that, capacity/vetting controls included.
+  const canShareGroup = g.visibility!=='private' || isAdmin;
+  document.getElementById('shareBox').style.display = canShareGroup ? 'flex' : 'none';
+  if(canShareGroup){
+    document.getElementById('shareLinkInput').value = g.visibility==='private'
+      ? `${location.origin}${location.pathname}?invite=${g.invite_token}`
+      : `${location.origin}${location.pathname}?group=${g.id}`;
+  }
   if(isAdmin){
     const lockedOfficial = !!g.is_official;
     document.getElementById('visSelect').value = g.visibility;
@@ -1521,8 +1611,165 @@ function dismissAnnBanner(){
   document.getElementById('annBanner').style.display = 'none';
 }
 
+/* ── STATISTICS TAB ────────────────────────────────────────────
+   Day/Week/Month view of one member's study time, backed by
+   rpc_user_study_breakdown() (per-day study/break seconds). "Other"
+   in the donut is whatever's left of the period's total wall-clock
+   time once study + break are subtracted — i.e. time not spent in
+   an active session at all, same idea as the reference screenshots. */
+let statsViewingUserId = null;
+let statsPeriod = 'day'; // 'day' | 'week' | 'month'
+let statsAnchorDate = new Date(); // reference date the current period is computed around
+
+function statsPeriodRange(){
+  const d = new Date(statsAnchorDate);
+  if(statsPeriod === 'day'){
+    const start = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const end = new Date(start); end.setDate(end.getDate()+1);
+    return { start, end, days:1 };
+  }
+  if(statsPeriod === 'week'){
+    const dow = (d.getDay()+6)%7; // Monday=0
+    const start = new Date(d.getFullYear(), d.getMonth(), d.getDate()-dow);
+    const end = new Date(start); end.setDate(end.getDate()+7);
+    return { start, end, days:7 };
+  }
+  const start = new Date(d.getFullYear(), d.getMonth(), 1);
+  const end = new Date(d.getFullYear(), d.getMonth()+1, 1);
+  const days = Math.round((end-start)/86400000);
+  return { start, end, days };
+}
+function setStatsPeriod(period){
+  statsPeriod = period;
+  statsAnchorDate = new Date();
+  document.querySelectorAll('.stats-period-btn').forEach(b=>b.classList.toggle('active', b.dataset.period===period));
+  loadStatistics();
+}
+function shiftStatsPeriod(dir){
+  const d = new Date(statsAnchorDate);
+  if(statsPeriod==='day') d.setDate(d.getDate()+dir);
+  else if(statsPeriod==='week') d.setDate(d.getDate()+dir*7);
+  else d.setMonth(d.getMonth()+dir);
+  statsAnchorDate = d;
+  loadStatistics();
+}
+function openStatistics(userId){
+  statsViewingUserId = userId;
+  const banner = document.getElementById('statsViewingBanner');
+  if(userId === me.id){
+    banner.style.display = 'none';
+  } else {
+    banner.style.display = 'flex';
+    document.getElementById('statsViewingName').textContent = escHtml(nameOf(userId));
+  }
+  loadStatistics();
+}
+async function loadStatistics(){
+  if(!currentGroup || !statsViewingUserId) return;
+  const grid = document.getElementById('statsSummaryGrid');
+  const barChart = document.getElementById('statsBarChart');
+  grid.textContent = 'Loading…';
+  barChart.innerHTML = '';
+  document.getElementById('statsDonutRow').innerHTML = '';
+
+  const { start, end, days } = statsPeriodRange();
+  const label = statsPeriod==='day'
+    ? start.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})
+    : statsPeriod==='week'
+    ? `${start.toLocaleDateString(undefined,{month:'short',day:'numeric'})} – ${new Date(end-86400000).toLocaleDateString(undefined,{month:'short',day:'numeric'})}`
+    : start.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+  document.getElementById('statsDateLabel').textContent = label;
+
+  const { data, error } = await sb.rpc('rpc_user_study_breakdown', {
+    p_group_id: currentGroup.id, p_user_id: statsViewingUserId,
+    p_start: start.toISOString(), p_end: end.toISOString(),
+  });
+  if(error){ grid.textContent = 'Could not load statistics.'; console.error(error); return; }
+
+  // Fill every day in range so the bar chart has no gaps, even with zero data
+  const byDate = {};
+  (data||[]).forEach(r=>{ byDate[r.bucket_date] = r; });
+  const dayList = [];
+  for(let i=0;i<days;i++){
+    const dt = new Date(start); dt.setDate(dt.getDate()+i);
+    const key = dt.toISOString().slice(0,10);
+    dayList.push({ date: dt, ...( byDate[key] || { study_seconds:0, break_seconds:0, session_count:0 } ) });
+  }
+
+  const totalStudy = dayList.reduce((s,d)=>s+Number(d.study_seconds||0),0);
+  const totalBreak = dayList.reduce((s,d)=>s+Number(d.break_seconds||0),0);
+  const periodSeconds = days * 86400;
+  const totalOther = Math.max(0, periodSeconds - totalStudy - totalBreak);
+  const activeDays = dayList.filter(d=>Number(d.study_seconds||0) > 0).length;
+  const avgStudy = activeDays ? totalStudy/activeDays : 0;
+
+  renderStatsSummary({ totalStudy, totalBreak, avgStudy, activeDays, days: dayList });
+  renderStatsBarChart(dayList);
+  renderStatsDonut({ totalStudy, totalBreak, totalOther });
+}
+function fmtHrsMin(secs){
+  secs = Math.max(0, Math.round(secs));
+  const h = Math.floor(secs/3600), m = Math.floor((secs%3600)/60);
+  return h>0 ? `${h}h ${m}m` : `${m}m`;
+}
+function renderStatsSummary({ totalStudy, totalBreak, avgStudy, activeDays, days }){
+  const grid = document.getElementById('statsSummaryGrid');
+  if(statsPeriod === 'day'){
+    const today = days[0];
+    grid.innerHTML = `
+      <div class="stats-summary-item"><span class="stats-summary-label">Study time</span><span class="stats-summary-value">${fmtHrsMin(today.study_seconds)}</span></div>
+      <div class="stats-summary-item"><span class="stats-summary-label">Break time</span><span class="stats-summary-value">${fmtHrsMin(today.break_seconds)}</span></div>
+      <div class="stats-summary-item"><span class="stats-summary-label">Sessions</span><span class="stats-summary-value">${today.session_count||0}</span></div>`;
+  } else {
+    grid.innerHTML = `
+      <div class="stats-summary-item"><span class="stats-summary-label">Total study time</span><span class="stats-summary-value">${fmtHrsMin(totalStudy)}</span></div>
+      <div class="stats-summary-item"><span class="stats-summary-label">Avg / active day</span><span class="stats-summary-value">${fmtHrsMin(avgStudy)}</span></div>
+      <div class="stats-summary-item"><span class="stats-summary-label">Active days</span><span class="stats-summary-value">${activeDays}/${days.length}</span></div>`;
+  }
+}
+function renderStatsBarChart(dayList){
+  const maxSecs = Math.max(1, ...dayList.map(d=>Number(d.study_seconds||0)));
+  const dayFmt = statsPeriod==='month' ? { day:'numeric' } : { weekday:'short' };
+  document.getElementById('statsBarChart').innerHTML = dayList.map(d=>{
+    const secs = Number(d.study_seconds||0);
+    const pct = Math.max(secs>0?4:0, (secs/maxSecs)*100);
+    return `<div class="stats-bar-col" title="${d.date.toLocaleDateString()}: ${fmtHrsMin(secs)}">
+      <div class="stats-bar-track"><div class="stats-bar-fill" style="height:${pct}%;"></div></div>
+      <div class="stats-bar-val">${secs>0 ? fmtHrsMin(secs) : ''}</div>
+      <div class="stats-bar-label">${d.date.toLocaleDateString(undefined, dayFmt)}</div>
+    </div>`;
+  }).join('');
+}
+function renderStatsDonut({ totalStudy, totalBreak, totalOther }){
+  const total = Math.max(1, totalStudy + totalBreak + totalOther);
+  const studyPct = totalStudy/total*100, breakPct = totalBreak/total*100;
+  const studyEnd = studyPct, breakEnd = studyPct+breakPct;
+  const donutStyle = `background:conic-gradient(var(--gold) 0% ${studyEnd}%, #38bdf8 ${studyEnd}% ${breakEnd}%, #333 ${breakEnd}% 100%);`;
+  document.getElementById('statsDonutRow').innerHTML = `
+    <div class="stats-donut" style="${donutStyle}"><div class="stats-donut-center">${Math.round(studyPct)}%</div></div>
+    <div class="stats-donut-legend">
+      <div class="stats-legend-row"><span class="stats-legend-dot" style="background:var(--gold);"></span><span class="stats-legend-label">Study</span><span class="stats-legend-val">${fmtHrsMin(totalStudy)} · ${Math.round(studyPct)}%</span></div>
+      <div class="stats-legend-row"><span class="stats-legend-dot" style="background:#38bdf8;"></span><span class="stats-legend-label">Break</span><span class="stats-legend-val">${fmtHrsMin(totalBreak)} · ${Math.round(breakPct)}%</span></div>
+      <div class="stats-legend-row"><span class="stats-legend-dot" style="background:#333;"></span><span class="stats-legend-label">Other</span><span class="stats-legend-val">${fmtHrsMin(totalOther)} · ${Math.round(100-studyPct-breakPct)}%</span></div>
+    </div>`;
+}
+
 function copyInvite(){
   navigator.clipboard.writeText(document.getElementById('inviteLinkInput').value);
+}
+function copyShareLink(){
+  navigator.clipboard.writeText(document.getElementById('shareLinkInput').value);
+}
+async function shareGroupLink(){
+  const url = document.getElementById('shareLinkInput').value;
+  const text = `Study with me in "${currentGroup.name}" on RevM²`;
+  if(navigator.share){
+    try{ await navigator.share({ title: currentGroup.name, text, url }); }
+    catch(e){ /* user cancelled the native share sheet — not an error */ }
+  } else {
+    navigator.clipboard.writeText(url);
+    alert('Link copied — your browser doesn\'t support the native share sheet.');
+  }
 }
 async function regenInvite(){
   const { data, error } = await sb.from('study_groups')
@@ -1606,12 +1853,12 @@ async function loadMembers(){
         ${streakNote}
       </div>
       ${iAmAdmin && m.user_id!==me.id ? `<div class="member-actions">
-        <button class="icon-btn" onclick="viewAnalytics('${m.user_id}')">Stats</button>
+        <button class="icon-btn" onclick="openStatsFor('${m.user_id}')">Stats</button>
         ${friendBtnHtml(m.user_id)}
         ${(!currentGroup.is_official || m.user_id!==currentGroup.system_owner_id) ? `
           <button class="icon-btn" onclick="transferAdmin('${m.user_id}')">Make admin</button>
           <button class="icon-btn danger" onclick="kickMember('${m.user_id}')">Kick</button>` : ''}
-      </div>` : `<div class="member-actions"><button class="icon-btn" onclick="viewAnalytics('${m.user_id}')">Stats</button>${m.user_id!==me.id?friendBtnHtml(m.user_id):''}</div>`}
+      </div>` : `<div class="member-actions"><button class="icon-btn" onclick="openStatsFor('${m.user_id}')">Stats</button>${m.user_id!==me.id?friendBtnHtml(m.user_id):''}</div>`}
     </div>`;
   }).join('') || `<div class="empty-state">No members yet.</div>`;
 }
@@ -1727,6 +1974,11 @@ function compareWithMember(userId, chipEl){
     </div>`;
 }
 
+function openStatsFor(userId){
+  setGroupTab('statistics', document.querySelector('.gd-nav-item[data-gtab="statistics"]'));
+  setStatsPeriod('day');
+  openStatistics(userId);
+}
 async function viewAnalytics(userId){
   // Jumps to this group's Analytics tab and pre-selects the clicked member
   // for a head-to-head comparison, instead of navigating away.
