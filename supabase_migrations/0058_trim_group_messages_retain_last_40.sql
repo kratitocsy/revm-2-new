@@ -17,8 +17,8 @@ begin
     where group_id = new.group_id
     order by created_at desc
     offset 40
-  ) old
-  where gm.id = old.id;
+  ) overflow_rows
+  where gm.id = overflow_rows.id;
   return new;
 end;
 $$;
