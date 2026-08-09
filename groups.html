@@ -88,6 +88,18 @@
 .stats-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
 .stats-legend-label{color:var(--text);min-width:52px;}
 .stats-legend-val{color:var(--muted);}
+.stats-cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:0.9rem 0.9rem 0;}
+.stats-cal-weekdays div{font-size:0.62rem;color:var(--dim);text-align:center;text-transform:uppercase;letter-spacing:0.03em;}
+.stats-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:0.4rem 0.9rem 0.9rem;}
+.stats-cal-cell{
+  aspect-ratio:1;border-radius:4px;padding:0.3rem;display:flex;flex-direction:column;
+  justify-content:space-between;transition:box-shadow 0.15s;min-width:0;
+}
+.stats-cal-cell.empty{background:transparent;}
+.stats-cal-cell.today{box-shadow:0 0 0 1.5px var(--gold) inset;}
+.stats-cal-cell.other-month{opacity:0.35;}
+.stats-cal-day{font-size:0.62rem;color:var(--text);}
+.stats-cal-val{font-size:0.56rem;color:var(--text);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
 /* ── MATERIALS SEARCH — premium ── */
 .mat-search{position:relative;display:flex;align-items:center;}
@@ -780,6 +792,10 @@
       <div class="card" style="margin-top:0.85rem;">
         <div class="card-header"><span class="card-title">Study time</span></div>
         <div class="stats-bar-chart" id="statsBarChart"></div>
+      </div>
+      <div class="card" style="margin-top:0.85rem;display:none;" id="statsCalendarCard">
+        <div class="card-header"><span class="card-title">Focus time</span></div>
+        <div id="statsCalendarGrid"></div>
       </div>
       <div class="card" style="margin-top:0.85rem;">
         <div class="card-header"><span class="card-title">Breakdown</span></div>
@@ -1706,6 +1722,8 @@ async function loadStatistics(){
   renderStatsSummary({ totalStudy, totalBreak, avgStudy, activeDays, days: dayList });
   renderStatsBarChart(dayList);
   renderStatsDonut({ totalStudy, totalBreak, totalOther });
+  document.getElementById('statsCalendarCard').style.display = statsPeriod==='month' ? 'block' : 'none';
+  if(statsPeriod==='month') renderStatsCalendarGrid(dayList, start, end);
 }
 function fmtHrsMin(secs){
   secs = Math.max(0, Math.round(secs));
@@ -1739,6 +1757,39 @@ function renderStatsBarChart(dayList){
       <div class="stats-bar-label">${d.date.toLocaleDateString(undefined, dayFmt)}</div>
     </div>`;
   }).join('');
+}
+// Month view only: a proper Mon-Sun calendar grid (including a few
+// dimmed leading/trailing days from adjacent months to fill the last
+// row, same as any normal calendar), each cell shaded by how much of
+// that month's peak day it represents.
+function renderStatsCalendarGrid(dayList, monthStart, monthEnd){
+  const firstDow = (monthStart.getDay()+6)%7; // Monday=0
+  const gridStart = new Date(monthStart); gridStart.setDate(gridStart.getDate()-firstDow);
+  const lastDayOfMonth = new Date(monthEnd); lastDayOfMonth.setDate(lastDayOfMonth.getDate()-1);
+  const lastDow = (lastDayOfMonth.getDay()+6)%7;
+  const gridEnd = new Date(monthEnd); gridEnd.setDate(gridEnd.getDate()+(6-lastDow));
+
+  const byKey = {};
+  dayList.forEach(d=>{ byKey[d.date.toDateString()] = d; });
+  const maxSecs = Math.max(1, ...dayList.map(d=>Number(d.study_seconds||0)));
+  const todayKey = new Date().toDateString();
+
+  const cells = [];
+  for(let dt=new Date(gridStart); dt<gridEnd; dt.setDate(dt.getDate()+1)){
+    const inMonth = dt>=monthStart && dt<monthEnd;
+    const rec = inMonth ? byKey[dt.toDateString()] : null;
+    const secs = rec ? Number(rec.study_seconds||0) : 0;
+    const intensity = secs/maxSecs;
+    const isToday = dt.toDateString()===todayKey;
+    const bg = inMonth && secs>0 ? `rgba(200,169,110,${(0.15+intensity*0.7).toFixed(2)})` : 'rgba(255,255,255,0.02)';
+    cells.push(`<div class="stats-cal-cell${isToday?' today':''}${inMonth?'':' other-month'}" style="background:${bg};" title="${dt.toLocaleDateString()}${secs>0?': '+fmtHrsMin(secs):''}">
+      <div class="stats-cal-day">${dt.getDate()}</div>
+      <div class="stats-cal-val">${inMonth && secs>0 ? fmtHrsMin(secs) : ''}</div>
+    </div>`);
+  }
+  document.getElementById('statsCalendarGrid').innerHTML = `
+    <div class="stats-cal-weekdays">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(w=>`<div>${w}</div>`).join('')}</div>
+    <div class="stats-cal-grid">${cells.join('')}</div>`;
 }
 function renderStatsDonut({ totalStudy, totalBreak, totalOther }){
   const total = Math.max(1, totalStudy + totalBreak + totalOther);
