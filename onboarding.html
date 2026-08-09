@@ -380,8 +380,32 @@ async function finish(){
   const btn=document.getElementById('contBtn');
   btn.textContent='Building...';btn.disabled=true;
   const cfg={subjects:subs,exam,track,start_date:document.getElementById('startDate').value,end_date:document.getElementById('endDate').value,onboarded:true,explainer_seen:true};
-  const {data:{session}}=await sb.auth.getSession();
-  if(session) await sb.from('user_profiles').upsert({id:session.user.id,display_name:displayName||null,avatar_url:avatarUrl||null,...cfg},{onConflict:'id'});
+
+  // A missing session here used to be silently ignored - the upsert
+  // (including onboarded:true) just never ran, but the code carried on
+  // to tracker.html anyway as if it had. Next login, profile.onboarded
+  // was still false, so the ENTIRE flow (username, name, subjects, exam,
+  // track) re-ran from scratch with no indication anything had gone
+  // wrong the first time. Retry once (getSession() reading a token
+  // mid-refresh is the realistic failure mode after a multi-step form
+  // sitting open a while) before giving up and telling the user, rather
+  // than proceeding on a guess.
+  let { data: { session } } = await sb.auth.getSession();
+  if(!session){ await new Promise(r=>setTimeout(r,600)); ({ data: { session } } = await sb.auth.getSession()); }
+  if(!session){
+    btn.textContent='Build my tracker →'; btn.disabled=false;
+    alert('Your sign-in expired while setting up — please refresh the page and finish setup again. Your username is already reserved, so you can pick straight back up.');
+    return;
+  }
+
+  const { error } = await sb.from('user_profiles')
+    .upsert({id:session.user.id,display_name:displayName||null,avatar_url:avatarUrl||null,...cfg},{onConflict:'id'});
+  if(error){
+    btn.textContent='Build my tracker →'; btn.disabled=false;
+    alert('Could not save your setup (' + error.message + '). Please try again - nothing has been lost.');
+    return;
+  }
+
   logEvent('onboarding_completed');
   Store.set('revm2_config',cfg);
   window.location.href='tracker.html';
