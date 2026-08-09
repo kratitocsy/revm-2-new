@@ -1662,6 +1662,7 @@ function closeDetail(){
   toggleGroupChatTray(false);
   stopFocusTick();
   stopFocusReconcilePoll();
+  _focusRenderSig = null; // force a full rebuild next time a group's focus card renders
   stopLiveGridTick();
   if(presenceChannel){ sb.removeChannel(presenceChannel); presenceChannel=null; }
   if(myPresenceChannel){ sb.removeChannel(myPresenceChannel); myPresenceChannel=null; }
@@ -3245,6 +3246,16 @@ function myAdminCls(){
   return currentGroup && currentGroup.my_role==='admin' ? ' admin' : '';
 }
 
+// Tracks which "mode" focusControls/focusSub/focusAvatar were last built for, so
+// renderFocusCard() (called every second by the tick, and again on every reconcile/
+// realtime event) only tears down and rebuilds those elements when the session
+// actually changes state — not on every tick. Previously the idle branch rebuilt
+// the <select id="focusSubjectSel"> innerHTML every single second, so clicking it
+// open (or picking a subject just before hitting Start) got wiped out mid-interaction,
+// which is what caused the flicker and made subject changes seem like they weren't
+// sticking / weren't connected to the actual session.
+let _focusRenderSig = null;
+
 function renderFocusCard(){
   const state = Store.get(FT_ACTIVE_KEY);
   const timeEl = document.getElementById('focusTime');
@@ -3254,18 +3265,27 @@ function renderFocusCard(){
   const ctrlEl = document.getElementById('focusControls');
   if(!timeEl) return; // detail view not open
 
-  if(state && (state.group_id === currentGroup.id || state.group_id == null)){
+  const isMine = state && (state.group_id === currentGroup.id || state.group_id == null);
+  const sig = isMine
+    ? `active:${state.id}:${!!state.paused_at}:${!!state.isPrivate}:${state.subject||''}`
+    : (state ? 'other' : 'idle');
+  const sigChanged = sig !== _focusRenderSig;
+  _focusRenderSig = sig;
+
+  if(isMine){
     const secs = computeElapsed(state);
     timeEl.textContent = fmtHMS(secs);
+    fillEl.style.width = Math.min(100, (secs/3600)*100) + '%';
+    if(!sigChanged) return; // clock/progress already updated above; nothing else changed
     timeEl.className = 'focus-time live';
     avEl.className = 'focus-avatar' + (state.paused_at ? ' paused-state' : '') + myAdminCls();
     avEl.innerHTML = avatarInner(me.id);
     subEl.innerHTML = state.paused_at ? `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><rect x="7" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg> Paused · ${escHtml(state.subject||'—')}${state.isPrivate?' · Hidden':''}` : `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--danger);margin-right:0.3rem;vertical-align:1px;"></span>Live · ${escHtml(state.subject||'studying')}${state.isPrivate?' · Hidden':''}`;
-    fillEl.style.width = Math.min(100, (secs/3600)*100) + '%';
     ctrlEl.innerHTML = state.paused_at
       ? `<button class="btn btn-gold btn-sm" onclick="focusResume()">Resume</button><button class="icon-btn danger" onclick="focusStop()">Stop</button>`
       : `<button class="icon-btn" onclick="focusPause()">Pause</button><button class="icon-btn danger" onclick="focusStop()">Stop</button>`;
   } else if(state){
+    if(!sigChanged) return;
     timeEl.textContent = '—';
     timeEl.className = 'focus-time';
     avEl.className = 'focus-avatar idle' + myAdminCls();
@@ -3274,6 +3294,7 @@ function renderFocusCard(){
     fillEl.style.width = '0%';
     ctrlEl.innerHTML = '';
   } else {
+    if(!sigChanged) return; // idle and nothing changed — leave the subject <select> alone so an open dropdown / in-progress pick isn't wiped out
     timeEl.textContent = '0:00:00';
     timeEl.className = 'focus-time';
     avEl.className = 'focus-avatar idle' + myAdminCls();
