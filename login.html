@@ -125,7 +125,15 @@ async function signIn(){
   btn.disabled=true; sp.style.display='block'; txt.textContent='Redirecting...';
   const {error}=await sb.auth.signInWithOAuth({
     provider:'google',
-    options:{redirectTo:window.location.origin+'/login.html'}
+    options:{
+      redirectTo:window.location.origin+'/login.html',
+      // Without this, Google silently re-authenticates with whichever
+      // Google account is already active in the browser (including one
+      // you'd already signed out of on RevM² itself) instead of showing
+      // the account picker - so "sign out then Continue with Google"
+      // just logged back into the same account with no way to switch.
+      queryParams:{prompt:'select_account'}
+    }
   });
   if(error){
     document.getElementById('statusMsg').textContent='Something went wrong. Try again.';
