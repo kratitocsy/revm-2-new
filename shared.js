@@ -20,6 +20,17 @@ const REVM2_CONFIG = {
    * Leave both empty to hide the Drive-import button entirely. */
   GOOGLE_API_KEY:   '',
   GOOGLE_CLIENT_ID: '',
+  /* ── Telegram Login (sign-in via @revm2_bot) ──────────────────────
+   * The numeric bot ID - the digits before the ':' in your bot token
+   * from @BotFather (e.g. token "1234567890:AAF..." → bot ID
+   * "1234567890"). NOT the bot's username or its token itself - this
+   * ID is public-safe, unlike the token.
+   * Also required, done once in Telegram itself, not here:
+   *   message @BotFather → /setdomain → @revm2_bot → your production
+   *   domain (e.g. revm-2-new.vercel.app) - the widget only works on
+   *   a domain the bot has explicitly allowed.
+   * Leave empty to hide the "Continue with Telegram" button. */
+  TELEGRAM_BOT_ID: '',
 };
 
 /* ── EBBINGHAUS INTERVALS ────────────────────────────────── */
