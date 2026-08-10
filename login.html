@@ -11,19 +11,41 @@
 <style>
 .login-wrap{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;text-align:center;}
 .login-wrap .rm2-logo{margin-bottom:2.75rem;}
-.btn-google{
+.btn-oauth{
   display:flex;align-items:center;justify-content:center;gap:0.85rem;
-  width:280px;background:#fff;color:#111;border:none;
-  padding:0.9rem 1.5rem;font-family:var(--font);font-size:0.85rem;
+  width:280px;border:none;
+  padding:0.85rem 1.5rem;font-family:var(--font);font-size:0.82rem;
   font-weight:600;letter-spacing:0.02em;cursor:pointer;transition:opacity 0.2s;
+  margin-bottom:0.6rem;
 }
-.btn-google:hover{opacity:0.88;}
-.btn-google:disabled{opacity:0.45;cursor:not-allowed;}
-.google-icon{width:18px;height:18px;flex-shrink:0;}
-.spinner{display:none;width:15px;height:15px;border:2px solid rgba(0,0,0,0.15);border-top-color:#111;border-radius:50%;animation:spin 0.7s linear infinite;}
+.btn-oauth:hover{opacity:0.88;}
+.btn-oauth:disabled{opacity:0.4;cursor:not-allowed;}
+.btn-google{background:#fff;color:#111;}
+.btn-microsoft{background:#fff;color:#5e5e5e;}
+.btn-discord{background:#5865F2;color:#fff;}
+.btn-github{background:#171515;color:#fff;border:1px solid #333;}
+.btn-facebook{background:#1877F2;color:#fff;}
+.oauth-icon{width:18px;height:18px;flex-shrink:0;}
+.btn-spinner{display:none;width:15px;height:15px;border:2px solid rgba(120,120,120,0.3);border-top-color:currentColor;border-radius:50%;animation:spin 0.7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
-.status-msg{margin-top:0.9rem;font-size:0.68rem;color:var(--gold);letter-spacing:0.08em;text-transform:uppercase;min-height:1em;}
+.oauth-divider{display:flex;align-items:center;gap:0.75rem;width:280px;margin:0.5rem 0 0.9rem;}
+.oauth-divider::before,.oauth-divider::after{content:'';flex:1;height:1px;background:var(--border2);}
+.oauth-divider span{font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);}
+.email-toggle{background:none;border:none;color:var(--gold);font-size:0.72rem;letter-spacing:0.03em;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
+.email-toggle:hover{opacity:0.8;}
+.email-form{width:280px;text-align:left;}
+.email-form .field{margin-bottom:0.85rem;}
+.btn-primary-full{width:100%;background:var(--gold);color:#0a0a0a;border:none;padding:0.75rem 1rem;font-family:var(--font);font-size:0.82rem;font-weight:600;letter-spacing:0.02em;cursor:pointer;margin-top:0.2rem;}
+.btn-primary-full:hover{opacity:0.9;}
+.btn-primary-full:disabled{opacity:0.45;cursor:not-allowed;}
+.email-form-links{display:flex;justify-content:space-between;margin-top:0.85rem;font-size:0.68rem;}
+.email-form-links a,.email-form-links button{background:none;border:none;color:var(--muted);cursor:pointer;font-family:var(--font);font-size:0.68rem;padding:0;text-decoration:underline;text-underline-offset:2px;}
+.email-form-links a:hover,.email-form-links button:hover{color:var(--gold);}
+.login-view{display:none;}
+.login-view.active{display:flex;flex-direction:column;align-items:center;}
+.status-msg{margin-top:0.9rem;font-size:0.68rem;color:var(--gold);letter-spacing:0.08em;text-transform:uppercase;min-height:1em;max-width:280px;}
 .status-msg.err{color:var(--danger);}
+.status-msg.ok{color:#4ade80;}
 .login-note{margin-top:1.6rem;font-size:0.65rem;color:var(--muted);line-height:1.65;max-width:270px;}
 .fixed-footer{position:fixed;bottom:1.25rem;left:0;right:0;text-align:center;z-index:10;}
 .fixed-footer p{font-size:0.6rem;color:var(--dim);letter-spacing:0.14em;text-transform:uppercase;}
@@ -76,19 +98,107 @@
   <div class="login-wrap">
     <div class="rm2-logo" data-size="full"></div>
 
-    <button class="btn-google" id="googleBtn" onclick="signIn()">
-      <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-      </svg>
-      <span id="btnTxt">Continue with Google</span>
-      <div class="spinner" id="spinner"></div>
-    </button>
+    <!-- ── OAuth providers (default view) ── -->
+    <div class="login-view active" id="viewOAuth">
+      <button class="btn-oauth btn-google" data-provider="google" onclick="signInOAuth('google')">
+        <svg class="oauth-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        <span class="oauth-label">Continue with Google</span>
+        <div class="btn-spinner"></div>
+      </button>
+
+      <button class="btn-oauth btn-microsoft" data-provider="azure" onclick="signInOAuth('azure')">
+        <svg class="oauth-icon" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
+          <rect x="12" y="1" width="10" height="10" fill="#7FBA00"/>
+          <rect x="1" y="12" width="10" height="10" fill="#00A4EF"/>
+          <rect x="12" y="12" width="10" height="10" fill="#FFB900"/>
+        </svg>
+        <span class="oauth-label">Continue with Microsoft</span>
+        <div class="btn-spinner"></div>
+      </button>
+
+      <button class="btn-oauth btn-discord" data-provider="discord" onclick="signInOAuth('discord')">
+        <svg class="oauth-icon" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20.32 4.37a19.8 19.8 0 0 0-4.9-1.52.07.07 0 0 0-.08.04c-.21.38-.45.87-.61 1.26a18.3 18.3 0 0 0-5.48 0 12.6 12.6 0 0 0-.62-1.26.08.08 0 0 0-.08-.04c-1.7.29-3.36.8-4.9 1.52a.07.07 0 0 0-.03.03C.53 8.6-.32 12.68.1 16.72a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 6 3.03.08.08 0 0 0 .08-.03c.46-.63.87-1.3 1.23-2a.08.08 0 0 0-.04-.11 13 13 0 0 1-1.87-.9.08.08 0 0 1-.01-.13c.13-.09.25-.19.37-.28a.07.07 0 0 1 .08-.01c3.93 1.8 8.18 1.8 12.06 0a.07.07 0 0 1 .08.01c.12.1.24.19.37.28a.08.08 0 0 1-.01.13c-.6.35-1.22.65-1.87.9a.08.08 0 0 0-.04.11c.36.7.78 1.37 1.23 2a.08.08 0 0 0 .08.03 19.8 19.8 0 0 0 6.01-3.03.08.08 0 0 0 .03-.06c.5-4.68-.83-8.73-3.5-12.32a.06.06 0 0 0-.03-.03zM8.02 14.24c-1.18 0-2.15-1.09-2.15-2.42 0-1.34.95-2.43 2.15-2.43 1.21 0 2.17 1.1 2.15 2.43 0 1.33-.95 2.42-2.15 2.42zm7.97 0c-1.18 0-2.15-1.09-2.15-2.42 0-1.34.96-2.43 2.15-2.43 1.21 0 2.17 1.1 2.15 2.43 0 1.33-.94 2.42-2.15 2.42z"/>
+        </svg>
+        <span class="oauth-label">Continue with Discord</span>
+        <div class="btn-spinner"></div>
+      </button>
+
+      <button class="btn-oauth btn-github" data-provider="github" onclick="signInOAuth('github')">
+        <svg class="oauth-icon" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.11.79-.25.79-.55 0-.27-.01-1.16-.02-2.11-3.2.7-3.88-1.36-3.88-1.36-.52-1.34-1.28-1.69-1.28-1.69-1.04-.72.08-.7.08-.7 1.16.08 1.76 1.19 1.76 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 2.9-.39c.98 0 1.97.13 2.9.39 2.21-1.49 3.18-1.18 3.18-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.39-5.25 5.67.41.36.78 1.07.78 2.15 0 1.55-.01 2.8-.01 3.18 0 .31.21.67.8.55A10.53 10.53 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/>
+        </svg>
+        <span class="oauth-label">Continue with GitHub</span>
+        <div class="btn-spinner"></div>
+      </button>
+
+      <button class="btn-oauth btn-facebook" data-provider="facebook" onclick="signInOAuth('facebook')">
+        <svg class="oauth-icon" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+          <path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.09 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.5c-1.5 0-1.96.93-1.96 1.89v2.25h3.33l-.53 3.49h-2.8V24C19.61 23.09 24 18.1 24 12.07z"/>
+        </svg>
+        <span class="oauth-label">Continue with Facebook</span>
+        <div class="btn-spinner"></div>
+      </button>
+
+      <div class="oauth-divider"><span>or</span></div>
+      <button class="email-toggle" onclick="showView('signin')">Continue with email</button>
+    </div>
+
+    <!-- ── Email + password: sign in ── -->
+    <div class="login-view" id="viewSignin">
+      <form class="email-form" onsubmit="return emailSignIn(event)">
+        <div class="field"><label>Email</label><input type="email" id="siEmail" autocomplete="email" required></div>
+        <div class="field"><label>Password</label><input type="password" id="siPassword" autocomplete="current-password" required></div>
+        <button class="btn-primary-full" type="submit" id="siBtn">Sign in</button>
+        <div class="email-form-links">
+          <button type="button" onclick="showView('forgot')">Forgot password?</button>
+          <button type="button" onclick="showView('signup')">Create account</button>
+        </div>
+      </form>
+      <button class="email-toggle" style="margin-top:1rem;" onclick="showView('oauth')">← Back</button>
+    </div>
+
+    <!-- ── Email + password: sign up ── -->
+    <div class="login-view" id="viewSignup">
+      <form class="email-form" onsubmit="return emailSignUp(event)">
+        <div class="field"><label>Email</label><input type="email" id="suEmail" autocomplete="email" required></div>
+        <div class="field"><label>Password</label><input type="password" id="suPassword" autocomplete="new-password" minlength="6" required></div>
+        <div class="field"><label>Confirm password</label><input type="password" id="suPassword2" autocomplete="new-password" minlength="6" required></div>
+        <button class="btn-primary-full" type="submit" id="suBtn">Create account</button>
+        <div class="email-form-links" style="justify-content:center;">
+          <button type="button" onclick="showView('signin')">Already have an account? Sign in</button>
+        </div>
+      </form>
+      <button class="email-toggle" style="margin-top:1rem;" onclick="showView('oauth')">← Back</button>
+    </div>
+
+    <!-- ── Forgot password ── -->
+    <div class="login-view" id="viewForgot">
+      <form class="email-form" onsubmit="return emailForgot(event)">
+        <div class="field"><label>Email</label><input type="email" id="fpEmail" autocomplete="email" required></div>
+        <button class="btn-primary-full" type="submit" id="fpBtn">Send reset link</button>
+      </form>
+      <button class="email-toggle" style="margin-top:1rem;" onclick="showView('signin')">← Back to sign in</button>
+    </div>
+
+    <!-- ── Set new password (after clicking the reset-link email) ── -->
+    <div class="login-view" id="viewRecovery">
+      <p style="font-size:0.72rem;color:var(--muted);margin-bottom:1rem;max-width:280px;">Choose a new password for your account.</p>
+      <form class="email-form" onsubmit="return emailSetNewPassword(event)">
+        <div class="field"><label>New password</label><input type="password" id="rcPassword" autocomplete="new-password" minlength="6" required></div>
+        <div class="field"><label>Confirm password</label><input type="password" id="rcPassword2" autocomplete="new-password" minlength="6" required></div>
+        <button class="btn-primary-full" type="submit" id="rcBtn">Set new password</button>
+      </form>
+    </div>
 
     <div class="status-msg" id="statusMsg"></div>
-    <p class="login-note">Free forever. No spam. Your data stays yours.</p>
+    <p class="login-note" id="loginNote">Free forever. No spam. Your data stays yours.</p>
   </div>
 </div>
 
@@ -108,6 +218,19 @@ function closeLoginDrawer(){
   document.getElementById('loginDrawerBackdrop').classList.remove('active');
 }
 
+function setStatus(msg, kind){
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg || '';
+  el.className = 'status-msg' + (kind ? ' ' + kind : '');
+}
+
+function showView(name){
+  document.querySelectorAll('.login-view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+  setStatus('');
+  document.getElementById('loginNote').style.display = (name === 'oauth') ? 'block' : 'none';
+}
+
 async function checkSession(){
   const {data:{session}} = await sb.auth.getSession();
   if(session) redirect(session.user);
@@ -116,38 +239,153 @@ checkSession();
 
 sb.auth.onAuthStateChange(async(event,session)=>{
   if(event==='SIGNED_IN'&&session) redirect(session.user);
+  // Fires when the user lands here via a password-reset email link — show
+  // the "set a new password" form instead of treating it as a normal
+  // sign-in (there's a session, but it's only valid for changing the
+  // password, not for using the app with).
+  if(event==='PASSWORD_RECOVERY') showView('recovery');
 });
 
-async function signIn(){
-  const btn=document.getElementById('googleBtn');
-  const sp=document.getElementById('spinner');
-  const txt=document.getElementById('btnTxt');
-  btn.disabled=true; sp.style.display='block'; txt.textContent='Redirecting...';
-  const {error}=await sb.auth.signInWithOAuth({
-    provider:'google',
-    options:{
-      redirectTo:window.location.origin+'/login.html',
-      // Without this, Google silently re-authenticates with whichever
-      // Google account is already active in the browser (including one
-      // you'd already signed out of on RevM² itself) instead of showing
-      // the account picker - so "sign out then Continue with Google"
-      // just logged back into the same account with no way to switch.
-      queryParams:{prompt:'select_account'}
-    }
+/* ── OAUTH (Google, Microsoft, Discord, GitHub, Facebook) ──────────
+   One handler for every provider — same redirect target, same
+   disable-while-pending behaviour, same error surfacing. Provider-
+   specific quirks (Azure needs an explicit `email` scope or it won't
+   return one; Google/Microsoft support prompt=select_account to force
+   the account chooser instead of silently reusing whatever session is
+   already active — Discord/GitHub/Facebook don't have a real
+   equivalent, so nothing's forced there) are the only per-provider
+   differences. */
+const OAUTH_OPTS = {
+  google:   { queryParams: { prompt: 'select_account' } },
+  azure:    { queryParams: { prompt: 'select_account' }, scopes: 'email' },
+  discord:  {},
+  github:   {},
+  facebook: {},
+};
+
+async function signInOAuth(providerId){
+  const buttons = document.querySelectorAll('.btn-oauth');
+  const btn = document.querySelector(`.btn-oauth[data-provider="${providerId}"]`);
+  buttons.forEach(b => b.disabled = true);
+  btn.querySelector('.oauth-label').textContent = 'Redirecting...';
+  btn.querySelector('.btn-spinner').style.display = 'block';
+  setStatus('');
+
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: providerId,
+    options: {
+      redirectTo: window.location.origin + '/login.html',
+      ...OAUTH_OPTS[providerId],
+    },
   });
   if(error){
-    document.getElementById('statusMsg').textContent='Something went wrong. Try again.';
-    document.getElementById('statusMsg').className='status-msg err';
-    btn.disabled=false; sp.style.display='none'; txt.textContent='Continue with Google';
+    setStatus('Something went wrong. Try again.', 'err');
+    buttons.forEach(b => b.disabled = false);
+    btn.querySelector('.oauth-label').textContent = btn.querySelector('.oauth-label').dataset.orig || btn.querySelector('.oauth-label').textContent;
+    btn.querySelector('.btn-spinner').style.display = 'none';
   }
+}
+// Stash each button's original label once, up front, so the error path
+// above can restore it (rather than being stuck on "Redirecting...").
+document.querySelectorAll('.oauth-label').forEach(el => { el.dataset.orig = el.textContent; });
+
+/* ── EMAIL + PASSWORD ────────────────────────────────────────── */
+async function emailSignIn(e){
+  e.preventDefault();
+  const btn = document.getElementById('siBtn');
+  const email = document.getElementById('siEmail').value.trim();
+  const password = document.getElementById('siPassword').value;
+  btn.disabled = true; btn.textContent = 'Signing in...'; setStatus('');
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if(error){
+    setStatus(error.message === 'Invalid login credentials' ? 'Wrong email or password.' : error.message, 'err');
+    btn.disabled = false; btn.textContent = 'Sign in';
+  }
+  // On success, onAuthStateChange's SIGNED_IN handler takes it from here.
+  return false;
+}
+
+async function emailSignUp(e){
+  e.preventDefault();
+  const btn = document.getElementById('suBtn');
+  const email = document.getElementById('suEmail').value.trim();
+  const password = document.getElementById('suPassword').value;
+  const password2 = document.getElementById('suPassword2').value;
+  if(password !== password2){
+    setStatus("Passwords don't match.", 'err');
+    return false;
+  }
+  btn.disabled = true; btn.textContent = 'Creating account...'; setStatus('');
+  const { data, error } = await sb.auth.signUp({
+    email, password,
+    options: { emailRedirectTo: window.location.origin + '/login.html' },
+  });
+  if(error){
+    setStatus(error.message, 'err');
+    btn.disabled = false; btn.textContent = 'Create account';
+    return false;
+  }
+  // Whether this needs email confirmation depends on the project's auth
+  // settings: if confirmation is on, signUp() returns a user but no
+  // session yet — nothing to redirect with, so tell them to check their
+  // inbox. If it's off, a session comes back immediately and
+  // onAuthStateChange's SIGNED_IN handler fires on its own.
+  if(!data.session){
+    setStatus('Check your email to confirm your account.', 'ok');
+    btn.textContent = 'Create account';
+    btn.disabled = false;
+  }
+  return false;
+}
+
+async function emailForgot(e){
+  e.preventDefault();
+  const btn = document.getElementById('fpBtn');
+  const email = document.getElementById('fpEmail').value.trim();
+  btn.disabled = true; btn.textContent = 'Sending...'; setStatus('');
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/login.html',
+  });
+  btn.disabled = false; btn.textContent = 'Send reset link';
+  // Deliberately the same message either way — confirming/denying whether
+  // an email address has an account here is exactly the kind of thing a
+  // password-reset form shouldn't leak.
+  setStatus('If that email has an account, a reset link is on its way.', 'ok');
+}
+
+async function emailSetNewPassword(e){
+  e.preventDefault();
+  const btn = document.getElementById('rcBtn');
+  const password = document.getElementById('rcPassword').value;
+  const password2 = document.getElementById('rcPassword2').value;
+  if(password !== password2){
+    setStatus("Passwords don't match.", 'err');
+    return false;
+  }
+  btn.disabled = true; btn.textContent = 'Saving...'; setStatus('');
+  const { error } = await sb.auth.updateUser({ password });
+  if(error){
+    setStatus(error.message, 'err');
+    btn.disabled = false; btn.textContent = 'Set new password';
+    return false;
+  }
+  setStatus('Password updated.', 'ok');
+  const {data:{session}} = await sb.auth.getSession();
+  if(session) redirect(session.user);
+  return false;
 }
 
 async function redirect(user){
-  // Save email + name from Google into user_profiles
+  // Save email + name into user_profiles. The row itself is guaranteed to
+  // already exist by this point (created server-side by the
+  // on_auth_user_created DB trigger the instant the auth account was
+  // created, regardless of provider) - this upsert is just keeping
+  // email/name fresh, not creating the row.
+  const md = user.user_metadata || {};
   await sb.from('user_profiles').upsert({
     id: user.id,
     email: user.email,
-    full_name: user.user_metadata?.full_name || ''
+    full_name: md.full_name || md.name || md.user_name || md.preferred_username || ''
   }, { onConflict: 'id' });
 
   logEvent('login');
