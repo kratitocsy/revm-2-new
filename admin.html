@@ -53,6 +53,16 @@ table.adm-table{width:100%;border-collapse:collapse;font-size:0.75rem;}
 .sla-pill.overdue{background:rgba(239,68,68,0.14);color:var(--danger);}
 .approve-btn{background:rgba(74,222,128,0.14);color:var(--success);border:none;font-size:0.65rem;padding:0.3rem 0.65rem;border-radius:4px;cursor:pointer;margin-right:0.4rem;letter-spacing:0.03em;text-transform:uppercase;}
 .reject-btn{background:rgba(239,68,68,0.14);color:var(--danger);border:none;font-size:0.65rem;padding:0.3rem 0.65rem;border-radius:4px;cursor:pointer;letter-spacing:0.03em;text-transform:uppercase;}
+.cr-metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.7rem;margin-bottom:1rem;}
+.cr-metric{background:var(--s2);border:1px solid var(--border);padding:0.75rem 0.85rem;}
+.cr-metric .label{font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem;}
+.cr-metric .val{font-size:1.15rem;font-weight:800;color:var(--white);}
+.cr-form{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:0.6rem;}
+.cr-form input,.cr-form select,.cr-form textarea{background:var(--s2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:0.5rem 0.65rem;border-radius:4px;width:100%;}
+.cr-form textarea{grid-column:1/-1;resize:vertical;min-height:44px;}
+.cr-form .cr-full{grid-column:1/-1;}
+.cr-grant-btn{background:var(--gold);color:#151107;border:none;font-size:0.7rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;padding:0.5rem 1rem;border-radius:4px;cursor:pointer;grid-column:1/-1;}
+@media (max-width:640px){.cr-form{grid-template-columns:1fr;}}
 @media (max-width:640px){
   .adm-wrap{padding:1.5rem 0.9rem 3rem;}
   .adm-title{font-size:1.05rem;}
@@ -108,6 +118,7 @@ async function init(){
   render(allProfiles, events||[]);
   await loadUsagePanel(usageWindowDays);
   if(isOwner) renderModeratorCard();
+  if(isOwner) await loadControlRoom();
   await loadRevheadQueue();
   await loadPayoutQueue();
   RevM2Logo.init();
@@ -209,6 +220,7 @@ function render(profiles, events){
       <div id="userUsageBox">Loading…</div>
     </div>
 
+    <div id="controlRoomMount"></div>
     <div id="revheadQueueMount"></div>
     <div id="payoutQueueMount"></div>
     <div id="moderatorCardMount"></div>
@@ -320,6 +332,93 @@ async function toggleUserDetail(userId){
   if(error){ panel.innerHTML = escHtml(error.message); return; }
   if(!data || !data.length){ panel.innerHTML = 'No usage in this window.'; return; }
   panel.innerHTML = data.map(d=>`<div style="display:flex;justify-content:space-between;padding:0.2rem 0;"><span>${escHtml(d.display_name)}</span><span style="color:var(--muted)">${fmtMins(d.seconds_used)}</span></div>`).join('');
+}
+
+async function loadControlRoom(){
+  const mount = document.getElementById('controlRoomMount');
+  if(!mount) return;
+  const [{ data: metrics, error: mErr }, { data: roles, error: rErr }] = await Promise.all([
+    sb.rpc('admin_platform_metrics'),
+    sb.rpc('admin_list_temp_roles')
+  ]);
+
+  const metricCards = mErr ? `<div style="color:var(--muted);font-size:0.75rem;">${escHtml(mErr.message)}</div>` : `
+    <div class="cr-metric-grid">
+      <div class="cr-metric"><div class="label">Users</div><div class="val">${metrics.users_total}</div></div>
+      <div class="cr-metric"><div class="label">Active 7d</div><div class="val">${metrics.users_active_7d}</div></div>
+      <div class="cr-metric"><div class="label">Active 30d</div><div class="val">${metrics.users_active_30d}</div></div>
+      <div class="cr-metric"><div class="label">Groups</div><div class="val">${metrics.groups_total}</div></div>
+      <div class="cr-metric"><div class="label">Group members</div><div class="val">${metrics.group_members_total}</div></div>
+      <div class="cr-metric"><div class="label">Group messages</div><div class="val">${metrics.group_messages_total}</div></div>
+      <div class="cr-metric"><div class="label">Study sessions</div><div class="val">${metrics.study_sessions_total}</div></div>
+      <div class="cr-metric"><div class="label">Study time (all-time)</div><div class="val">${fmtTime(metrics.study_seconds_all_time)}</div></div>
+      <div class="cr-metric"><div class="label">Study time (7d)</div><div class="val">${fmtTime(metrics.study_seconds_7d)}</div></div>
+      <div class="cr-metric"><div class="label">Coins outstanding</div><div class="val">${Number(metrics.coins_outstanding).toLocaleString('en-IN')}</div></div>
+      <div class="cr-metric"><div class="label">Coins earned (all-time)</div><div class="val">${Number(metrics.coins_total_earned_all_time).toLocaleString('en-IN')}</div></div>
+      <div class="cr-metric"><div class="label">Revenue (all-time)</div><div class="val">₹${Number(metrics.revenue_total_all_time).toLocaleString('en-IN')}</div></div>
+      <div class="cr-metric"><div class="label">Revenue (30d)</div><div class="val">₹${Number(metrics.revenue_30d).toLocaleString('en-IN')}</div></div>
+      <div class="cr-metric"><div class="label">Payouts pending</div><div class="val">${metrics.payouts_pending_count} <span style="font-size:0.65rem;color:var(--muted);">(₹${Number(metrics.payouts_pending_amount).toLocaleString('en-IN')})</span></div></div>
+      <div class="cr-metric"><div class="label">Payouts paid (all-time)</div><div class="val">₹${Number(metrics.payouts_paid_all_time).toLocaleString('en-IN')}</div></div>
+      <div class="cr-metric"><div class="label">RevHeads</div><div class="val">${metrics.revhead_total} <span style="font-size:0.65rem;color:var(--muted);">(${metrics.revhead_pending_applications} pending)</span></div></div>
+      <div class="cr-metric"><div class="label">RevHead earnings (all-time)</div><div class="val">₹${Number(metrics.revhead_earnings_all_time).toLocaleString('en-IN')}</div></div>
+      <div class="cr-metric"><div class="label">Moderators</div><div class="val">${metrics.moderators_total}</div></div>
+      <div class="cr-metric"><div class="label">Active temp grants</div><div class="val">${metrics.temp_roles_active}</div></div>
+    </div>`;
+
+  const roleRows = (rErr || !roles || !roles.length) ? `<tr><td colspan="5" style="color:var(--muted)">No temporary grants issued.</td></tr>` :
+    roles.map(r=>`
+      <tr>
+        <td>${escHtml(r.email)}</td>
+        <td><span class="pill ${r.is_active?'on':'off'}">${escHtml(r.role)}</span></td>
+        <td>${escHtml(r.reason||'—')}</td>
+        <td>${r.is_active ? 'Expires ' + fmtDateShort(r.expires_at.split('T')[0]) : 'Expired'}</td>
+        <td>${r.is_active ? `<button class="reject-btn" onclick="revokeTempRole('${r.user_id}','${escHtml(r.role)}')">Revoke</button>` : ''}</td>
+      </tr>`).join('');
+
+  mount.innerHTML = `
+    <div class="adm-card">
+      <h3>Control Room <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">— platform-wide metrics, owner-only</span></h3>
+      ${metricCards}
+    </div>
+
+    <div class="adm-card">
+      <h3>Temporary owner / vice-admin access <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">— grant powers to another account for a limited time, auto-expires</span></h3>
+      <div class="cr-form">
+        <input type="email" id="crGrantEmail" placeholder="Account email">
+        <select id="crGrantRole">
+          <option value="vice_admin">Vice Admin (elevated, not full owner)</option>
+          <option value="owner">Owner (full platform control)</option>
+        </select>
+        <input type="number" id="crGrantHours" placeholder="Duration in hours (max 720)" min="1" max="720" value="24">
+        <textarea id="crGrantReason" placeholder="Reason (optional, shown in the grants list below)"></textarea>
+        <button class="cr-grant-btn" onclick="grantTempRole()">Grant access</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="adm-table">
+          <thead><tr><th>Account</th><th>Role</th><th>Reason</th><th>Status</th><th></th></tr></thead>
+          <tbody>${roleRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+async function grantTempRole(){
+  const email = document.getElementById('crGrantEmail').value.trim();
+  const role = document.getElementById('crGrantRole').value;
+  const hours = Number(document.getElementById('crGrantHours').value);
+  const reason = document.getElementById('crGrantReason').value.trim() || null;
+  if(!email){ alert('Enter the account email to grant access to.'); return; }
+  if(role === 'owner' && !confirm(`Grant FULL OWNER access to ${email} for ${hours} hours? This gives them complete platform control until it expires.`)) return;
+  const { error } = await sb.rpc('admin_grant_temp_role', { p_email: email, p_role: role, p_hours: hours, p_reason: reason });
+  if(error){ alert('Could not grant access: ' + error.message); return; }
+  loadControlRoom();
+}
+
+async function revokeTempRole(userId, role){
+  if(!confirm('Revoke this access immediately?')) return;
+  const { error } = await sb.rpc('admin_revoke_temp_role', { p_user_id: userId, p_role: role });
+  if(error){ alert('Could not revoke: ' + error.message); return; }
+  loadControlRoom();
 }
 
 function renderModeratorCard(){
