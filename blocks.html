@@ -940,8 +940,13 @@ async function startBlock(){
   document.getElementById('blockName').value='';
   pendingNoEarlyUnlock=false;
   const noEarlyChk=document.getElementById('noEarlyUnlockChk'); if(noEarlyChk) noEarlyChk.checked=false;
-  try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true, endsAt}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
+  // Order matters: set_session_active's false->true edge fires an
+  // IMMEDIATE enforcement pass on the Rust side (not just the periodic
+  // 3s tick), so the app-block list/mode must already be in place
+  // before that flag flips, or that first pass runs against a stale
+  // (possibly empty/wrong-mode) list and closes nothing.
   await syncBlockedAppsToDesktop(startedApps, startedAppMode);
+  try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true, endsAt}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
   const startedSessionPayload={ blockName:name, sites:startedSites, durationMinutes: startedMinutes>0 ? startedMinutes : null, mode:startedMode, youtubeRules, noEarlyUnlock: startedNoEarlyUnlock };
   sendToExtension({ type:'RM2_START_SESSION', payload:startedSessionPayload });
   pushSessionEventToDesktop(true, startedSessionPayload);
@@ -978,6 +983,11 @@ async function loadActiveBlock(){
   if(!myUserId) return;
   const { data } = await sb.from('focus_lock_sessions')
     .select('*').eq('user_id', myUserId).eq('active', true).maybeSingle();
+  // Same ordering fix as startBlock()/startPreset(): sync the app list
+  // BEFORE flipping session_active, so a block picked up here for the
+  // first time (started on another tab/device) doesn't have its very
+  // first enforcement pass run against a stale/empty app list.
+  if(data) await syncBlockedAppsToDesktop(data.apps || [], data.apps_mode);
   try{ await window.__TAURI__.core.invoke('set_session_active', {active: !!data, endsAt: data?.ends_at || null}); }catch(e){ console.error('RM2 desktop invoke error (poll):', e); }
   const card=document.getElementById('activeBlockCard');
   const startCard=document.getElementById('startCard');
@@ -1149,8 +1159,9 @@ async function startPreset(id){
     else alert(error.message);
     return;
   }
-  try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true, endsAt}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
+  // Same ordering fix as startBlock() - see comment there.
   await syncBlockedAppsToDesktop(presetApps, presetAppMode);
+  try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true, endsAt}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
   const presetSessionPayload={ blockName:preset.name, sites:preset.sites, durationMinutes: preset.duration_minutes || null, mode:presetMode, youtubeRules: preset.youtube_rules || null, noEarlyUnlock: presetNoEarlyUnlock };
   sendToExtension({ type:'RM2_START_SESSION', payload:presetSessionPayload });
   pushSessionEventToDesktop(true, presetSessionPayload);

@@ -1093,10 +1093,15 @@ async function pollBlockStatusForDesktop(){
   const { data } = await sb.from('focus_lock_sessions')
     .select('apps, apps_mode, ends_at').eq('user_id', myUserId).eq('active', true).maybeSingle();
   if(isDesktopApp()){
-    try{ await window.__TAURI__.core.invoke('set_session_active', {active: !!data, endsAt: data?.ends_at || null}); }
-    catch(e){ console.error('RM2 desktop invoke error (poll):', e); }
+    // set_blocked_apps before set_session_active - same ordering fix as
+    // blocks.html's loadActiveBlock(); a block picked up here for the
+    // first time (e.g. started on another device) needs the app list in
+    // place before session_active's false->true edge fires its
+    // immediate enforcement pass.
     try{ await window.__TAURI__.core.invoke('set_blocked_apps', {apps: data?.apps || [], mode: data?.apps_mode==='whitelist' ? 'whitelist' : 'blacklist'}); }
     catch(e){ console.error('RM2 desktop invoke error (set_blocked_apps):', e); }
+    try{ await window.__TAURI__.core.invoke('set_session_active', {active: !!data, endsAt: data?.ends_at || null}); }
+    catch(e){ console.error('RM2 desktop invoke error (poll):', e); }
   }
 }
 function startBlockStatusPoller(){
@@ -1111,8 +1116,14 @@ async function startRemoteSession(subject){
     if(error) throw error;
     remoteSessionId=data.id;
     Store.set(FT_ACTIVE_KEY,{id:data.id,group_id:data.group_id,subject:data.subject,started_at:data.started_at,paused_at:null,accumPaused:0,isPrivate:data.is_private});
-    try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
+    // Order matters: startSelectedBlockPreset() (which calls
+    // set_blocked_apps) must land before set_session_active's
+    // active:true, since that flag flip triggers an IMMEDIATE
+    // enforcement pass on the desktop side - see blocks.html's
+    // startBlock() for the full explanation. Doing it in the old order
+    // meant that first pass could run against a stale/empty app list.
     await startSelectedBlockPreset();
+    try{ if(isDesktopApp()) await window.__TAURI__.core.invoke('set_session_active', {active:true}); }catch(e){ alert('RM2 desktop invoke error (start): '+(e&&e.message||e)); }
     document.getElementById('timerLiveTag').style.display='block';
   }catch(e){
     console.warn('RevMGrid sync unavailable, timer still runs locally:',e);
