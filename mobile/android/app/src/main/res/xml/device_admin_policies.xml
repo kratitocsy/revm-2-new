@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<device-admin xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-policies>
+        <!-- Deliberately minimal: this is Device Admin (revocable anytime
+             by the user via Settings), NOT Device Owner. The only real
+             effect we rely on is that Android requires deactivating admin
+             here BEFORE the app can be uninstalled — that extra step is
+             the entire "uninstall-resistance" mechanism, same as
+             AppBlock's "Strict Mode". See docs/revm2-locking-research.md
+             for why we do not attempt Device Owner as the default. -->
+        <limit-password />
+        <watch-login />
+    </uses-policies>
+</device-admin>

@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">RevM2</string>
+    <string name="title_activity_main">RevM2</string>
+    <string name="package_name">com.revm2.app</string>
+    <string name="custom_url_scheme">com.revm2.app</string>
+    <string name="accessibility_service_description">Lets RevM2 detect when a blocked app comes to the foreground during an active focus session, so it can show the block screen. Does not read screen content — only which app is currently open. Only active while you have a focus session running.</string>
+</resources>

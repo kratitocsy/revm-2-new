@@ -434,3 +434,68 @@ select{color-scheme:dark;}
   }
   .rm2-word{ opacity:1; filter:none; transform:none; }
 }
+
+/* ============================================================
+   MOBILE-NATIVE SHELL (Tier 1 — Capacitor Android app only)
+   Everything below is scoped under html.rm2-native-shell, so it
+   has zero effect on the regular website/desktop app.
+   ============================================================ */
+:root{ --rm2-kb-height: 0px; }
+
+html.rm2-native-shell body{
+  padding-bottom: calc(60px + env(safe-area-inset-bottom));
+}
+html.rm2-native-shell .sidebar{
+  display: none !important; /* replaced by the bottom tab bar */
+}
+html.rm2-native-shell .sidebar-backdrop{
+  display: none !important;
+}
+html.rm2-native-shell.rm2-kb-open body{
+  padding-bottom: var(--rm2-kb-height);
+}
+
+.rm2-native-tabbar{
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 500;
+  display: flex;
+  background: rgba(11,11,15,0.96);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid rgba(212,175,55,0.16);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+html.rm2-kb-open .rm2-native-tabbar{
+  display: none; /* free up space for the keyboard while typing */
+}
+.rm2-native-tabbar .rm2-tab{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 2px 6px;
+  color: rgba(255,255,255,0.45);
+  text-decoration: none;
+  font-size: 10.5px;
+  letter-spacing: 0.01em;
+  -webkit-tap-highlight-color: transparent;
+  transition: color .15s ease;
+}
+.rm2-native-tabbar .rm2-tab svg{
+  filter: none;
+  transition: filter .15s ease, transform .15s ease;
+}
+.rm2-native-tabbar .rm2-tab.active{
+  color: #d4af37;
+}
+.rm2-native-tabbar .rm2-tab.active svg{
+  filter: drop-shadow(0 0 3px rgba(212,175,55,0.5));
+  transform: translateY(-1px);
+}
+.rm2-native-tabbar .rm2-tab:active{
+  color: #d4af37;
+}
