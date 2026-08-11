@@ -2045,6 +2045,11 @@ async function loadMembers(){
   userIds.forEach(id=>{ membersCache[id]=nameOf(id); avatarCache[id]=(profiles||[]).find(p=>p.id===id)?.avatar_url || null; usernameCache[id]=usernameOf(id); }); // reused by the live-grid render
   data.forEach(m=>{ rolesCache[m.user_id]=m.role; });
   renderAnnouncement(); // re-render now that membersCache has names, so "by @who" in the banner is accurate
+  renderLiveGridDOM(); // same reason: the live/video grid renders early (by design, for a fast-opening
+                        // call view) using whatever's in membersCache at that instant, which can still be
+                        // empty the first time this runs — nothing was refreshing those tiles afterward,
+                        // so anyone whose name loaded after the grid's first paint got stuck permanently
+                        // showing a truncated user id ("55979f") instead of their actual display name
 
   // friend status vs. me, for the "Add friend" button on every row (best-effort — ignore if RPC not deployed yet)
   friendStatusCache = {};
