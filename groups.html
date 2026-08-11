@@ -2377,6 +2377,25 @@ const remoteStreams = {};   // user_id -> MediaStream
 const voiceAudioEls = {};   // user_id -> hidden <audio> element playing that peer's voice-only stream
 let camActiveUsers = new Set();
 
+/* ── Perfect-negotiation state ────────────────────────────────
+   Needed so that EITHER side of a mesh connection can push new
+   media (e.g. flipping voice-only → video mid-call) and have the
+   other side actually pick it up in real time, instead of only
+   the original "offering" side ever being allowed to renegotiate.
+   politePeers[id]     → true if we back off on an offer collision
+   makingOffer[id]      → true while we're mid-createOffer, so we can
+                           detect a collision if an offer arrives from
+                           the other side at the same time (glare)
+   pendingCandidates[id] → ICE candidates that arrived before we had
+                           a remote description to attach them to —
+                           without this queue they were silently
+                           dropped (swallowed by the catch below),
+                           which is what produced the "connects, but
+                           only after a long stall" black-tile symptom */
+const politePeers = {};
+const makingOffer = {};
+const pendingCandidates = {};
+
 /* ── AUTO-HIDE CALL CONTROLS ──────────────────────────────────
    While in a call, the control bar (mic/cam/hand-raise/leave/etc.)
    and the video-grid pager fade out after a few seconds of no
@@ -2693,6 +2712,21 @@ async function toggleCamCall(){
     }catch(e){ hasMultipleCameras = false; }
     joinedCam = true;
     micOn = true;
+    // Push the new tracks into any peer connections that already exist
+    // (i.e. we were already in a voice-only call and are now turning the
+    // camera on). Audio reuses the existing sender via replaceTrack (no
+    // renegotiation needed, so voice doesn't hiccup); video is genuinely
+    // new so it goes through addTrack, which now correctly triggers
+    // onnegotiationneeded on THIS side too (see createCamPeer) — that's
+    // what makes the other participant's tile light up in real time
+    // instead of staying black until something else forced a reconnect.
+    Object.values(camPeers).forEach(pc => {
+      localStream.getTracks().forEach(track => {
+        const existingSender = pc.getSenders().find(s => s.track && s.track.kind === track.kind);
+        if(existingSender) existingSender.replaceTrack(track).catch(()=>{});
+        else pc.addTrack(track, localStream);
+      });
+    });
     // If already voice-only, stop the voiceStream — video stream now carries audio
     if(joinedVoice && voiceStream){
       voiceStream.getTracks().forEach(t=>t.stop());
@@ -2859,13 +2893,12 @@ function syncCamPresence(){
 
   camActiveUsers.forEach(id=>{
     if(id===me.id || camPeers[id]) return;
-    const iInitiate = me.id < id; // deterministic so only one side offers, avoiding glare
-    createCamPeer(id, iInitiate);
+    createCamPeer(id);
   });
   Object.keys(camPeers).forEach(id=>{ if(!camActiveUsers.has(id)) closeCamPeer(id); });
 }
 
-function createCamPeer(peerId, iInitiate){
+function createCamPeer(peerId){
   // Uses whatever's already cached (see getCachedIceServersSync) so a warm
   // cache — the common case, since initCamChannel pre-warms it on group
   // open — gets full TURN-inclusive servers from the very first candidate,
@@ -2875,6 +2908,13 @@ function createCamPeer(peerId, iInitiate){
     iceTransportPolicy: 'all'  // TURN only used when P2P fails — never forced on everyone
   });
   camPeers[peerId] = pc;
+  pendingCandidates[peerId] = [];
+  makingOffer[peerId] = false;
+  // "Polite" side backs off and accepts the incoming offer on a collision;
+  // the "impolite" side keeps its own offer and ignores the other one.
+  // Deterministic split (same rule both sides compute independently) so
+  // there's never a disagreement about who yields.
+  politePeers[peerId] = me.id > peerId;
 
   // Safety net for a still-cold cache (e.g. first-ever call on this page,
   // faster than the fetch): upgrade ICE config once the fetch resolves.
@@ -2896,15 +2936,25 @@ function createCamPeer(peerId, iInitiate){
     }
     if(['failed','closed','disconnected'].includes(pc.connectionState)) closeCamPeer(peerId);
   };
-  if(iInitiate){
-    pc.onnegotiationneeded = async () => {
-      try{
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        sendCamSignal(peerId, { kind:'offer', sdp: pc.localDescription });
-      } catch(e){ console.error(e); }
-    };
-  }
+  // Perfect negotiation: BOTH sides get this handler now (previously only
+  // the deterministic "initiator" did, so if the other side later added a
+  // track — e.g. switching from voice-only to video mid-call — nothing
+  // ever told their browser to send a fresh offer, and the peer they were
+  // talking to just kept the stale connection with no video track showing
+  // up, ever, until something else forced a full reconnect. That's the
+  // "other person's tile goes black and stays black for ages" bug.
+  pc.onnegotiationneeded = async () => {
+    try{
+      makingOffer[peerId] = true;
+      const offer = await pc.createOffer();
+      // Bail if something else already moved us out of stable in the
+      // meantime (e.g. we just accepted a remote offer as the polite peer).
+      if(pc.signalingState !== 'stable') return;
+      await pc.setLocalDescription(offer);
+      sendCamSignal(peerId, { kind:'offer', sdp: pc.localDescription });
+    } catch(e){ console.error('negotiation error', e); }
+    finally { makingOffer[peerId] = false; }
+  };
   return pc;
 }
 
@@ -2912,6 +2962,9 @@ function closeCamPeer(peerId){
   const pc = camPeers[peerId];
   if(pc){ pc.close(); delete camPeers[peerId]; }
   delete remoteStreams[peerId];
+  delete pendingCandidates[peerId];
+  delete makingOffer[peerId];
+  delete politePeers[peerId];
   stopSpeakingDetector(peerId);
   detachVoiceAudio(peerId);
   renderLiveGridDOM();
@@ -2930,19 +2983,47 @@ async function handleCamSignal(payload){
   // "works on some devices, not others" pattern this was reported as.
   if(!payload || payload.to !== me.id || (!joinedCam && !joinedVoice)) return;
   const peerId = payload.from;
-  let pc = camPeers[peerId] || createCamPeer(peerId, false);
+  let pc = camPeers[peerId] || createCamPeer(peerId);
+  const polite = politePeers[peerId];
   try{
     if(payload.kind === 'offer'){
-      await pc.setRemoteDescription(payload.sdp);
+      // Glare: both sides sent an offer at once. The impolite side keeps
+      // its own offer and ignores the incoming one; the polite side rolls
+      // back its own and accepts the remote one instead of erroring out
+      // (which previously left the connection stuck mid-negotiation —
+      // exactly the kind of stall that shows up as a long-lived black tile).
+      const offerCollision = makingOffer[peerId] || pc.signalingState !== 'stable';
+      if(offerCollision && !polite) return; // ignore — our own offer wins
+      await pc.setRemoteDescription(payload.sdp); // if polite+collision, this implicitly rolls back our offer
+      await flushPendingCandidates(peerId, pc);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       sendCamSignal(peerId, { kind:'answer', sdp: pc.localDescription });
     } else if(payload.kind === 'answer'){
       await pc.setRemoteDescription(payload.sdp);
+      await flushPendingCandidates(peerId, pc);
     } else if(payload.kind === 'ice'){
-      await pc.addIceCandidate(payload.candidate);
+      if(pc.remoteDescription && pc.remoteDescription.type){
+        try { await pc.addIceCandidate(payload.candidate); } catch(e){ console.warn('ICE add failed', e); }
+      } else {
+        // Remote description isn't set yet (offer/answer still in flight) —
+        // queue it instead of dropping it. Silently swallowing this via the
+        // outer catch is exactly what used to cause connections to only
+        // recover minutes later (or not at all) once ICE candidates raced
+        // ahead of signaling.
+        (pendingCandidates[peerId] || (pendingCandidates[peerId] = [])).push(payload.candidate);
+      }
     }
   } catch(e){ console.error('cam signal error', e); }
+}
+
+async function flushPendingCandidates(peerId, pc){
+  const queued = pendingCandidates[peerId];
+  if(!queued || !queued.length) return;
+  pendingCandidates[peerId] = [];
+  for(const candidate of queued){
+    try { await pc.addIceCandidate(candidate); } catch(e){ console.warn('queued ICE add failed', e); }
+  }
 }
 
 // Bind a MediaStream to a tile's <video> element once it exists in the DOM (tiles get rebuilt on every grid refresh).
