@@ -1332,6 +1332,15 @@ async function openGroup(groupId){
   subscribeLivePresence(groupId);
   startFocusReconcilePoll();
   initAutoHideControls();
+  // Same reasoning as the reordering above: this channel is what actually
+  // carries "who's on camera/mic right now" and WebRTC signaling — it needs
+  // to subscribe immediately, not sit behind loadMembers/coins/challenges/
+  // chat's network round-trips. When someone elsewhere in the group already
+  // has an active call, those slower steps compete with a channel that's
+  // already busy carrying offer/answer/ICE traffic for the ongoing call,
+  // which is exactly what made opening the group feel sluggish and made
+  // other members' live/speaking state show up late (or not at all) here.
+  try{ initCamChannel(groupId); }catch(e){ console.error('initCamChannel failed:', e); }
 
   // Everything below is secondary panel data — each wrapped individually so
   // one failing step (e.g. challenges) can't block the others (e.g. chat),
@@ -1344,7 +1353,6 @@ async function openGroup(groupId){
     subscribeGroupChat(groupId);
     refreshChatUnreadBadge();
   }catch(e){ console.error('loadGroupChat failed:', e); }
-  try{ initCamChannel(groupId); }catch(e){ console.error('initCamChannel failed:', e); }
 
   setGroupTab('overview', document.querySelector('.gd-nav-item[data-gtab="overview"]'));
 }
@@ -2508,6 +2516,19 @@ async function getGroupIceServers(){
     return _GRP_STUN_ONLY;
   }
 }
+// Non-blocking read of whatever's cached right now, with no network call.
+// createCamPeer uses this for a connection's *initial* config — the async
+// getGroupIceServers() fetch used to only ever get applied via
+// setConfiguration() well after RTCPeerConnection creation, racing against
+// onnegotiationneeded (which fires almost immediately after addTrack). On a
+// cold cache that race was lost essentially every time, so the very first
+// offer of a call — the common case for a simple two-person call — nearly
+// always went out STUN-only with no TURN fallback queued behind it, even
+// though the code intended one. Pre-warming the cache (see initCamChannel)
+// means this is usually already warm by the time anyone actually joins.
+function getCachedIceServersSync(){
+  return _grpIceCache || _GRP_STUN_ONLY;
+}
 
 /* ── SFU stub ────────────────────────────────────────────────
    When camActiveUsers.size > GROUP_MESH_MAX and SFU_URL is set,
@@ -2565,6 +2586,10 @@ function initCamChannel(groupId){
   Object.keys(camPeers).forEach(closeCamPeer);
   Object.keys(remoteStreams).forEach(id=>delete remoteStreams[id]);
   updateCamButtons();
+  getGroupIceServers(); // pre-warm the TURN-credentials cache now, in the background —
+                         // by the time anyone actually joins the call, createCamPeer's
+                         // first RTCPeerConnection already has full ICE servers instead
+                         // of racing this fetch after negotiation has already started.
 
   camChannel = sb.channel(`group-cam-${groupId}`, { config: { presence: { key: me.id } } })
     .on('presence', { event: 'sync' }, syncCamPresence)
@@ -2836,16 +2861,18 @@ function syncCamPresence(){
 }
 
 function createCamPeer(peerId, iInitiate){
-  // RTCPeerConnection is created synchronously with STUN-only first;
-  // we then swap in full ICE servers (including TURN) asynchronously
-  // before any offer/answer is exchanged, so TURN is available when needed.
+  // Uses whatever's already cached (see getCachedIceServersSync) so a warm
+  // cache — the common case, since initCamChannel pre-warms it on group
+  // open — gets full TURN-inclusive servers from the very first candidate,
+  // not just after an async upgrade that used to arrive too late to matter.
   const pc = new RTCPeerConnection({
-    iceServers: _GRP_STUN_ONLY,
+    iceServers: getCachedIceServersSync(),
     iceTransportPolicy: 'all'  // TURN only used when P2P fails — never forced on everyone
   });
   camPeers[peerId] = pc;
 
-  // Upgrade ICE config with TURN credentials before negotiation starts
+  // Safety net for a still-cold cache (e.g. first-ever call on this page,
+  // faster than the fetch): upgrade ICE config once the fetch resolves.
   getGroupIceServers().then(servers => {
     if(camPeers[peerId] === pc) {
       pc.setConfiguration({ iceServers: servers, iceTransportPolicy: 'all' });
@@ -2890,7 +2917,13 @@ function sendCamSignal(to, data){
 }
 
 async function handleCamSignal(payload){
-  if(!payload || payload.to !== me.id || !joinedCam) return;
+  // Previously only checked joinedCam, so anyone who joined voice-only
+  // (joinedVoice true, joinedCam false) silently dropped every incoming
+  // offer/answer/ICE candidate sent their way. Two voice-only participants
+  // could never connect to each other at all, and a voice-only participant
+  // could never receive a call from someone on video either — exactly the
+  // "works on some devices, not others" pattern this was reported as.
+  if(!payload || payload.to !== me.id || (!joinedCam && !joinedVoice)) return;
   const peerId = payload.from;
   let pc = camPeers[peerId] || createCamPeer(peerId, false);
   try{
