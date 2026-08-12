@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "sync-web": "mkdir -p www && cp ../*.html ../*.js ../*.css ../*.json ../*.jpg ../*.png www/ 2>/dev/null; true",
+    "sync-web": "node sync-web.js",
     "build": "npm run sync-web && npx cap sync android"
   },
   "keywords": [],
