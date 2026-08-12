@@ -191,6 +191,21 @@
 
     <div class="blocks-wrap">
 
+      <!-- MOBILE-NATIVE PERMISSION ONBOARDING (Tier 2+3 — Capacitor app only)
+           Hidden entirely on web/desktop; on native it stays hidden once
+           every permission below reads back as granted. See
+           mobile/android/.../locking/RevM2LockingPlugin.kt for what each
+           button actually opens. -->
+      <div id="mobilePermCard" style="display:none;" class="bl-card">
+        <div class="bl-card-title">Enable full blocking on this device</div>
+        <p class="empty-note" style="margin-bottom:0.9rem;">
+          Each of these opens a system settings screen — nothing here is silent or automatic.
+          You can revoke any of them later from Android Settings. Website blocking (VPN) needs Accessibility
+          and Overlay granted first, since it's requested last in this list.
+        </p>
+        <div id="mobilePermList" style="display:flex;flex-direction:column;gap:0.6rem;"></div>
+      </div>
+
       <!-- ACTIVE BLOCK (shown only while one is running) -->
       <div id="activeBlockCard" style="display:none;" class="bl-card active-block-card">
         <div class="bl-card-title">Currently active</div>
@@ -522,6 +537,7 @@ requireAuth().then(session=>{
   loadPresets();
   loadSchedules();
   loadDevices();
+  refreshMobilePermCard(); // no-op on web/desktop — see isMobileApp()
   autoConnectExtension(); // silent - no click needed if the extension is already installed
   setInterval(loadActiveBlock, 5000); // cheap poll - good enough for a status card, no realtime plumbing needed
 });
@@ -788,6 +804,85 @@ function currentYoutubeRulesPayload(){
     : null;
 }
 
+/* ── mobile-native (Capacitor) locking bridge ──────────────────────
+   Tier 2+3. Mirrors the desktop bridge pattern below
+   (syncBlockedAppsToDesktop / pushSessionEventToDesktop /
+   isDesktopApp) but talks to Capacitor.Plugins.RevM2Locking instead
+   of window.__TAURI__. See mobile/README.md for what's built vs not.
+
+   NOTE — apps blocking is web/desktop only for now: desktop's app
+   list holds process names (e.g. "chrome.exe"), which don't map to
+   Android package names at all. Until there's a dedicated Android
+   app picker producing real package names, only SITE/domain
+   blocking (the VPN side) is wired through to mobile — passing
+   desktop-style app names into RevM2Locking would silently block
+   nothing (or the wrong thing), which is worse than not wiring it. */
+function isMobileApp(){
+  return typeof RM2Native !== 'undefined' && RM2Native.isNative();
+}
+function mobileLockingPlugin(){
+  return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.RevM2Locking;
+}
+async function syncSessionToMobile(active, session){
+  if(!isMobileApp()) return;
+  const plugin = mobileLockingPlugin();
+  if(!plugin) return;
+  try{
+    if(active && session){
+      await plugin.setBlockListAndStart({
+        sessionId: session.sessionId || 'web-mirrored-session',
+        noEarlyUnlock: !!session.noEarlyUnlock,
+        appsMode: 'blacklist',
+        apps: [], // see note above — not wired yet, web/desktop only
+        domains: (session.sites || []).map(normalizeDomain).filter(Boolean)
+      });
+    } else {
+      await plugin.endSession({});
+    }
+  }catch(e){ console.error('RM2 mobile locking sync error:', e); }
+}
+
+/* ── mobile-native permission onboarding card ── */
+const MOBILE_PERMS = [
+  { key:'accessibility', label:'Detect blocked apps', method:'requestAccessibility',
+    desc:'Lets RevM2 see which app is in front, so it can show the block screen over a blocked one.' },
+  { key:'overlay', label:'Show block screen', method:'requestOverlay',
+    desc:'Draws the full-screen block over a blocked app. Without this, blocked apps are detected but nothing actually covers them.' },
+  { key:'vpn', label:'Block websites', method:'requestVpn',
+    desc:'A local, on-device-only VPN that blackholes blocked domains — nothing routes through a remote server.' },
+  { key:'deviceAdmin', label:'Uninstall resistance', method:'requestDeviceAdmin',
+    desc:'Optional: requires deactivating admin here before RevM2 can be uninstalled, so leaving mid-session takes a deliberate extra step.' }
+];
+async function refreshMobilePermCard(){
+  if(!isMobileApp()) return;
+  const plugin = mobileLockingPlugin();
+  const card = document.getElementById('mobilePermCard');
+  const list = document.getElementById('mobilePermList');
+  if(!plugin || !card || !list) return;
+  let status = {};
+  try{ status = (await plugin.checkPermissions()) || {}; }catch(e){ console.error('RM2 checkPermissions error:', e); }
+  const allGranted = MOBILE_PERMS.every(p => status[p.key]);
+  if(allGranted){ card.style.display='none'; return; }
+  card.style.display='block';
+  list.innerHTML = MOBILE_PERMS.map(p => `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+      <div style="flex:1;">
+        <div style="font-weight:600;">${p.label} ${status[p.key] ? '<span style="color:var(--gold);">✓ granted</span>' : ''}</div>
+        <div class="empty-note" style="margin:0.15rem 0 0;">${p.desc}</div>
+      </div>
+      ${status[p.key] ? '' : `<button class="btn btn-ghost btn-sm" onclick="requestMobilePerm('${p.method}')">Enable</button>`}
+    </div>`).join('');
+}
+async function requestMobilePerm(method){
+  const plugin = mobileLockingPlugin();
+  if(!plugin || !plugin[method]) return;
+  try{ await plugin[method](); }catch(e){ console.error('RM2 permission request error:', e); }
+  // The system settings screen opens over the app; re-check shortly after
+  // the person is likely to have come back (no reliable "screen resumed"
+  // hook without another plugin, so this is a pragmatic delay+poll).
+  setTimeout(refreshMobilePermCard, 2000);
+}
+
 /* ── native apps (desktop only) ──
    Only the Tauri-wrapped window has window.__TAURI__ - a plain browser
    tab visiting this same URL doesn't, and has no way to enumerate or
@@ -950,6 +1045,7 @@ async function startBlock(){
   const startedSessionPayload={ blockName:name, sites:startedSites, durationMinutes: startedMinutes>0 ? startedMinutes : null, mode:startedMode, youtubeRules, noEarlyUnlock: startedNoEarlyUnlock };
   sendToExtension({ type:'RM2_START_SESSION', payload:startedSessionPayload });
   pushSessionEventToDesktop(true, startedSessionPayload);
+  syncSessionToMobile(true, { sites: startedSites, noEarlyUnlock: startedNoEarlyUnlock }); // sessionId corrected moments later by loadActiveBlock()
   loadActiveBlock();
 }
 
@@ -962,6 +1058,33 @@ async function stopActiveBlock(){
   // the 150-char gibberish code exactly, same honesty rule as unlocking a
   // blocked site mid-session. Only that flow (unlock.js -> backend ->
   // SESSION_ENDED_EARLY) actually marks the session unverified and ends it.
+  //
+  // MOBILE NOTE: there is no browser extension inside the Capacitor
+  // WebView to mediate this, so the exact same code-gate path can't run
+  // here. This is a separate, simpler mobile-native equivalent — same
+  // "type it exactly, marked unverified either way" honesty rule, but it
+  // has NOT been checked against whatever the real extension gate's
+  // backend function does beyond what's visible in this repo (that
+  // function isn't in supabase/functions/ — likely deployed separately).
+  // Treat this as a first pass, not a guaranteed-equivalent security
+  // boundary, until that's confirmed.
+  if(isMobileApp()){
+    const activeData = await sb.from('focus_lock_sessions').select('no_early_unlock').eq('user_id', myUserId).eq('active', true).maybeSingle();
+    if(activeData.data?.no_early_unlock){
+      alert("This block was started with early unlock turned off - it can't be stopped early, only wait it out.");
+      return;
+    }
+    const gate = Math.random().toString(36).slice(2, 10).toUpperCase();
+    const typed = prompt(`Type this exactly to stop early (this ends the session and marks it unverified):\n\n${gate}`);
+    if(typed !== gate) return; // silent cancel — same as dismissing the extension gate
+    const { error } = await sb.from('focus_lock_sessions')
+      .update({ active:false, verified:false })
+      .eq('user_id', myUserId).eq('active', true);
+    if(error){ alert(error.message || 'Could not stop the block.'); return; }
+    await syncSessionToMobile(false, null);
+    loadActiveBlock();
+    return;
+  }
   const result = await sendToExtension({ type:'RM2_OPEN_UNLOCK_GATE' });
   if(!result.ok){
     const reasons = {
@@ -997,6 +1120,7 @@ async function loadActiveBlock(){
     if(activeTickHandle){ clearInterval(activeTickHandle); activeTickHandle=null; }
     syncBlockedAppsToDesktop([], 'blacklist');
     pushSessionEventToDesktop(false, null);
+    syncSessionToMobile(false, null);
     return;
   }
   // Relay whatever this poll just learned to the desktop bridge - covers
@@ -1017,6 +1141,7 @@ async function loadActiveBlock(){
       youtubeRules: data.youtube_rules || null,
       noEarlyUnlock: !!data.no_early_unlock,
     });
+    syncSessionToMobile(true, { sessionId: data.id, sites: data.sites, noEarlyUnlock: !!data.no_early_unlock });
   }
   startCard.style.display='none';
   card.style.display='block';
@@ -1047,7 +1172,12 @@ async function loadActiveBlock(){
     }
   } else {
     if(stopEarlyBtn) stopEarlyBtn.style.display='';
-    if(stopEarlyNote) stopEarlyNote.style.display='';
+    if(stopEarlyNote){
+      stopEarlyNote.style.display='';
+      stopEarlyNote.textContent = isMobileApp()
+        ? "Stop early shows a short code to type back exactly — end the session, and it's marked unverified either way."
+        : "Stop early opens the same code-typing gate the extension shows on a blocked site — type it exactly to end the session, and it's marked unverified either way.";
+    }
     if(lockedNote) lockedNote.style.display='none';
   }
   // Set by session-pause when the free code route is used on a blocked
