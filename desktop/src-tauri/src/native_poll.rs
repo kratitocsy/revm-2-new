@@ -97,6 +97,7 @@ struct SessionRow {
 pub fn spawn_native_session_poll(
     app: AppHandle,
     session_active: Arc<AtomicBool>,
+    schedule_active: Arc<AtomicBool>,
     blocked_apps: crate::app_guard::SharedBlockList,
     grace_tracker: Arc<BrowserGraceTracker>,
     heartbeat_state: Arc<crate::heartbeat::HeartbeatState>,
@@ -178,6 +179,7 @@ pub fn spawn_native_session_poll(
             apply_session_state(
                 &app,
                 &session_active,
+                &schedule_active,
                 &blocked_apps,
                 &grace_tracker,
                 &heartbeat_state,
@@ -195,6 +197,40 @@ pub fn spawn_native_session_poll(
             if let Some(row) = row {
                 let mode = row.apps_mode.unwrap_or_else(|| "blacklist".to_string());
                 let _ = apply_blocked_apps(&app, &blocked_apps, row.apps, Some(mode));
+            }
+
+            // Second, independent question on the same tick: does this
+            // account have ANY schedule enabled at all right now,
+            // regardless of whether a session is currently firing off
+            // it. This is what keeps the app tray-resident / un-
+            // closable / Task Manager-locked between scheduled slots,
+            // not just during them - see ScheduleActiveState's doc
+            // comment in lib.rs for why this stays a second flag
+            // instead of folding into `active` above.
+            let schedule_url = format!(
+                "{}/rest/v1/focus_lock_schedules?user_id=eq.{}&active=eq.true&select=id&limit=1",
+                auth.supabase_url.trim_end_matches('/'),
+                auth.user_id,
+            );
+            let schedule_resp = client
+                .get(&schedule_url)
+                .header("apikey", &auth.supabase_anon_key)
+                .header("Authorization", format!("Bearer {}", auth.access_token))
+                .send()
+                .await;
+            match schedule_resp {
+                Ok(r) if r.status().is_success() => match r.json::<Vec<serde_json::Value>>().await {
+                    Ok(schedule_rows) => {
+                        let has_active_schedule = !schedule_rows.is_empty();
+                        let was = schedule_active.swap(has_active_schedule, Ordering::SeqCst);
+                        if was != has_active_schedule {
+                            let _ = crate::apply_schedule_active_lock(&app, &session_active, &schedule_active, &quit_item);
+                        }
+                    }
+                    Err(e) => eprintln!("native_poll: couldn't parse schedule response: {e}"),
+                },
+                Ok(r) => eprintln!("native_poll: schedule query returned {}", r.status()),
+                Err(e) => eprintln!("native_poll: schedule query failed: {e}"),
             }
         }
     });

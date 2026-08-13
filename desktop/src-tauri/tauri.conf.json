@@ -13,6 +13,7 @@
         "title": "revm2-desktop",
         "width": 800,
         "height": 600,
+        "visible": false,
       "url": "https://revm-2-new.vercel.app/blocks.html"
       }
     ],

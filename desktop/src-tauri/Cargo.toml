@@ -19,6 +19,11 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri-plugin-single-instance = "2"
+# Launches RevM2 at Windows login, hidden/minimized to tray -- so the
+# native_poll.rs schedule-checking loop is already running by the time
+# any scheduled block is due, without the user having to remember to
+# open the app first. See lib.rs setup() for how it's registered.
+tauri-plugin-autostart = "2"
 sysinfo = { version = "0.30", default-features = false }
 tokio = { version = "1", features = ["time", "rt", "macros"] }
 tauri = { version = "2", features = ["tray-icon"] }

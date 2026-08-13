@@ -174,6 +174,37 @@ const WATCHDOG_CHECK_INTERVAL_SECS: u64 = 15;
 // managed-state lookup.
 pub struct SessionState(pub Arc<AtomicBool>);
 
+// Shared flag: does the signed-in account have AT LEAST ONE enabled
+// schedule row (focus_lock_schedules.active = true), independent of
+// whether a session is literally firing right now. Deliberately kept
+// separate from SessionState rather than folded into the same bool -
+// this is driven solely by native_poll.rs's own ~20s tick (schedules
+// aren't something any webview page polls today), while SessionState
+// is driven by both the webview's ~5s poll AND native_poll's fallback.
+// Blending the two into one flag would mean those two pollers
+// fighting each other every few seconds (webview says "no live
+// session" -> unlock, native poll says "schedule active" -> relock,
+// repeat) - see lock_should_hold() below for how they're combined
+// instead, only at the points that actually need the combined answer.
+//
+// What this flag governs: staying tray-resident, the close("X")/quit
+// lock, and Task Manager being disabled - i.e. "can the person make
+// this app stop running at all." It deliberately does NOT gate
+// app_guard/browser_guard's actual kill loop - that stays tied to
+// SessionState alone, so having a schedule configured doesn't block
+// apps/sites at 3am on a day nothing is scheduled. Only a genuinely
+// live session should ever kill anything.
+pub struct ScheduleActiveState(pub Arc<AtomicBool>);
+
+// True if either flag says the app should stay locked down. The one
+// place this OR happens - every caller that touches closable/
+// taskmgr_guard/quit_item goes through this instead of reading either
+// flag directly, so the two can never drift out of sync with each
+// other.
+fn lock_should_hold(session_active: &AtomicBool, schedule_active: &AtomicBool) -> bool {
+    session_active.load(Ordering::SeqCst) || schedule_active.load(Ordering::SeqCst)
+}
+
 // Unix timestamp of the last time the web page successfully told us
 // (via set_session_active) what the real session state is - true or false,
 // either counts as "still in contact". The watchdog uses staleness of this,
@@ -196,6 +227,7 @@ pub struct BrowserGraceTracker(pub Mutex<HashMap<String, i64>>);
 async fn set_session_active(
     app: AppHandle,
     state: tauri::State<'_, SessionState>,
+    schedule_state: tauri::State<'_, ScheduleActiveState>,
     blocked_apps: tauri::State<'_, app_guard::SharedBlockList>,
     grace_tracker: tauri::State<'_, Arc<BrowserGraceTracker>>,
     heartbeat_state: tauri::State<'_, Arc<heartbeat::HeartbeatState>>,
@@ -214,6 +246,7 @@ async fn set_session_active(
     apply_session_state(
         &app,
         &state.0,
+        &schedule_state.0,
         blocked_apps.inner(),
         grace_tracker.inner(),
         heartbeat_state.inner(),
@@ -227,6 +260,63 @@ async fn set_session_active(
     Ok(())
 }
 
+// Companion to set_session_active, but for the broader "does this
+// account have any schedule enabled at all" question (see
+// ScheduleActiveState's doc comment). Called from native_poll.rs's own
+// tick - no webview page pushes this today, since none of them
+// currently ask "do I have any active schedule row" independent of
+// "is a session live right now." Kept as its own command (rather than
+// folding into set_session_active) so the two can be driven by
+// different, independent pollers without fighting each other - see
+// lock_should_hold().
+// Shared by both the set_schedule_active command (webview/debug callers)
+// and native_poll.rs (which has raw Arc/MenuItem handles, not
+// tauri::State extractors, so it can't call the #[tauri::command]
+// version directly). Re-applies the closable/taskmgr/quit_item lock
+// surface from the combined signal, and updates the tray tooltip on a
+// real edge while idle.
+pub(crate) fn apply_schedule_active_lock(
+    app: &AppHandle,
+    session_active: &Arc<AtomicBool>,
+    schedule_active: &Arc<AtomicBool>,
+    quit_item: &MenuItem<tauri::Wry>,
+) {
+    let locked = lock_should_hold(session_active, schedule_active);
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.set_closable(!locked);
+        #[cfg(target_os = "windows")]
+        set_native_closable(&window, !locked);
+    }
+    if let Err(e) = taskmgr_guard::set_disabled(locked) {
+        eprintln!("taskmgr_guard: failed to set disabled={locked}: {e}");
+    }
+    let _ = quit_item.set_enabled(!locked);
+
+    if !session_active.load(Ordering::SeqCst) {
+        let text = if schedule_active.load(Ordering::SeqCst) {
+            "RevM2 - Schedule active (locked, no session right now)".to_string()
+        } else {
+            "RevM2 - No active session".to_string()
+        };
+        let _ = set_tray_status(app.clone(), text);
+    }
+}
+
+#[tauri::command]
+async fn set_schedule_active(
+    app: AppHandle,
+    state: tauri::State<'_, SessionState>,
+    schedule_state: tauri::State<'_, ScheduleActiveState>,
+    quit_item: tauri::State<'_, MenuItem<tauri::Wry>>,
+    active: bool,
+) -> Result<(), String> {
+    schedule_state.0.store(active, Ordering::SeqCst);
+    apply_schedule_active_lock(&app, &state.0, &schedule_state.0, &quit_item);
+    Ok(())
+}
+
+
+
 // The actual logic behind set_session_active, pulled out so
 // native_poll.rs's fallback Supabase poll can drive the exact same state
 // machine as the webview's own poll - the two are meant to be
@@ -237,6 +327,7 @@ async fn set_session_active(
 pub(crate) async fn apply_session_state(
     app: &AppHandle,
     state: &Arc<AtomicBool>,
+    schedule_active: &Arc<AtomicBool>,
     blocked_apps: &app_guard::SharedBlockList,
     grace_tracker: &Arc<BrowserGraceTracker>,
     heartbeat_state: &Arc<heartbeat::HeartbeatState>,
@@ -259,21 +350,29 @@ pub(crate) async fn apply_session_state(
     // put the tray back to its true idle state instead of leaving it
     // showing stale "Session active..."/"closed: ..." text from the guard
     // loop, which only updates the tooltip while a session is active.
+    // Only actually goes idle if nothing else (a still-enabled schedule)
+    // is holding the lock - otherwise this would flash "No active
+    // session" for a moment right as a schedule keeps it locked anyway.
     if was_active && !active {
-        let _ = set_tray_status(app.clone(), "RevM2 - No active session".to_string());
+        let idle_text = if schedule_active.load(Ordering::SeqCst) {
+            "RevM2 - Schedule active (locked, no session right now)".to_string()
+        } else {
+            "RevM2 - No active session".to_string()
+        };
+        let _ = set_tray_status(app.clone(), idle_text);
     }
 
-    // Hide the taskbar/title-bar close ("X") control while a block is
-    // active, so closing the window isn't a one-click way to dodge
-    // enforcement - the app still only enforces while its process is
-    // running (see browser_guard/app_guard), so letting someone just
-    // click X to make it go away would defeat the whole point. Runs on
-    // every call (not just the false->true edge) so it stays correct
-    // even if a call is ever missed or retried.
+    // Hide the taskbar/title-bar close ("X") control while the app should
+    // stay locked - either a block is literally active, OR the account
+    // has any schedule enabled at all (see ScheduleActiveState's doc for
+    // why that's a second, OR'd-in flag rather than folded into `active`
+    // itself). Runs on every call (not just the false->true edge) so it
+    // stays correct even if a call is ever missed or retried.
+    let locked = lock_should_hold(state, schedule_active);
     if let Some(window) = app.get_webview_window("main") {
-        let _ = window.set_closable(!active);
+        let _ = window.set_closable(!locked);
         #[cfg(target_os = "windows")]
-        set_native_closable(&window, !active);
+        set_native_closable(&window, !locked);
     }
 
     // Task Manager is the single most common way to just kill
@@ -281,8 +380,8 @@ pub(crate) async fn apply_session_state(
     // lock it for the same window the close/quit controls are locked.
     // Runs on every call, same reasoning as set_closable above: stays
     // correct even if a call is ever missed or retried.
-    if let Err(e) = taskmgr_guard::set_disabled(active) {
-        eprintln!("taskmgr_guard: failed to set disabled={active}: {e}");
+    if let Err(e) = taskmgr_guard::set_disabled(locked) {
+        eprintln!("taskmgr_guard: failed to set disabled={locked}: {e}");
     }
 
     // External, process-independent backstop: if this process dies
@@ -332,7 +431,7 @@ pub(crate) async fn apply_session_state(
     // Same reasoning for the tray's "Quit RevM2" item - the real gate is
     // in the "quit" match arm in the tray's on_menu_event handler, this
     // just keeps the visible state honest.
-    let _ = quit_item.set_enabled(!active);
+    let _ = quit_item.set_enabled(!locked);
 
     // "Always check for extension active or not whenever a block
     // starts" - without this, a block that starts with the extension
@@ -712,6 +811,7 @@ async fn run_guard_tick(
 fn spawn_watchdog_loop(
     app: AppHandle,
     session_active: Arc<AtomicBool>,
+    schedule_active: Arc<AtomicBool>,
     last_sync: Arc<std::sync::atomic::AtomicI64>,
     quit_item: MenuItem<tauri::Wry>,
     backstop_fire_at: Arc<std::sync::atomic::AtomicI64>,
@@ -730,25 +830,39 @@ fn spawn_watchdog_loop(
             }
 
             eprintln!(
-                "watchdog: no set_session_active call in {stale_for}s (timeout {WATCHDOG_TIMEOUT_SECS}s) - releasing lock as a fail-safe"
+                "watchdog: no set_session_active call in {stale_for}s (timeout {WATCHDOG_TIMEOUT_SECS}s) - releasing session lock as a fail-safe"
             );
             session_active.store(false, Ordering::SeqCst);
             write_session_lock(false);
 
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.set_closable(true);
-                #[cfg(target_os = "windows")]
-                set_native_closable(&window, true);
-            }
-            let _ = quit_item.set_enabled(true);
-            if let Err(e) = taskmgr_guard::set_disabled(false) {
-                eprintln!("taskmgr_guard: failed to re-enable during watchdog release: {e}");
+            // Only fully unlock (closable, Task Manager) if there's ALSO
+            // no active schedule holding the lock independently - the
+            // whole point of ScheduleActiveState is that it must survive
+            // this exact release. Without this check, a monitor simply
+            // turning off long enough to stale the webview poll would
+            // silently defeat the schedule-based lock too.
+            let still_locked = schedule_active.load(Ordering::SeqCst);
+            if !still_locked {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.set_closable(true);
+                    #[cfg(target_os = "windows")]
+                    set_native_closable(&window, true);
+                }
+                let _ = quit_item.set_enabled(true);
+                if let Err(e) = taskmgr_guard::set_disabled(false) {
+                    eprintln!("taskmgr_guard: failed to re-enable during watchdog release: {e}");
+                }
             }
             backstop_fire_at.store(0, Ordering::SeqCst);
             if let Err(e) = taskmgr_backstop::cancel() {
                 eprintln!("taskmgr_backstop: failed to cancel during watchdog release: {e}");
             }
-            let _ = set_tray_status(app.clone(), "RevM2 - No active session".to_string());
+            let idle_text = if still_locked {
+                "RevM2 - Schedule active (locked, no session right now)".to_string()
+            } else {
+                "RevM2 - No active session".to_string()
+            };
+            let _ = set_tray_status(app.clone(), idle_text);
 
             notify(
                 &app,
@@ -787,6 +901,7 @@ fn spawn_guard_loop(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let session_active = Arc::new(AtomicBool::new(false));
+    let schedule_active = Arc::new(AtomicBool::new(false));
     let blocked_apps: app_guard::SharedBlockList = Arc::new(Mutex::new(app_guard::BlockedApps::default()));
     let grace_tracker = Arc::new(BrowserGraceTracker(Mutex::new(HashMap::new())));
     let heartbeat_state = Arc::new(heartbeat::HeartbeatState::new());
@@ -801,7 +916,8 @@ pub fn run() {
     let backstop_fire_at = Arc::new(std::sync::atomic::AtomicI64::new(0));
     // 0 = never notified yet; see CLOSE_NOTIFY_COOLDOWN_SECS above.
     let last_close_notify_ts = Arc::new(std::sync::atomic::AtomicI64::new(0));
-    let exit_guard_session_active = session_active.clone();
+    // (No longer need a session_active clone here - ExitRequested is
+    // prevented unconditionally now; see the run() closure below.)
     // See native_poll.rs's module doc: the desktop app's own independent,
     // OS-timer-driven check of Supabase, so schedule-driven blocks keep
     // starting/ending correctly even when the webview's JS poll is
@@ -840,10 +956,23 @@ pub fn run() {
                 let _ = window.set_focus();
             }
         }))
+        // Launches RevM2 at Windows login, passing --hidden so the
+        // window is never shown at boot - just the tray icon, with
+        // native_poll.rs already ticking. Without this, a reboot (or the
+        // app simply not being reopened) leaves nothing running to
+        // notice a scheduled block start, or to hold the schedule-active
+        // lock at all. MacosLauncher::LaunchAgent is ignored on Windows
+        // (the plugin uses the registry Run key there instead) but is
+        // still the required argument cross-platform.
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec!["--hidden"]),
+        ))
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .manage(SessionState(session_active.clone()))
+        .manage(ScheduleActiveState(schedule_active.clone()))
         .manage(blocked_apps.clone())
         .manage(heartbeat_state.clone())
         .manage(grace_tracker.clone())
@@ -854,6 +983,18 @@ pub fn run() {
         .manage(auth_state.clone())
         .setup(move |app| {
             gate_guard_state.spawn_watchers(app.handle().clone());
+
+            // Window starts invisible (see tauri.conf.json) so this is
+            // the only place it ever appears - avoids a visible flash on
+            // an autostart launch before we get a chance to check for
+            // --hidden. A normal double-click launch (no arg) shows it
+            // immediately, same as before this change.
+            let launched_hidden = std::env::args().any(|a| a == "--hidden");
+            if !launched_hidden {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                }
+            }
 
             if let Ok(store) = app.store(BLOCKED_APPS_STORE) {
                 if let Some(apps) = store
@@ -894,9 +1035,35 @@ pub fn run() {
                 eprintln!("taskmgr_backstop: failed to clear stale schedule on startup: {e}");
             }
 
+            // Auto-enable on first run, so the reliability fix actually
+            // takes effect without the person needing to know it exists.
+            // Idempotent: enable() on an already-enabled autostart entry
+            // is a no-op, so this is safe to run on every launch, not
+            // just a genuine first run. Explicitly surfaced (not silent)
+            // via the checkable tray item below - this app already asks
+            // for a lot of trust (Task Manager lock, uninstall-adjacent
+            // protections), so "runs at login" should be visible and
+            // toggle-able, not just assumed.
+            {
+                use tauri_plugin_autostart::ManagerExt;
+                let autolaunch = app.autolaunch();
+                if matches!(autolaunch.is_enabled(), Ok(false)) {
+                    if let Err(e) = autolaunch.enable() {
+                        eprintln!("autostart: failed to enable: {e}");
+                    }
+                }
+            }
+
             let debug_item = MenuItem::with_id(app, "debug_status", "Show Debug Status", true, None::<&str>)?;
+            let autostart_enabled = {
+                use tauri_plugin_autostart::ManagerExt;
+                app.autolaunch().is_enabled().unwrap_or(true)
+            };
+            let autostart_item = tauri::menu::CheckMenuItem::with_id(
+                app, "toggle_autostart", "Start with Windows", true, autostart_enabled, None::<&str>,
+            )?;
             let quit_item = MenuItem::with_id(app, "quit", "Quit RevM2", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&debug_item, &quit_item])?;
+            let menu = Menu::with_items(app, &[&debug_item, &autostart_item, &quit_item])?;
 
             // Also managed as app state so set_session_active can grey it
             // out/re-enable it as sessions start and stop - see there.
@@ -906,6 +1073,8 @@ pub fn run() {
             let debug_blocked_apps = blocked_apps.clone();
             let debug_heartbeat = heartbeat_state.clone();
             let quit_session_active = session_active.clone();
+            let quit_schedule_active = schedule_active.clone();
+            let autostart_item_handle = autostart_item.clone();
 
             let _tray = TrayIconBuilder::with_id("main-tray")
                 .icon(app.default_window_icon().unwrap().clone())
@@ -924,7 +1093,33 @@ pub fn run() {
                                 notify(app, "RevM2 - Can't quit", "A block is active. End it from the app to quit.");
                                 return;
                             }
+                            if quit_schedule_active.load(Ordering::SeqCst) {
+                                notify(app, "RevM2 - Can't quit", "A schedule is active on this account. Turn it off from Blocks to quit.");
+                                return;
+                            }
                             app.exit(0);
+                        }
+                        "toggle_autostart" => {
+                            use tauri_plugin_autostart::ManagerExt;
+                            let autolaunch = app.autolaunch();
+                            let now_enabled = autolaunch.is_enabled().unwrap_or(true);
+                            let result = if now_enabled {
+                                autolaunch.disable()
+                            } else {
+                                autolaunch.enable()
+                            };
+                            match result {
+                                Ok(()) => {
+                                    let _ = autostart_item_handle.set_checked(!now_enabled);
+                                }
+                                Err(e) => {
+                                    eprintln!("autostart: failed to toggle: {e}");
+                                    // Reflect the real (unchanged) state rather
+                                    // than leaving the checkbox showing a
+                                    // toggle that didn't actually happen.
+                                    let _ = autostart_item_handle.set_checked(now_enabled);
+                                }
+                            }
                         }
                         "debug_status" => {
                             let active = debug_session_active.load(Ordering::SeqCst);
@@ -964,6 +1159,7 @@ pub fn run() {
             spawn_watchdog_loop(
                 app.handle().clone(),
                 session_active.clone(),
+                schedule_active.clone(),
                 last_sync.clone(),
                 quit_item.clone(),
                 backstop_fire_at.clone(),
@@ -972,6 +1168,7 @@ pub fn run() {
             native_poll::spawn_native_session_poll(
                 app.handle().clone(),
                 session_active.clone(),
+                schedule_active.clone(),
                 blocked_apps.clone(),
                 grace_tracker.clone(),
                 heartbeat_state.clone(),
@@ -988,22 +1185,37 @@ pub fn run() {
             // through the title-bar/thumbnail X at all.
             if let Some(window) = app.get_webview_window("main") {
                 let close_guard_session = session_active.clone();
+                let close_guard_schedule = schedule_active.clone();
                 let close_guard_app = app.handle().clone();
                 let close_guard_last_notify = last_close_notify_ts.clone();
+                let close_guard_window = window.clone();
                 window.on_window_event(move |event| {
                     if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                        if close_guard_session.load(Ordering::SeqCst) {
-                            api.prevent_close();
+                        // Always prevent the default close - real exit is
+                        // only ever the tray's "Quit RevM2" (app.exit(0)).
+                        // What differs is what happens instead: locked,
+                        // the window stays visible with a "can't close"
+                        // notification (so it's obvious *why* nothing
+                        // happened); idle, it just quietly hides to tray,
+                        // matching ordinary tray-app behavior instead of
+                        // fully exiting and losing the poll loop.
+                        api.prevent_close();
+                        let session_live = close_guard_session.load(Ordering::SeqCst);
+                        let schedule_live = close_guard_schedule.load(Ordering::SeqCst);
+                        if session_live || schedule_live {
                             let now = now_ts();
                             let last = close_guard_last_notify.load(Ordering::SeqCst);
                             if now - last >= CLOSE_NOTIFY_COOLDOWN_SECS {
                                 close_guard_last_notify.store(now, Ordering::SeqCst);
-                                notify(
-                                    &close_guard_app,
-                                    "RevM2 - Can't close",
-                                    "A block is active. End it from the app first.",
-                                );
+                                let body = if session_live {
+                                    "A block is active. End it from the app first."
+                                } else {
+                                    "A schedule is active on this account. Turn it off from Blocks first."
+                                };
+                                notify(&close_guard_app, "RevM2 - Can't close", body);
                             }
+                        } else {
+                            let _ = close_guard_window.hide();
                         }
                     }
                 });
@@ -1015,6 +1227,7 @@ pub fn run() {
             greet,
             set_tray_status,
             set_session_active,
+            set_schedule_active,
             push_session_event,
             debug_browser_status,
             list_running_apps,
@@ -1036,10 +1249,15 @@ pub fn run() {
             // OS-level kill from Task Manager's "End task" - no user-space
             // code can intercept that - but every graceful shutdown path
             // goes through here.
+            // Real exit is now ONLY ever app.exit(0) in the tray's "quit"
+            // handler above - that call bypasses RunEvent entirely, so
+            // this branch never sees it. Every other path that could
+            // request an exit (last window closing, etc) is prevented
+            // unconditionally, matching the window-close handler's shift
+            // to always-minimize-to-tray rather than only guarding
+            // during an active lock.
             if let tauri::RunEvent::ExitRequested { api, .. } = event {
-                if exit_guard_session_active.load(Ordering::SeqCst) {
-                    api.prevent_exit();
-                }
+                api.prevent_exit();
             }
         });
 }

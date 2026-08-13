@@ -18,6 +18,7 @@
     "allow-greet",
     "allow-set-tray-status",
     "allow-set-session-active",
+    "allow-set-schedule-active",
     "allow-debug-browser-status",
     "allow-push-session-event",
     "allow-list-running-apps",
