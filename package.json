@@ -1,0 +1,14 @@
+{
+  "name": "revm2",
+  "private": true,
+  "version": "1.0.0",
+  "description": "RevM² — study accountability platform (web app + shared build)",
+  "type": "module",
+  "scripts": {
+    "build:shared": "vite build --config vite.shared.config.js",
+    "dev:shared": "vite build --config vite.shared.config.js --watch"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

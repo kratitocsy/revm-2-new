@@ -1,0 +1,25 @@
+/* Extracted from telegram.html — page-specific overrides on top of base.css */
+
+.tg-wrap{position:relative;z-index:10;width:100%;max-width:460px;}
+.tg-back{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.7rem;color:var(--muted);text-decoration:none;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:1.5rem;transition:color 0.2s;}
+.tg-back:hover{color:var(--gold);}
+.tg-icon{font-size:2.25rem;line-height:1;margin-bottom:0.9rem;}
+.tg-status{display:flex;align-items:center;gap:0.5rem;font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:1.1rem;}
+.dot-status{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dot-status.off{background:var(--muted);}
+.dot-status.on{background:var(--success);box-shadow:0 0 8px rgba(74,222,128,0.6);}
+.tg-desc{font-size:0.82rem;color:var(--muted);line-height:1.7;margin-bottom:1.4rem;}
+.tg-row{display:flex;align-items:center;justify-content:space-between;padding:0.9rem 0;border-top:1px solid var(--border);}
+.tg-row:first-of-type{border-top:none;}
+.tg-row-label{font-size:0.82rem;color:var(--text);}
+.tg-row-sub{font-size:0.66rem;color:var(--dim);margin-top:0.15rem;}
+/* simple switch */
+.switch{position:relative;width:42px;height:24px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;}
+.switch-track{position:absolute;inset:0;background:var(--s3);border:1px solid var(--border2);border-radius:99px;cursor:pointer;transition:background 0.2s,border-color 0.2s;}
+.switch-track::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:50%;transform:translateY(-50%);background:var(--muted);border-radius:50%;transition:transform 0.2s,background 0.2s;}
+.switch input:checked + .switch-track{background:var(--gold-dim);border-color:var(--gold-border);}
+.switch input:checked + .switch-track::before{transform:translate(18px,-50%);background:var(--gold);}
+.switch input:disabled + .switch-track{opacity:0.45;cursor:not-allowed;}
+.tg-msg{font-size:0.68rem;letter-spacing:0.05em;text-transform:uppercase;min-height:1em;margin-top:0.9rem;color:var(--gold);}
+.tg-msg.err{color:var(--danger);}

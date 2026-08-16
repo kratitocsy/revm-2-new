@@ -6,61 +6,7 @@
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="style.css">
-<style>
-:root{ --coin:#f59e0b; --coin-dim:rgba(245,158,11,0.12); }
-.sw{max-width:1000px;margin:0 auto;padding:1.5rem;}
-
-/* WALLET HERO */
-.wallet-hero{background:linear-gradient(135deg,var(--s1) 0%,rgba(200,169,110,0.08) 100%);border:1px solid var(--gold);border-radius:8px;padding:1.4rem 1.6rem;display:flex;align-items:center;gap:1.5rem;margin-bottom:1.8rem;flex-wrap:wrap;}
-.coin-icon{font-size:2.4rem;color:var(--coin);}
-.wallet-bal{font-size:2rem;font-weight:900;color:var(--gold);letter-spacing:-0.02em;}
-.wallet-sub{font-size:0.72rem;color:var(--muted);}
-.rank-pill{display:flex;align-items:center;gap:0.5rem;background:var(--s2);border:1px solid var(--border);padding:0.55rem 1rem;border-radius:6px;margin-left:auto;}
-.rank-name{font-size:0.88rem;font-weight:700;color:var(--white);}
-.rank-sub{font-size:0.65rem;color:var(--muted);}
-.rank-bar-wrap{width:140px;height:6px;background:var(--s2);border-radius:99px;overflow:hidden;margin-top:0.25rem;}
-.rank-bar{height:100%;border-radius:99px;background:var(--gold);}
-
-/* SECTION TABS */
-.store-tabs{display:flex;gap:0.4rem;margin-bottom:1.25rem;}
-.store-tab{padding:0.5rem 1rem;font-size:0.74rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;border:1px solid var(--border2);background:var(--s1);color:var(--muted);cursor:pointer;font-family:var(--font);}
-.store-tab.active{background:var(--coin-dim);border-color:var(--coin);color:var(--coin);}
-
-/* COIN PACKAGES */
-.pkg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.8rem;}
-.pkg-card{background:var(--s1);border:1px solid var(--border);padding:1rem;text-align:center;position:relative;cursor:pointer;transition:border-color 0.2s;}
-.pkg-card:hover{border-color:var(--coin);}
-.pkg-card.popular{border-color:var(--coin);box-shadow:0 0 0 1px var(--coin);}
-.popular-tag{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--coin);color:#000;font-size:0.6rem;font-weight:800;padding:0.15rem 0.6rem;border-radius:99px;white-space:nowrap;}
-.pkg-coins{font-size:1.5rem;font-weight:900;color:var(--coin);}
-.pkg-bonus{font-size:0.65rem;color:var(--success);font-weight:700;margin:0.1rem 0;}
-.pkg-price{font-size:0.82rem;color:var(--text);margin:0.4rem 0;}
-.pkg-name{font-size:0.68rem;color:var(--muted);}
-
-/* SHOP ITEMS */
-.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.8rem;}
-.shop-card{background:var(--s1);border:1px solid var(--border);padding:1rem;}
-.shop-type{font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem;}
-.shop-name{font-size:0.85rem;font-weight:700;color:var(--white);margin-bottom:0.3rem;}
-.shop-desc{font-size:0.7rem;color:var(--muted);margin-bottom:0.65rem;line-height:1.4;}
-.shop-cost{display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;font-weight:700;color:var(--coin);}
-
-/* RANK TABLE */
-.rank-table{width:100%;border-collapse:collapse;}
-.rank-table th{font-size:0.65rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid var(--border);}
-.rank-table td{padding:0.6rem 0.75rem;border-bottom:1px solid var(--border);font-size:0.8rem;}
-.rank-table tr.my-rank td{background:rgba(200,169,110,0.08);}
-.r-badge{display:inline-flex;align-items:center;gap:0.4rem;font-weight:700;}
-
-/* INVENTORY */
-.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.8rem;}
-.inv-card{background:var(--s1);border:1px solid var(--border);padding:0.9rem;}
-.inv-name{font-size:0.82rem;font-weight:700;color:var(--white);}
-.inv-exp{font-size:0.68rem;color:var(--muted);}
-.inv-active{font-size:0.65rem;color:var(--success);}
-
-.empty-state{text-align:center;padding:2rem;color:var(--muted);font-size:0.78rem;}
-</style>
+<link rel="stylesheet" href="src/styles/pages/store.css">
 </head>
 <body>
 <div class="app-layout">
