@@ -89,35 +89,78 @@ same position in `<head>` — so cascade order is unchanged. This part needed
 no build step (CSS has no load-order/global-scope hazards the way the JS
 did), so it's a plain 1:1 move, already live in every page.
 
+## groups.html — extracted, not yet split further
+
+`groups.html`'s 3,056-line inline `<script>` block is now
+`src/pages/groups.page.js`, loaded via
+`<script src="src/pages/groups.page.js"></script>` at the exact same
+position. This alone cut `groups.html` from 3,515 lines to 459 — the
+markup is now readable on its own, diffable in PRs without JS noise, and
+the JS is a real file a linter/editor can navigate.
+
+**This was a verbatim, zero-risk move** (checked byte-for-byte identical to
+what was removed, plus `node --check` for valid syntax) — nothing inside
+the script was reordered or touched.
+
+**It was deliberately *not* split further into per-feature files**, and
+that's worth understanding before attempting it: the same
+extract → auto-detect-imports process used for `shared.js` was tried here
+first, splitting by the code's own comment sections (video call, friend
+requests, chat badges, stats tab, drive import, etc.). The result showed
+**real circular dependencies** — e.g. the video-call code and the
+friend-request code call into each other both ways, and the stats tab
+reaches into `group-detail`, `drive-import`, `sharing`, and `focus-time`,
+each of which reaches back into it. Unlike `shared.js` (genuinely
+independent utilities), these "sections" are visual groupings, not real
+module boundaries — the whole file is one tightly-coupled page controller.
+
+Splitting a file like that into multiple modules with circular imports
+doesn't reduce coupling, it just hides the same tangle behind more files,
+and introduces a real correctness risk (circular `let`/`const` module
+bindings can throw "cannot access before initialization" depending on
+evaluation order) that can't be ruled out here the way it was for
+`shared.js` — WebRTC/mesh-call code isn't something that can be safely
+executed in a sandboxed Node `vm` stub to prove it still works.
+
+**If someone wants to properly decompose `groups.page.js` later**, that's
+a real refactor, not a mechanical split — it needs an actual shared-state
+pattern (e.g. a small store/event-bus the sub-modules talk through instead
+of calling each other directly) designed by someone who knows the call/
+friend-request/chat interactions, plus manual testing of the video call
+flow. Don't attempt it with the same auto-import-detection script used for
+`shared.js` — the circular-dependency check above will tell you why.
+
 ## What's still monolithic (good next targets)
 
 These were **not** touched in this pass — each is a bigger, higher-risk job
 that deserves its own careful pass with the same "extract, verify, diff"
-discipline used for `shared.js`:
+discipline used for `shared.js` and `groups.html`:
 
-- `groups.html` (3.5k lines), `blocks.html` (2.2k), `tracker.html` (2k),
-  `timer.html` (1.9k), `partners.html` (1.3k) — each is a full page's HTML +
-  inline `<script>` logic in one file. Splitting these means separating
-  markup from page-specific JS (into `src/pages/<name>.js`), which is
-  riskier because — unlike `shared.js` — nobody has audited exactly which
-  inline `onclick`/`onchange` handlers and DOM-ready timing each one
-  depends on.
+- `blocks.html` (2.2k lines), `tracker.html` (2k), `timer.html` (1.9k),
+  `partners.html` (1.3k) — each is a full page's HTML + inline `<script>`
+  logic in one file, same shape `groups.html` was. First check for
+  circular coupling the same way (auto-map imports, look for mutual
+  pairs) before deciding whether a real split or just a verbatim
+  extraction (like `groups.page.js`) is the safe move.
 - `materials.js`, `materials-viewer.js`, `ads.js` — already separate files,
   but each is a single undivided module (285–605 lines) and could be split
-  by concern the same way `shared.js` was.
+  by concern the same way `shared.js` was, once checked for coupling.
 
-**Suggested playbook for each**, modeled on this pass:
-1. Map every top-level function/const and every place it's called from
-   (inline `<script>`, `onclick=`, other files).
-2. Split into small files by concern under `src/pages/<name>/`.
-3. Add `export` to each declaration; auto-detect cross-file references
-   (don't hand-write imports — script it, like `src/lib/index.js` was
-   built, to avoid missing one).
-4. Bundle back to the exact original global surface via a small Vite
-   `lib`/`iife` config, same pattern as `vite.shared.config.js`.
-5. Verify: diff the public symbol list, and execute the built file in a
-   sandboxed DOM stub before trusting it.
-6. Only then touch the `.html` file's script tag.
+**Playbook for each**, refined from this pass:
+1. Extract the inline `<script>` block verbatim into `src/pages/<name>.page.js`
+   first — zero-risk, immediate clutter reduction, always worth doing.
+2. Map every top-level function/const and every place it's called from
+   (inline `<script>`, `onclick=`, other files) — script this, don't do
+   it by hand.
+3. Auto-detect cross-reference imports if you attempt a further split, and
+   explicitly check for mutual/circular pairs before trusting the result
+   (see groups.html above for why this matters).
+4. If it's a clean DAG (like `shared.js` was): split, bundle back via Vite
+   `lib`/`iife`, verify by diffing the public symbol list and executing the
+   built file in a sandboxed DOM stub.
+5. If it's circularly tangled (like `groups.html` was): stop at step 1,
+   document why, and flag it as needing a real refactor rather than a
+   mechanical split.
 
 ## Build tooling
 
