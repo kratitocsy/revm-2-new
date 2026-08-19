@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>WYNKO — Coming Soon</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+    }
+
+    body {
+      background:
+        radial-gradient(
+          circle at 50% 20%,
+          rgba(54, 35, 120, 0.35),
+          transparent 40%
+        ),
+        linear-gradient(
+          180deg,
+          #241b55 0%,
+          #17132f 42%,
+          #0f0c20 100%
+        );
+
+      color: #ffffff;
+      font-family: Arial, Helvetica, sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* =========================
+       MAIN CONTAINER
+    ========================= */
+
+    .page {
+      width: 100%;
+      min-height: 100vh;
+      padding: 55px 6%;
+      position: relative;
+    }
+
+    /* =========================
+       HEADER
+    ========================= */
+
+    .header {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    /* Temporary W logo */
+    .logo {
+      width: 60px;
+      height: 60px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 12px;
+
+      background: rgba(10, 10, 20, 0.55);
+
+      box-shadow:
+        0 0 20px rgba(75, 75, 255, 0.12);
+    }
+
+    .logo span {
+      font-size: 34px;
+      font-weight: 900;
+      font-style: italic;
+
+      background: linear-gradient(
+        135deg,
+        #7b4dff,
+        #00d9ff
+      );
+
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .brand-text h1 {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 2px;
+    }
+
+    .brand-text p {
+      margin-top: 2px;
+      font-size: 13px;
+      letter-spacing: 3px;
+      color: #aaa4c8;
+    }
+
+    /* Neon divider */
+    .divider {
+      height: 3px;
+      width: 100%;
+      margin-top: 22px;
+
+      background: linear-gradient(
+        90deg,
+        #874cff,
+        #5149ff,
+        #00d9ff
+      );
+
+      box-shadow:
+        0 0 8px rgba(102, 85, 255, 0.6),
+        0 0 18px rgba(0, 210, 255, 0.25);
+    }
+
+    /* =========================
+       HERO
+    ========================= */
+
+    .hero {
+      max-width: 1400px;
+      margin: 105px auto 0;
+    }
+
+    .small-line {
+      width: 66px;
+      height: 5px;
+
+      background: #00cfff;
+
+      box-shadow:
+        0 0 10px rgba(0, 207, 255, 0.65);
+
+      margin-bottom: 22px;
+    }
+
+    .eyebrow {
+      color: #00cfff;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-bottom: 30px;
+    }
+
+    .headline {
+      max-width: 800px;
+
+      font-size: clamp(
+        48px,
+        6vw,
+        82px
+      );
+
+      line-height: 0.98;
+      font-weight: 800;
+      letter-spacing: -3px;
+    }
+
+    .headline span {
+      display: block;
+    }
+
+    .description {
+      max-width: 650px;
+
+      margin-top: 28px;
+
+      font-size: clamp(
+        20px,
+        2.3vw,
+        31px
+      );
+
+      line-height: 1.35;
+
+      color: #d0ccdf;
+      font-weight: 400;
+    }
+
+    /* =========================
+       COMING SOON BUTTON
+    ========================= */
+
+    .coming-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      margin-top: 370px;
+      padding-bottom: 80px;
+    }
+
+    .coming-soon {
+      position: relative;
+
+      min-width: 370px;
+      height: 96px;
+
+      padding: 0 42px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+
+      border: 2px solid transparent;
+      border-radius: 60px;
+
+      background:
+        linear-gradient(#151128, #151128) padding-box,
+        linear-gradient(
+          100deg,
+          #9670ff,
+          #9c9cff,
+          #00d9ff
+        ) border-box;
+
+      box-shadow:
+        0 0 18px rgba(139, 91, 255, 0.45),
+        0 0 45px rgba(0, 180, 255, 0.2);
+
+      color: #eae8f6;
+
+      font-size: 24px;
+      font-weight: 500;
+
+      letter-spacing: 7px;
+
+      text-transform: uppercase;
+    }
+
+    .diamond {
+      width: 10px;
+      height: 10px;
+
+      transform: rotate(45deg);
+
+      background: #8b72ff;
+
+      box-shadow:
+        0 0 10px #8b72ff;
+    }
+
+    .coming-text {
+      position: relative;
+      padding-bottom: 9px;
+    }
+
+    .coming-text::after {
+      content: "";
+
+      position: absolute;
+
+      left: 0;
+      right: 0;
+      bottom: 0;
+
+      height: 1px;
+
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* =========================
+       GLOW EFFECT
+    ========================= */
+
+    .coming-soon::before {
+      content: "";
+
+      position: absolute;
+
+      inset: -15px;
+
+      border-radius: 70px;
+
+      background: linear-gradient(
+        90deg,
+        rgba(125, 76, 255, 0.12),
+        rgba(0, 207, 255, 0.12)
+      );
+
+      filter: blur(20px);
+
+      z-index: -1;
+    }
+
+    /* =========================
+       MOBILE
+    ========================= */
+
+    @media (max-width: 700px) {
+
+      .page {
+        padding: 30px 25px;
+      }
+
+      .logo {
+        width: 48px;
+        height: 48px;
+      }
+
+      .logo span {
+        font-size: 27px;
+      }
+
+      .brand-text h1 {
+        font-size: 24px;
+      }
+
+      .brand-text p {
+        font-size: 9px;
+        letter-spacing: 2px;
+      }
+
+      .hero {
+        margin-top: 80px;
+      }
+
+      .eyebrow {
+        font-size: 18px;
+      }
+
+      .headline {
+        font-size: 48px;
+        letter-spacing: -2px;
+      }
+
+      .description {
+        font-size: 20px;
+      }
+
+      .coming-wrapper {
+        margin-top: 230px;
+      }
+
+      .coming-soon {
+        min-width: 0;
+        width: 100%;
+        height: 76px;
+
+        padding: 0 20px;
+
+        font-size: 16px;
+        letter-spacing: 4px;
+      }
+
+      .diamond {
+        width: 8px;
+        height: 8px;
+      }
+    }
+
+    /* =========================
+       VERY SMALL PHONES
+    ========================= */
+
+    @media (max-width: 400px) {
+
+      .headline {
+        font-size: 41px;
+      }
+
+      .description {
+        font-size: 18px;
+      }
+
+      .coming-soon {
+        font-size: 14px;
+        letter-spacing: 3px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="page">
+
+    <!-- HEADER -->
+    <header class="header">
+
+      <div class="brand">
+
+        <div class="logo">
+          <span>W</span>
+        </div>
+
+        <div class="brand-text">
+          <h1>WYNKO</h1>
+          <p>WHAT'S RIGHT MUST BE DONE</p>
+        </div>
+
+      </div>
+
+      <div class="divider"></div>
+
+    </header>
+
+
+    <!-- HERO -->
+    <section class="hero">
+
+      <div class="small-line"></div>
+
+      <div class="eyebrow">
+        THE TRUTH
+      </div>
+
+      <h2 class="headline">
+        <span>You're not dumb.</span>
+        <span>You're not a genius</span>
+        <span>either.</span>
+      </h2>
+
+      <p class="description">
+        Nature never played favorites.<br />
+        Everyone starts equal.
+      </p>
+
+    </section>
+
+
+    <!-- COMING SOON -->
+    <div class="coming-wrapper">
+
+      <div class="coming-soon">
+
+        <span class="diamond"></span>
+
+        <span class="coming-text">
+          Coming Soon
+        </span>
+
+      </div>
+
+    </div>
+
+  </main>
+
+</body>
+</html>
