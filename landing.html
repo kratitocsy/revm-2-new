@@ -523,9 +523,13 @@
         <div class="link-row">
           <input type="text" id="refLinkInput" readonly />
         </div>
+        <div class="share-row" style="margin-bottom:10px;">
+          <button class="btn btn-grad" id="copyBtn" style="flex:1;">Copy invite link</button>
+        </div>
         <div class="share-row">
-          <button class="btn btn-grad" id="copyBtn">Copy invite link</button>
-          <button class="btn btn-ghost" id="waBtn">Share on WhatsApp</button>
+          <button class="btn btn-ghost" id="waBtn">WhatsApp</button>
+          <button class="btn btn-ghost" id="xBtn">X</button>
+          <button class="btn btn-ghost" id="mailBtn">Email</button>
         </div>
       </div>
 
@@ -843,9 +847,20 @@ function renderConfirmation(status, email){
     setTimeout(() => btn.textContent = 'Copy invite link', 1600);
   };
 
+  const shareMsg = "I just joined the Wynko founding cohort — a study app that actually locks out distraction. Join with my link and we both move up the list: " + link;
+
   document.getElementById('waBtn').onclick = () => {
-    const msg = "I just joined the Wynko founding cohort — a study app that actually locks out distraction. Join with my link and we both move up the list: " + link;
-    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+    window.open('https://wa.me/?text=' + encodeURIComponent(shareMsg), '_blank');
+  };
+
+  document.getElementById('xBtn').onclick = () => {
+    window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareMsg), '_blank');
+  };
+
+  document.getElementById('mailBtn').onclick = () => {
+    const subject = encodeURIComponent("Join me on the Wynko waitlist");
+    const body = encodeURIComponent(shareMsg);
+    window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
   };
 }
 
