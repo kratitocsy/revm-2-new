@@ -331,6 +331,21 @@
   .confirm-head{ text-align:center; }
   .confirm-head h2{ font-size:clamp(24px, 3vw, 32px); margin-bottom:8px; }
   .rank-inline{ color:var(--mint); }
+  .rank-inline.pushed{ display:inline-block; animation:rankPulse .8s ease; }
+  @keyframes rankPulse{
+    0%{ transform:scale(1); }
+    32%{ transform:scale(1.22); color:var(--cyan); text-shadow:0 0 20px rgba(34,211,238,.7); }
+    100%{ transform:scale(1); color:var(--mint); text-shadow:none; }
+  }
+  .rank-push-toast{
+    display:inline-flex; align-items:center; gap:6px;
+    margin:2px 0 12px; background:rgba(52,211,153,.12);
+    border:1px solid rgba(52,211,153,.35); color:var(--mint);
+    font-size:12px; font-weight:600; padding:6px 14px; border-radius:999px;
+    animation:toastIn .35s ease;
+  }
+  .rank-push-icon{ font-size:10px; }
+  @keyframes toastIn{ from{ opacity:0; transform:translateY(-6px) scale(.94); } to{ opacity:1; transform:none; } }
   .rank-sub{ color:var(--text-dim); font-size:14px; margin:0 0 24px; text-align:center; }
 
   .reward-banner{
@@ -604,6 +619,10 @@
           <div class="check-badge">✓</div>
           <p class="eyebrow" style="margin-bottom:8px;">You're on the list</p>
           <h2>You're <span class="rank-inline mono" id="rankNum">—</span> in line.</h2>
+          <div class="rank-push-toast" id="rankPushToast" style="display:none;">
+            <span class="rank-push-icon">▲</span>
+            <span id="rankPushMsg"></span>
+          </div>
         </div>
         <p class="rank-sub" id="rankSub">Referring friends moves you up immediately — like a revision for your wait curve.</p>
 
@@ -973,16 +992,51 @@ document.getElementById('heroJoinBtn').addEventListener('click', () => {
 
 const GAUGE_LEN = 251.4; // πr of the referral gauge arc
 
-function renderConfirmation(status, email){
+/* tracks the last rank we showed, so a poll can tell "improved" from
+   "unchanged" and only animate on a real, referral-driven jump */
+let lastKnownRank = null;
+let lastKnownInZone = null;
+
+function showRankPushToast(message){
+  const toast = document.getElementById('rankPushToast');
+  const msg = document.getElementById('rankPushMsg');
+  if (!toast || !msg) return;
+  msg.textContent = message;
+  toast.style.display = 'none';
+  void toast.offsetWidth; // restart the CSS animation
+  toast.style.display = 'inline-flex';
+  clearTimeout(showRankPushToast._t);
+  showRankPushToast._t = setTimeout(() => { toast.style.display = 'none'; }, 6000);
+}
+
+function renderConfirmation(status, email, opts){
+  opts = opts || {};
   joinPanel.style.display = 'none';
   confirmPanel.style.display = 'block';
 
   const rank = status.queue_position;
-  document.getElementById('rankNum').textContent = '#' + fmtNum(rank);
+  const rankEl = document.getElementById('rankNum');
+  const prevRank = lastKnownRank;
+  const prevInZone = lastKnownInZone;
+  rankEl.textContent = '#' + fmtNum(rank);
 
   const inZone = !!status.in_premium_zone;
   const refCount = status.referral_count || 0;
   const toGo = status.referrals_to_go || 0;
+
+  /* live push — fires only when a poll finds the rank genuinely improved
+     since we last checked, i.e. a real referral converted just now */
+  if (opts.animate && prevRank !== null && rank < prevRank) {
+    rankEl.classList.remove('pushed'); void rankEl.offsetWidth; rankEl.classList.add('pushed');
+    const jump = prevRank - rank;
+    if (!prevInZone && inZone) {
+      showRankPushToast("Someone joined with your link — you're in the Top 200 now.");
+    } else {
+      showRankPushToast('Someone joined with your link — you moved up ' + jump + (jump === 1 ? ' spot' : ' spots') + ' to #' + fmtNum(rank) + '.');
+    }
+  }
+  lastKnownRank = rank;
+  lastKnownInZone = inZone;
 
   document.getElementById('rankSub').textContent = inZone
     ? "You're inside the Top 200 right now — Premium, founder access, and your Founding badge are locked in."
@@ -1032,6 +1086,34 @@ function renderConfirmation(status, email){
   };
 }
 
+/* ============ live rank polling ============
+   While someone sits on the confirmation panel, quietly re-check their real
+   queue status every 25s (well under the RPC's own 5-per-60s rate limit) so
+   a referral that converts while they're watching shows up as a live push
+   instead of only updating on next page load. Pauses while the tab is
+   backgrounded, and re-checks immediately the moment it's foregrounded. */
+let statusPollTimer = null;
+
+function startStatusPolling(email){
+  stopStatusPolling();
+  statusPollTimer = setInterval(async () => {
+    if (document.hidden) return;
+    try {
+      const status = await getStatus(email);
+      if (status) renderConfirmation(status, email, { animate: true });
+    } catch(e) { /* transient network/rate-limit blip — just try again next tick */ }
+  }, 25000);
+}
+function stopStatusPolling(){
+  if (statusPollTimer) { clearInterval(statusPollTimer); statusPollTimer = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden || confirmPanel.style.display === 'none') return;
+  const email = loadMyEmail();
+  if (!email) return;
+  getStatus(email).then(status => { if (status) renderConfirmation(status, email, { animate: true }); });
+});
+
 joinForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   joinError.textContent = '';
@@ -1049,7 +1131,7 @@ joinForm.addEventListener('submit', async (e) => {
     saveMyEmail(email);
     const status = await getStatus(email);
     await refreshTotalCount();
-    if (status) renderConfirmation(status, email);
+    if (status) { renderConfirmation(status, email); startStatusPolling(email); }
     else joinError.textContent = "You're signed up, but we couldn't load your queue position — refresh to see it.";
   } catch(err) {
     console.error(err);
@@ -1091,7 +1173,7 @@ async function init(){
   const savedEmail = loadMyEmail();
   if (savedEmail) {
     const status = await getStatus(savedEmail);
-    if (status) renderConfirmation(status, savedEmail);
+    if (status) { renderConfirmation(status, savedEmail); startStatusPolling(savedEmail); }
   }
 }
 init();
