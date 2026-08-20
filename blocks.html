@@ -9,6 +9,20 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#c8a96e">
 <link rel="stylesheet" href="src/styles/pages/blocks.css">
+<style>
+.btn-ai{background:linear-gradient(135deg,#c8a96e 0%,#e8d5a3 50%,#c8a96e 100%);color:#1a1a1a;border:1px solid rgba(200,169,110,0.5);font-weight:600;position:relative;overflow:hidden}
+.btn-ai:hover{filter:brightness(1.1);box-shadow:0 0 16px rgba(200,169,110,0.3)}
+.btn-ai:disabled{opacity:0.6;cursor:not-allowed;filter:none}
+.btn-ai .ai-shimmer{position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent);animation:ai-shimmer 2s infinite}
+@keyframes ai-shimmer{0%{left:-100%}100%{left:100%}}
+.ai-modal-textarea{width:100%;min-height:140px;background:var(--s2,#111);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:inherit;font-size:0.88rem;padding:0.8rem;resize:vertical;transition:border-color 0.2s}
+.ai-modal-textarea:focus{outline:none;border-color:var(--gold)}
+.ai-modal-textarea::placeholder{color:var(--muted)}
+.ai-gen-info{font-size:0.72rem;color:var(--muted);margin-top:0.5rem;line-height:1.5}
+.ai-loading-box{text-align:center;padding:2rem 1rem}
+.ai-spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--gold);border-radius:50%;animation:ai-spin 0.8s linear infinite;margin:0 auto 1rem}
+@keyframes ai-spin{to{transform:rotate(360deg)}}
+</style>
 </head>
 <body>
 <div class="app-layout">
@@ -185,6 +199,8 @@
         <div style="display:flex;flex-wrap:wrap;gap:0.6rem;align-items:center;margin-top:0.9rem;">
           <button class="btn btn-ghost btn-sm" onclick="openScheduleBuilder()">+ New schedule</button>
           <button class="btn btn-ghost btn-sm" id="ocrScanBtn" onclick="document.getElementById('ocrFileInput').click()">📷 Scan from screenshot</button>
+          <button class="btn btn-ai btn-sm" onclick="openAiGoalModal()">✨ Describe goals</button>
+          <button class="btn btn-ai btn-sm" onclick="generateSmartSchedule()">⚡ Smart schedule</button>
           <input type="file" id="ocrFileInput" accept="image/*" style="display:none;" onchange="handleScheduleScreenshot(event)">
         </div>
         <p class="empty-note" id="ocrStatus" style="margin-top:0.6rem;display:none;"></p>
@@ -242,6 +258,31 @@
           <div class="modal-footer">
             <button class="btn btn-ghost" onclick="closeScheduleGate()">Cancel</button>
             <button class="btn btn-gold" id="schGateUnlockBtn" disabled onclick="confirmScheduleGate()">Unlock editing</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Schedule Generation Modal -->
+      <div class="modal-overlay" id="aiScheduleModal">
+        <div class="modal" style="max-width:560px;max-height:85vh;overflow-y:auto;">
+          <h3>✨ AI Schedule from Goals</h3>
+          <p class="empty-note" style="margin-bottom:0.8rem;">Describe your study goals, exam prep, or ideal week — the AI will build a complete schedule for you.</p>
+          <div id="aiGoalInput">
+            <textarea class="ai-modal-textarea" id="aiGoalText" placeholder="e.g. I have JEE Advanced in 3 months. I'm strong in Math but weak in Physics and Chemistry. I can study 6 hours on weekdays and 8 hours on weekends. I'm most productive in the mornings."></textarea>
+            <div class="ai-gen-info">The AI will use your available blocks, subjects, and this description to generate a schedule. You can edit everything before saving.</div>
+          </div>
+          <div id="aiLoadingState" style="display:none;">
+            <div class="ai-loading-box">
+              <div class="ai-spinner"></div>
+              <p class="empty-note" id="aiLoadingMsg">Generating your schedule...</p>
+            </div>
+          </div>
+          <div id="aiErrorState" style="display:none;">
+            <p class="empty-note" style="color:var(--warn);" id="aiErrorMsg"></p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeAiModal()">Cancel</button>
+            <button class="btn btn-ai" id="aiGenerateBtn" onclick="submitAiGoal()">Generate schedule</button>
           </div>
         </div>
       </div>
@@ -1822,6 +1863,114 @@ async function openScheduleBuilderFromDetectedSlots(detectedSlots){
         is_sleep:s.is_sleep
       });
     });
+}
+
+/* ── AI Schedule Generation ──
+   Two modes:
+   1. "Describe goals" — user writes text goals → AI generates schedule
+   2. "Smart schedule" — AI analyses study stats → generates optimal schedule
+   Both call the ai-generate-schedule edge function, then populate the
+   normal schedule builder for the user to review/edit before saving. */
+
+function openAiGoalModal(){
+  if(!schedulePresetsCache?.length){
+    alert('Save at least one block preset first — the AI needs to know which blocks to schedule.');
+    return;
+  }
+  document.getElementById('aiGoalText').value='';
+  document.getElementById('aiGoalInput').style.display='';
+  document.getElementById('aiLoadingState').style.display='none';
+  document.getElementById('aiErrorState').style.display='none';
+  document.getElementById('aiGenerateBtn').disabled=false;
+  document.getElementById('aiGenerateBtn').textContent='Generate schedule';
+  document.getElementById('aiScheduleModal').classList.add('show');
+}
+
+function closeAiModal(){
+  document.getElementById('aiScheduleModal').classList.remove('show');
+}
+
+async function generateSmartSchedule(){
+  if(!schedulePresetsCache?.length){
+    const { data: presets } = await sb.from('focus_lock_presets').select('id,name').eq('user_id', myUserId).order('name');
+    schedulePresetsCache=presets||[];
+    if(!schedulePresetsCache.length){ alert('Save at least one block preset first — the AI needs to know which blocks to schedule.'); return; }
+  }
+  await callAiSchedule('stats');
+}
+
+async function submitAiGoal(){
+  const text=document.getElementById('aiGoalText').value.trim();
+  if(!text){ alert('Describe your goals first.'); return; }
+  await callAiSchedule('text', text);
+}
+
+async function callAiSchedule(mode, goalText){
+  document.getElementById('aiGoalInput').style.display='none';
+  document.getElementById('aiLoadingState').style.display='';
+  document.getElementById('aiErrorState').style.display='none';
+  document.getElementById('aiLoadingMsg').textContent = mode==='stats' ? 'Analysing your study patterns...' : 'Generating your schedule...';
+  document.getElementById('aiGenerateBtn').disabled=true;
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if(!session) throw new Error('Not authenticated');
+
+    const presetsForAi = schedulePresetsCache.map(p=>({name:p.name}));
+    const subjects = cfg.subjects || [];
+
+    const res = await fetch(`${REVM2_CONFIG.SUPABASE_URL}/functions/v1/ai-generate-schedule`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
+        mode,
+        goal_text: goalText || null,
+        presets: presetsForAi,
+        subjects
+      })
+    });
+
+    const data = await res.json();
+    if(!res.ok || !data.success) throw new Error(data.error || 'Generation failed');
+
+    closeAiModal();
+    await populateBuilderFromAi(data.schedule);
+  } catch(e){
+    document.getElementById('aiLoadingState').style.display='none';
+    document.getElementById('aiErrorState').style.display='';
+    document.getElementById('aiErrorMsg').textContent = e.message || 'Something went wrong. Please try again.';
+    document.getElementById('aiGoalInput').style.display='';
+    document.getElementById('aiGenerateBtn').disabled=false;
+  }
+}
+
+async function populateBuilderFromAi(schedule){
+  await openScheduleBuilder();
+  document.getElementById('schName').value = schedule.name || 'AI Generated Schedule';
+  document.querySelectorAll('#schDayOpts .mode-opt').forEach(btn=>{
+    const day = parseInt(btn.dataset.day, 10);
+    btn.classList.toggle('active', (schedule.days_of_week||[]).includes(day));
+  });
+  document.getElementById('schSlots').innerHTML='';
+  scheduleSlotSeq=0;
+  const slots = (schedule.slots||[]).sort((a,b)=>a.start_time.localeCompare(b.start_time));
+  slots.forEach(slot=>{
+    const matchedPreset = schedulePresetsCache.find(p=>
+      p.name.toLowerCase() === (slot.subject||'').toLowerCase()
+    );
+    addScheduleSlotRow({
+      id: null,
+      preset_id: matchedPreset ? matchedPreset.id : (schedulePresetsCache[0]?.id || null),
+      subject: slot.subject || null,
+      start_time: slot.start_time,
+      end_time: slot.end_time,
+      break_after_minutes: slot.break_after_minutes || 0,
+      is_sleep: !!slot.is_sleep
+    });
+  });
 }
 
 /* ── 500-char "ultra gibberish" edit-lock gate ──
