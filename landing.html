@@ -99,21 +99,37 @@
     display:flex; align-items:center; justify-content:space-between;
     padding:14px 28px; max-width:var(--maxw); margin:0 auto;
   }
-  .brand{ display:flex; align-items:center; gap:13px; }
+  .brand{ display:flex; align-items:center; gap:15px; }
   .logo-tile{
-    width:42px; height:42px; border-radius:12px;
-    background:#0a0a10; border:1px solid var(--border-strong);
+    position:relative;
+    width:54px; height:54px; border-radius:15px;
+    background:linear-gradient(160deg,#0c0c15,#07070c);
     display:flex; align-items:center; justify-content:center;
-    box-shadow:0 0 28px rgba(108,67,255,.32);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.05) inset,
+      0 14px 34px -14px rgba(108,67,255,.6),
+      0 0 44px rgba(34,211,238,.14);
   }
-  .logo-tile img{ height:25px; width:auto; display:block; }
-  .brand-name{ font-weight:700; font-size:17px; letter-spacing:.08em; }
+  .logo-tile::before{
+    content:''; position:absolute; inset:0; border-radius:inherit; padding:1px;
+    background:linear-gradient(135deg, rgba(155,125,255,.7), rgba(34,211,238,.55) 55%, transparent 85%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none;
+  }
+  .logo-tile img{ height:32px; width:auto; display:block; position:relative; }
+  .brand-name{ font-weight:800; font-size:19px; letter-spacing:.1em; }
+  .brand-sub{
+    display:block; font-family:'IBM Plex Mono', monospace; font-size:9.5px;
+    letter-spacing:.2em; text-transform:uppercase; color:var(--text-faint); margin-top:1px;
+  }
   .header-meta{
     font-family:'IBM Plex Mono', monospace;
-    font-size:11px; letter-spacing:.14em; text-transform:uppercase;
-    color:var(--text-faint); white-space:nowrap;
+    font-size:11px; letter-spacing:.13em; text-transform:uppercase;
+    color:var(--text-dim); white-space:nowrap;
+    border:1px solid rgba(245,166,35,.35); background:rgba(245,166,35,.08);
+    border-radius:999px; padding:8px 16px;
   }
-  .header-meta b{ color:var(--cyan); font-weight:600; }
+  .header-meta b{ color:var(--amber); font-weight:700; }
   @media (max-width:560px){ .header-meta .hide-sm{ display:none; } }
 
   /* ---------- deck / kit primitives ---------- */
@@ -213,6 +229,26 @@
   }
   .hero-stats .card{ padding:20px 22px; }
   @media (max-width:560px){ .hero-stats{ grid-template-columns:1fr; } }
+
+  /* ---------- founding 200 (exclusivity) ---------- */
+  .founding200{ padding:66px 0 6px; }
+  .f200-grid{ grid-template-columns:repeat(3,1fr); gap:14px; margin:28px 0 22px; }
+  @media (max-width:900px){ .f200-grid{ grid-template-columns:1fr; } }
+  .f200-card{
+    border-color:rgba(245,166,35,.22);
+    background:linear-gradient(180deg, rgba(245,166,35,.06), transparent 55%), var(--ink-card);
+  }
+  .f200-icon{
+    width:42px; height:42px; border-radius:11px; margin-bottom:14px;
+    display:flex; align-items:center; justify-content:center; font-size:19px;
+    background:rgba(245,166,35,.12); border:1px solid rgba(245,166,35,.3);
+  }
+  .f200-meter{ padding:22px 24px; }
+  .f200-meter-top{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:13px; color:var(--text-dim); margin-bottom:10px; flex-wrap:wrap; }
+  .f200-meter-top span:last-child{ color:var(--amber); font-weight:600; }
+  .f200-bar{ height:8px; border-radius:999px; background:var(--ink-2); border:1px solid var(--border); overflow:hidden; }
+  .f200-bar-fill{ height:100%; width:0%; border-radius:999px; background:linear-gradient(90deg, var(--amber), var(--coral)); transition:width .6s ease; }
+  .f200-note{ font-size:12px; color:var(--text-faint); margin:10px 0 0; }
 
   /* ---------- join / confirm panels ---------- */
   .panel{
@@ -391,9 +427,12 @@
   <div class="header-inner">
     <div class="brand">
       <div class="logo-tile"><img src="wynko-icon.png" alt="Wynko" /></div>
-      <span class="brand-name">WYNKO</span>
+      <span>
+        <span class="brand-name">WYNKO</span>
+        <span class="brand-sub">Memory Instrument</span>
+      </span>
     </div>
-    <div class="header-meta"><span class="hide-sm">Founding cohort · </span><b>Opens soon</b></div>
+    <div class="header-meta"><span class="hide-sm">Founding cohort · </span><b id="headerSeatNote">Top 200 get founder access</b></div>
   </div>
 </header>
 
@@ -456,6 +495,43 @@
     </div>
   </section>
 
+  <!-- ============ FOUNDING 200 (exclusivity) ============ -->
+  <section class="founding200">
+    <div class="section-head">
+      <p class="eyebrow">Exclusive · A hard cap, not a marketing number</p>
+      <span class="section-num">— · The Founding 200</span>
+    </div>
+    <h2>200 seats. Not 200,000.</h2>
+    <p class="lead">Most waitlists promise vague "early access." This one has a number on it — whoever holds <b>rank #1–200</b> the moment Wynko opens its doors keeps the three things below, for good. Seat #201 gets none of them, no matter how they ask afterward.</p>
+
+    <div class="grid-2 f200-grid">
+      <div class="card f200-card">
+        <div class="f200-icon">🏆</div>
+        <h3>Premium, free for 1 year</h3>
+        <p>The full Focus Lock Premium tier from day one — no trial window, no card on file, no auto-renew trap.</p>
+      </div>
+      <div class="card f200-card">
+        <div class="f200-icon">💬</div>
+        <h3>A direct line to the founder</h3>
+        <p>Added to a private channel with Aryan, Wynko's founder — your feedback shapes what ships next, not a support-ticket queue.</p>
+      </div>
+      <div class="card f200-card">
+        <div class="f200-icon">✓</div>
+        <h3>A verified Founding badge</h3>
+        <p>Permanent, on your profile, from launch day onward — can't be earned later, bought, or granted after the doors open.</p>
+      </div>
+    </div>
+
+    <div class="f200-meter card">
+      <div class="f200-meter-top">
+        <span>Aspirants on the list right now</span>
+        <span class="mono" id="f200Claimed">— / 200</span>
+      </div>
+      <div class="f200-bar"><div class="f200-bar-fill" id="f200BarFill"></div></div>
+      <p class="f200-note" id="f200Note">Pulled from the same live queue count above — not a fake progress bar.</p>
+    </div>
+  </section>
+
   <!-- ============ WAITLIST / COMING SOON ============ -->
   <section class="block">
     <div class="section-head">
@@ -501,7 +577,7 @@
 
         <div class="reward-banner">
           <span>🏆</span>
-          <span><b>Top 200</b> get Focus Lock Premium <b>free for 1 year</b> — this is a launch competition, not a subscription trap.</span>
+          <span>Rank <b>#1–200</b> at launch locks in <b>Premium free for 1 year</b>, a <b>direct line to the founder</b>, and a <b>verified Founding badge</b> — permanently.</span>
         </div>
 
         <div class="queue-card">
@@ -535,7 +611,7 @@
             </svg>
           </div>
           <p class="gauge-caption" id="meterCaption">Every friend who joins with your link flattens your wait curve.</p>
-          <div class="guarantee-badge" id="guaranteeBadge">✓ Inside the Top 200 — free Premium is yours at launch.</div>
+          <div class="guarantee-badge" id="guaranteeBadge">✓ Inside the Top 200 — Premium, founder access &amp; your Founding badge are locked in.</div>
         </div>
 
         <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; text-align:center;">Your invite link</label>
@@ -812,7 +888,34 @@ const referredByCode = urlParams.get('ref');
 
 async function refreshTotalCount(){
   const total = await getTotalCount();
-  if (total !== null) totalCountEl.textContent = fmtNum(total);
+  if (total !== null) {
+    totalCountEl.textContent = fmtNum(total);
+    updateFounding200(total);
+  }
+}
+
+/* live, honest scarcity — no fabricated numbers, just the real queue count
+   plotted against the real 200-seat cap */
+function updateFounding200(total){
+  const claimedEl = document.getElementById('f200Claimed');
+  const fill = document.getElementById('f200BarFill');
+  const note = document.getElementById('f200Note');
+  const headerNote = document.getElementById('headerSeatNote');
+  if (!claimedEl || !fill) return;
+
+  const pct = Math.min(100, (total / 200) * 100);
+  fill.style.width = pct + '%';
+
+  if (total >= 200) {
+    claimedEl.textContent = fmtNum(total) + ' on the list — Top 200 line is full';
+    note.textContent = 'The Top 200 rank is already spoken for. From here, referring friends is the only way to move inside it.';
+    if (headerNote) headerNote.textContent = 'Top 200 is full — refer to get in';
+  } else {
+    const left = 200 - total;
+    claimedEl.textContent = fmtNum(total) + ' / 200';
+    note.textContent = fmtNum(left) + ' seat' + (left === 1 ? '' : 's') + ' left before the Top 200 line fills, based on the live count above.';
+    if (headerNote) headerNote.textContent = fmtNum(left) + ' of 200 founder seats left';
+  }
 }
 
 /* hero CTA scrolls to whichever panel is live */
@@ -836,7 +939,7 @@ function renderConfirmation(status, email){
   const toGo = status.referrals_to_go || 0;
 
   document.getElementById('rankSub').textContent = inZone
-    ? "You're inside the Top 200 free-Premium zone right now."
+    ? "You're inside the Top 200 right now — Premium, founder access, and your Founding badge are locked in."
     : "Refer friends to move up — every referral flattens your wait curve.";
 
   document.getElementById('referralMilestoneNote').textContent = inZone
@@ -851,7 +954,7 @@ function renderConfirmation(status, email){
   gauge.style.strokeDashoffset = String(GAUGE_LEN * (1 - pct / 100));
 
   document.getElementById('meterCaption').textContent = inZone
-    ? 'Guarantee unlocked — thank you for bringing your squad.'
+    ? 'Premium, founder access & your badge — unlocked. Thank you for bringing your squad.'
     : toGo + ' more referral' + (toGo === 1 ? '' : 's') + ' moves you into the Top 200 zone, based on where the cutoff sits right now.';
   document.getElementById('guaranteeBadge').style.display = inZone ? 'flex' : 'none';
 
