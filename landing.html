@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wynko — Focus. Study. Together. Opening soon.</title>
+<meta name="description" content="Wynko locks out distraction, times your revisions to the minute your memory actually needs them, and puts you in a room with people who show up. Join the founding cohort." />
+<link rel="icon" href="wynko-icon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0e0e17;
+    --ink-2:#10101a;
+    --ink-card:#14141f;
+    --ink-raised:#171724;
+    --border: rgba(255,255,255,.08);
+    --border-strong: rgba(255,255,255,.16);
+    --text:#f5f5f8;
+    --text-dim:#9c9cad;
+    --text-faint:#6b6b7a;
+    --violet:#8b5cf6;
+    --violet-soft:#a78bfa;
+    --blue:#3b82f6;
+    --cyan:#22d3ee;
+    --amber:#f5a623;
+    --mint:#34d399;
+    --coral:#fb7185;
+    --grad: linear-gradient(120deg, var(--violet), var(--blue) 52%, var(--cyan));
+    --radius: 14px;
+    --radius-sm: 10px;
+    --maxw: 1120px;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(1000px 520px at 12% -10%, rgba(139,92,246,.13), transparent 60%),
+      radial-gradient(900px 520px at 92% 4%, rgba(34,211,238,.09), transparent 55%),
+      var(--ink);
+    color:var(--text);
+    font-family:'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.55;
+    position:relative;
+  }
+  /* instrument graph-grid overlay */
+  body::before{
+    content:'';
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
+    background-size:44px 44px;
+    pointer-events:none; z-index:0;
+    mask-image:linear-gradient(180deg, rgba(0,0,0,.9), rgba(0,0,0,.55));
+    -webkit-mask-image:linear-gradient(180deg, rgba(0,0,0,.9), rgba(0,0,0,.55));
+  }
+  body::after{
+    content:'';
+    position:fixed; right:-140px; bottom:-160px;
+    width:620px; height:620px;
+    background:url('wynko-icon.png') center/contain no-repeat;
+    opacity:.05; pointer-events:none; z-index:0;
+  }
+  .mono{ font-family:'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  a{ color:inherit; }
+  .wrap{ max-width:var(--maxw); margin:0 auto; padding:0 28px; position:relative; z-index:1; }
+
+  @keyframes rise{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
+  .rise{ animation: rise .6s ease both; }
+  .d1{ animation-delay:.08s; } .d2{ animation-delay:.16s; } .d3{ animation-delay:.24s; } .d4{ animation-delay:.32s; }
+
+  /* ---------- header ---------- */
+  header{
+    position:sticky; top:0; z-index:20;
+    background:rgba(14,14,23,.8);
+    backdrop-filter: blur(12px);
+    border-bottom:1px solid var(--border);
+  }
+  .header-inner{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 28px; max-width:var(--maxw); margin:0 auto;
+  }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .logo-tile{
+    width:38px; height:38px; border-radius:11px;
+    background:#0a0a10; border:1px solid var(--border-strong);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 24px rgba(139,92,246,.25);
+  }
+  .logo-tile img{ height:22px; width:auto; display:block; }
+  .brand-name{ font-weight:700; font-size:16px; letter-spacing:.06em; }
+  .header-meta{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--text-faint); white-space:nowrap;
+  }
+  .header-meta b{ color:var(--cyan); font-weight:600; }
+  @media (max-width:560px){ .header-meta .hide-sm{ display:none; } }
+
+  /* ---------- deck / kit primitives ---------- */
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px; font-weight:600; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--cyan); margin:0 0 16px;
+  }
+  .eyebrow::before{ content:'— '; color:var(--cyan); }
+  .section-head{
+    display:flex; justify-content:space-between; align-items:baseline; gap:16px;
+    margin-bottom:16px;
+  }
+  .section-head .eyebrow{ margin:0; }
+  .section-num{
+    font-family:'IBM Plex Mono', monospace; font-size:12px;
+    color:var(--text-faint); letter-spacing:.08em; white-space:nowrap;
+  }
+  h1, h2{
+    font-weight:800; letter-spacing:-.015em; line-height:1.12; margin:0 0 18px;
+  }
+  h1{ font-size:clamp(34px, 5vw, 56px); max-width:820px; }
+  h2{ font-size:clamp(26px, 3.4vw, 38px); max-width:760px; }
+  .lead{ color:var(--text-dim); font-size:16.5px; max-width:640px; margin:0 0 28px; }
+  .lead b{ color:var(--text); font-weight:600; }
+
+  .card{
+    border:1px solid var(--border); background:var(--ink-card);
+    border-radius:var(--radius); padding:26px;
+    transition: border-color .18s ease, transform .18s ease;
+  }
+  .card:hover{ border-color:var(--border-strong); transform:translateY(-2px); }
+  .card h3{ margin:0 0 8px; font-size:16.5px; font-weight:700; }
+  .card p{ margin:0; font-size:13.5px; color:var(--text-dim); }
+
+  .callout{
+    background:var(--ink-raised);
+    border-left:3px solid var(--cyan);
+    border-radius:6px;
+    padding:20px 26px;
+    color:var(--text-dim); font-size:15px;
+  }
+  .callout b{ color:var(--text); }
+
+  .pill{
+    display:inline-block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+    padding:5px 12px; border-radius:999px; white-space:nowrap;
+  }
+  .pill-cyan{ color:var(--cyan); border:1px solid rgba(34,211,238,.4); background:rgba(34,211,238,.08); }
+  .pill-violet{ color:var(--violet-soft); border:1px solid rgba(139,92,246,.45); background:rgba(139,92,246,.1); }
+
+  .check-list{ list-style:none; margin:0; padding:0; }
+  .check-list li{
+    display:flex; gap:12px; align-items:flex-start;
+    color:var(--text-dim); font-size:14.5px; padding:7px 0;
+  }
+  .check-list li::before{ content:'✓'; color:var(--cyan); font-weight:700; flex:none; }
+  .check-list li b{ color:var(--text); font-weight:600; }
+
+  .stat-num{ font-family:'IBM Plex Mono', monospace; font-size:30px; font-weight:700; color:var(--violet-soft); line-height:1.1; }
+  .stat-label{
+    font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--text-faint); margin-top:6px;
+  }
+
+  /* ---------- hero ---------- */
+  .hero{ padding:84px 0 30px; }
+  .hero-grid{
+    display:grid; grid-template-columns: 1.05fr .95fr;
+    gap:56px; align-items:center;
+  }
+  @media (max-width:900px){ .hero-grid{ grid-template-columns:1fr; gap:36px; } }
+
+  .cta-row{ display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin-bottom:14px; }
+  .social-proof{
+    display:flex; align-items:center; gap:10px;
+    font-size:14px; color:var(--text-dim);
+  }
+  .social-proof .count{ color:var(--mint); font-weight:700; font-size:15px; }
+  .dot{ width:6px; height:6px; border-radius:50%; background:var(--mint); box-shadow:0 0 8px var(--mint); flex:none; }
+  .dot.pulse{ animation:pulse 2.2s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+
+  .curve-card{ padding:24px 24px 16px; }
+  .curve-card .label{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--cyan); margin:0 0 10px;
+  }
+  .curve-card .label::before{ content:'— '; }
+  .curve-card svg{ display:block; width:100%; height:auto; }
+  .curve-card .caption{ font-size:12.5px; color:var(--text-faint); margin:10px 0 8px; }
+
+  .hero-stats{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:34px;
+  }
+  .hero-stats .card{ padding:20px 22px; }
+  @media (max-width:560px){ .hero-stats{ grid-template-columns:1fr; } }
+
+  /* ---------- join / confirm panels ---------- */
+  .panel{
+    border:1px solid var(--border-strong);
+    background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.005)), var(--ink-card);
+    border-radius:var(--radius);
+    padding:30px;
+    box-shadow:0 24px 70px -28px rgba(0,0,0,.7);
+  }
+
+  .countdown{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+  .countdown .box{
+    text-align:center; background:var(--ink-2); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:14px 4px 10px; min-width:0;
+  }
+  .countdown .box .n{ font-family:'IBM Plex Mono', monospace; font-size:26px; font-weight:700; color:var(--text); display:block; }
+  .countdown .box .u{ font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-faint); }
+  .countdown-note{ font-size:12.5px; color:var(--text-faint); margin:0 0 20px; }
+
+  .notify-row{
+    display:flex; gap:8px; align-items:center;
+    background:var(--ink-2); border:1px solid var(--border);
+    border-radius:12px; padding:5px;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .notify-row:focus-within{ border-color:var(--cyan); box-shadow:0 0 0 3px rgba(34,211,238,.13); }
+  .notify-row input{
+    flex:1; min-width:0; background:transparent; border:none; outline:none;
+    color:var(--text); font-family:'Poppins', sans-serif; font-size:14.5px; padding:10px 12px;
+  }
+  .notify-row input::placeholder{ color:var(--text-faint); font-family:'IBM Plex Mono', monospace; font-size:13px; }
+
+  .btn{
+    appearance:none; border:none; cursor:pointer;
+    border-radius:var(--radius-sm);
+    font-family:'Poppins', sans-serif; font-weight:600; font-size:14.5px;
+    padding:12px 20px;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    transition: transform .12s ease, opacity .12s ease, box-shadow .12s ease, border-color .12s ease, color .12s ease;
+    white-space:nowrap;
+  }
+  .btn:active{ transform:scale(.98); }
+  .btn:disabled{ opacity:.6; cursor:default; }
+  .btn-cyan{ background:var(--cyan); color:#06252b; box-shadow:0 10px 30px -12px rgba(34,211,238,.5); }
+  .btn-cyan:hover:not(:disabled){ box-shadow:0 12px 34px -10px rgba(34,211,238,.6); }
+  .btn-ghost{ background:transparent; border:1px solid var(--border-strong); color:var(--text); }
+  .btn-ghost:hover{ border-color:var(--cyan); color:var(--cyan); }
+  .btn-grad{ background:var(--grad); color:#0a0a10; box-shadow:0 12px 32px -12px rgba(59,130,246,.55); }
+  .btn-grad:hover{ box-shadow:0 14px 36px -10px rgba(139,92,246,.6); }
+
+  .fineprint{ font-size:12px; color:var(--text-faint); margin-top:14px; text-align:center; }
+  .error-msg{ color:var(--coral); font-size:13px; margin-top:8px; min-height:0; }
+  .invited-note{
+    font-size:12.5px; color:var(--violet-soft); background:rgba(139,92,246,.09);
+    border:1px solid rgba(139,92,246,.3); border-radius:var(--radius-sm);
+    padding:9px 12px; margin-bottom:18px;
+  }
+
+  .check-badge{
+    width:46px; height:46px; border-radius:14px;
+    background:var(--mint); color:#06251b;
+    display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:700;
+    margin:0 auto 16px;
+    box-shadow:0 10px 30px -10px rgba(52,211,153,.5);
+  }
+  .confirm-head{ text-align:center; }
+  .confirm-head h2{ font-size:clamp(24px, 3vw, 32px); margin-bottom:8px; }
+  .rank-inline{ color:var(--mint); }
+  .rank-sub{ color:var(--text-dim); font-size:14px; margin:0 0 24px; text-align:center; }
+
+  .reward-banner{
+    display:flex; gap:12px; align-items:flex-start;
+    border:1px solid rgba(245,166,35,.3); background:rgba(245,166,35,.08);
+    border-radius:var(--radius-sm); padding:13px 14px; margin-bottom:20px;
+    font-size:13px; color:#ffd79a;
+  }
+  .reward-banner b{ color:var(--amber); }
+
+  .queue-card{ border:1px solid var(--border); background:var(--ink-2); border-radius:var(--radius); padding:18px; margin-bottom:18px; }
+  .queue-card .label{
+    display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--mint); margin-bottom:6px;
+  }
+  .queue-card .label .name::before{ content:'— '; }
+  .queue-card svg{ display:block; width:100%; height:auto; }
+
+  .gauge-block{ border:1px solid var(--border); background:var(--ink-2); border-radius:var(--radius); padding:18px 18px 14px; margin-bottom:20px; }
+  .gauge-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+  .gauge-top .t{ font-size:13.5px; font-weight:600; }
+  .gauge-top .v{ font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--amber); }
+  .gauge-wrap{ position:relative; max-width:240px; margin:0 auto; }
+  .gauge-wrap svg{ display:block; width:100%; height:auto; }
+  .gauge-caption{ font-size:12px; color:var(--text-faint); margin-top:8px; text-align:center; }
+  .guarantee-badge{ display:none; align-items:center; justify-content:center; gap:6px; margin-top:10px; font-size:12.5px; color:var(--mint); font-weight:600; }
+
+  .link-row{ display:flex; gap:8px; margin-bottom:10px; }
+  .link-row input{
+    flex:1; min-width:0; background:var(--ink-2); border:1px solid var(--border);
+    border-radius:999px; padding:12px 16px; color:var(--cyan); text-align:center;
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; outline:none;
+  }
+  .share-row{ display:flex; gap:10px; }
+  .share-row .btn{ flex:1; }
+
+  /* ---------- sections ---------- */
+  section.block{ padding:72px 0 8px; }
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:760px){ .grid-2{ grid-template-columns:1fr; } }
+  .waitlist-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; }
+  .waitlist-grid > *{ min-width:0; }
+  @media (max-width:900px){ .waitlist-grid{ grid-template-columns:1fr; } }
+
+  .card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px; }
+  .swatch{ width:30px; height:30px; border-radius:9px; flex:none; }
+
+  .compare-title{ font-size:13px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; margin:0 0 12px; }
+  .compare-title.dim{ color:var(--text-faint); }
+  .compare-title.brand-c{ color:var(--cyan); }
+  .card.hl{ border-color:rgba(139,92,246,.5); }
+  .x-list{ list-style:none; margin:0; padding:0; }
+  .x-list li{
+    display:flex; gap:12px; align-items:flex-start;
+    color:var(--text-dim); font-size:14px; padding:7px 0;
+  }
+  .x-list li::before{ content:'⊘'; color:var(--coral); font-weight:700; flex:none; }
+
+  .decay-card{ padding:22px 22px 12px; }
+  .decay-card .label{
+    display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap;
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--coral); margin-bottom:8px;
+  }
+  .decay-card .label .name::before{ content:'— '; }
+  .decay-card .stat{ color:var(--coral); font-weight:600; font-size:12px; }
+  .decay-card svg{ display:block; width:100%; height:auto; }
+  .decay-card .caption{ font-size:12px; color:var(--text-faint); margin:8px 0 6px; }
+
+  /* ---------- finale ---------- */
+  .finale{ padding:96px 0 60px; text-align:center; }
+  .finale .logo-tile{ width:64px; height:64px; border-radius:18px; margin:0 auto 26px; }
+  .finale .logo-tile img{ height:38px; }
+  .finale h2{
+    font-size:clamp(30px, 4.4vw, 46px); max-width:760px; margin:0 auto 18px;
+    background:linear-gradient(120deg, var(--violet-soft), var(--violet) 60%, var(--blue));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .finale .sub{ color:var(--text-dim); font-size:16px; max-width:640px; margin:0 auto 40px; }
+  .meta-cols{
+    display:flex; justify-content:center; gap:56px; flex-wrap:wrap; margin-bottom:40px;
+  }
+  .meta-col .k{ font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--text-faint); margin-bottom:6px; }
+  .meta-col .v{ font-size:14px; color:var(--text-dim); }
+  .finale .callout{ max-width:720px; margin:0 auto; text-align:center; }
+
+  footer{ border-top:1px solid var(--border); padding:30px 0 40px; margin-top:30px; }
+  .foot-row{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
+  .foot-brand{ display:flex; align-items:center; gap:10px; color:var(--text-faint); font-size:12px; letter-spacing:.1em; text-transform:uppercase; }
+  .foot-brand img{ height:18px; width:auto; opacity:.85; }
+  .foot-tagline{ font-size:12px; color:var(--text-faint); letter-spacing:.16em; text-transform:uppercase; }
+
+  @media (max-width:640px){
+    .panel{ padding:24px; }
+    .share-row{ flex-direction:column; }
+    .hero{ padding-top:56px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="logo-tile"><img src="wynko-icon.png" alt="Wynko" /></div>
+      <span class="brand-name">WYNKO</span>
+    </div>
+    <div class="header-meta"><span class="hide-sm">Founding cohort · </span><b>Opens soon</b></div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="hero-grid">
+      <div>
+        <p class="eyebrow rise">Founding cohort · Opens soon</p>
+        <h1 class="rise d1">Study like someone's watching. Because someone is.</h1>
+        <p class="lead rise d2">Wynko locks out distraction, times your revisions to the minute your memory actually needs them, and puts you in a room with people who show up — built for <b>NEET, JEE, CAT, UPSC &amp; GATE</b> prep.</p>
+
+        <div class="cta-row rise d3">
+          <button class="btn btn-cyan" id="heroJoinBtn">Join the waitlist →</button>
+          <div class="social-proof">
+            <span class="dot pulse"></span>
+            <span><span class="count mono" id="totalCount">—</span> aspirants already on the list</span>
+          </div>
+        </div>
+
+        <div class="hero-stats rise d4">
+          <div class="card">
+            <div class="stat-num">3</div>
+            <div class="stat-label">Platforms — web, desktop, extension</div>
+          </div>
+          <div class="card">
+            <div class="stat-num">1</div>
+            <div class="stat-label">Shared real-time backend</div>
+          </div>
+          <div class="card">
+            <div class="stat-num">5+</div>
+            <div class="stat-label">Exam cohorts at launch</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- signature: the Recall Curve -->
+      <div class="card curve-card rise d2">
+        <p class="label">Forgetting curve, flattened</p>
+        <svg viewBox="0 0 480 210" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="recallFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="rgba(34,211,238,.28)"/>
+              <stop offset="1" stop-color="rgba(34,211,238,0)"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,150 L70,178 L92,74 L160,168 L182,60 L250,152 L272,48 L340,138 L362,38 L430,122 L452,30 L480,96 L480,210 L0,210 Z"
+                fill="url(#recallFill)" stroke="none"/>
+          <path d="M0,150 L70,178 L92,74 L160,168 L182,60 L250,152 L272,48 L340,138 L362,38 L430,122 L452,30 L480,96"
+                fill="none" stroke="var(--cyan)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+        <p class="caption">Memory decays — a revision spikes it back. One line, everywhere in Wynko: retention charts, exam tracks, and your place in this queue.</p>
+      </div>
+    </div>
+
+    <div style="height:44px;"></div>
+    <div class="callout rise d3">
+      Built around <b>autonomy, competence, and real peer connection</b> instead of guilt-based streaks and engineered urgency. Every gamified mechanic is reviewed against that principle before it ships.
+    </div>
+  </section>
+
+  <!-- ============ WAITLIST / COMING SOON ============ -->
+  <section class="block">
+    <div class="section-head">
+      <p class="eyebrow">Coming soon</p>
+      <span class="section-num">01 · Waitlist</span>
+    </div>
+    <h2>Right now, this page is the only thing standing between you and forgetting.</h2>
+    <p class="lead">We're not opening on a marketing date — we're opening the moment Focus Lock and the Recall Engine are solid enough to trust with your prep. Here's the honest countdown.</p>
+
+    <div class="waitlist-grid">
+      <!-- JOIN FORM -->
+      <div class="panel" id="joinPanel">
+        <div id="countdownWrap">
+          <div class="countdown" id="countdownBoxes">
+            <div class="box"><span class="n" id="cdDays">—</span><span class="u">Days</span></div>
+            <div class="box"><span class="n" id="cdHours">—</span><span class="u">Hrs</span></div>
+            <div class="box"><span class="n" id="cdMins">—</span><span class="u">Min</span></div>
+            <div class="box"><span class="n" id="cdSecs">—</span><span class="u">Sec</span></div>
+          </div>
+          <p class="countdown-note" id="countdownNote">Launch date isn't locked yet — you'll get one email the moment it is.</p>
+        </div>
+
+        <div class="invited-note" id="invitedNote" style="display:none;"></div>
+
+        <form id="joinForm" autocomplete="off">
+          <div class="notify-row">
+            <input type="email" id="emailInput" placeholder="you@example.com" aria-label="Email" required />
+            <button type="submit" class="btn btn-cyan" id="joinBtn">Notify me →</button>
+          </div>
+          <div class="error-msg" id="joinError"></div>
+        </form>
+        <p class="fineprint">No spam — one email, the day it opens. Maybe two, if we're honest about delays.</p>
+      </div>
+
+      <!-- CONFIRMATION -->
+      <div class="panel" id="confirmPanel" style="display:none;">
+        <div class="confirm-head">
+          <div class="check-badge">✓</div>
+          <p class="eyebrow" style="margin-bottom:8px;">You're on the list</p>
+          <h2>You're <span class="rank-inline mono" id="rankNum">—</span> in line.</h2>
+        </div>
+        <p class="rank-sub" id="rankSub">Referring friends moves you up immediately — like a revision for your wait curve.</p>
+
+        <div class="reward-banner">
+          <span>🏆</span>
+          <span><b>Top 200</b> get Focus Lock Premium <b>free for 1 year</b> — this is a launch competition, not a subscription trap.</span>
+        </div>
+
+        <div class="queue-card">
+          <div class="label">
+            <span class="name">Your queue curve</span>
+            <span id="referralMilestoneNote" class="mono" style="color:var(--text-faint); text-transform:none; letter-spacing:0;">—</span>
+          </div>
+          <svg viewBox="0 0 480 130" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="queueFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="rgba(52,211,153,.3)"/>
+                <stop offset="1" stop-color="rgba(52,211,153,0)"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,95 C 60,75 90,103 150,85 C 190,73 210,95 240,81 L 300,28 L 360,64 C 400,46 440,58 480,34 L480,130 L0,130 Z"
+                  fill="url(#queueFill)" stroke="none"/>
+            <path d="M0,95 C 60,75 90,103 150,85 C 190,73 210,95 240,81 L 300,28 L 360,64 C 400,46 440,58 480,34"
+                  fill="none" stroke="var(--mint)" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+        <div class="gauge-block">
+          <div class="gauge-top">
+            <span class="t">Referral progress</span>
+            <span class="v mono" id="referralCountLabel">0 referrals</span>
+          </div>
+          <div class="gauge-wrap">
+            <svg viewBox="0 0 200 112" aria-hidden="true">
+              <path d="M20,102 A80,80 0 0 1 180,102" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="9" stroke-dasharray="2 8" stroke-linecap="round"/>
+              <path id="referralMeterFill" d="M20,102 A80,80 0 0 1 180,102" fill="none" stroke="var(--cyan)" stroke-width="9" stroke-linecap="round" style="stroke-dasharray:251.4; stroke-dashoffset:251.4; transition:stroke-dashoffset .5s ease;"/>
+            </svg>
+          </div>
+          <p class="gauge-caption" id="meterCaption">Every friend who joins with your link flattens your wait curve.</p>
+          <div class="guarantee-badge" id="guaranteeBadge">✓ Inside the Top 200 — free Premium is yours at launch.</div>
+        </div>
+
+        <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; text-align:center;">Your invite link</label>
+        <div class="link-row">
+          <input type="text" id="refLinkInput" readonly />
+        </div>
+        <div class="share-row">
+          <button class="btn btn-grad" id="copyBtn">Copy invite link</button>
+          <button class="btn btn-ghost" id="waBtn">Share on WhatsApp</button>
+        </div>
+      </div>
+
+      <!-- decay counter -->
+      <div class="card decay-card">
+        <div class="label">
+          <span class="name">What happens if you don't revise</span>
+          <span class="stat mono">184 topics forgotten / hr</span>
+        </div>
+        <svg viewBox="0 0 480 140" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="decayFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="rgba(251,113,133,.3)"/>
+              <stop offset="1" stop-color="rgba(251,113,133,0)"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,18 C 60,42 90,58 150,66 C 210,74 240,80 300,90 C 360,98 410,104 480,110 L480,140 L0,140 Z"
+                fill="url(#decayFill)" stroke="none"/>
+          <path d="M0,18 C 60,42 90,58 150,66 C 210,74 240,80 300,90 C 360,98 410,104 480,110"
+                fill="none" stroke="var(--coral)" stroke-width="2.5" stroke-dasharray="6 5" stroke-linecap="round"/>
+        </svg>
+        <p class="caption">A live estimate, not a countdown gimmick — this is what Wynko exists to fix. Join above and the first 200 aspirants get Focus Lock Premium free for a year.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEM ============ -->
+  <section class="block">
+    <div class="section-head">
+      <p class="eyebrow">The problem</p>
+      <span class="section-num">02 · Problem</span>
+    </div>
+    <h2>Exam-prep students are stuck between two broken options.</h2>
+    <p class="lead">Study alone against a phone built to distract you — or lean on productivity apps that just replace one manipulative reward loop with another.</p>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Distraction is the default</h3>
+        <p>Phones and browsers are engineered for engagement, not focus — the environment actively works against the thing you're trying to do.</p>
+      </div>
+      <div class="card">
+        <h3>Willpower alone doesn't scale</h3>
+        <p>Blockers with a one-tap exit get disabled the moment they're inconvenient — friction has to be designed in, not assumed.</p>
+      </div>
+      <div class="card">
+        <h3>Studying is isolating</h3>
+        <p>Serious aspirants often prep alone or in expensive coaching hubs, missing the peer accountability that keeps consistent habits alive.</p>
+      </div>
+      <div class="card">
+        <h3>Existing apps copy dark patterns</h3>
+        <p>Streaks-for-guilt, variable rewards, engineered urgency — the same playbook students are trying to escape.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WHY WE WIN ============ -->
+  <section class="block">
+    <div class="section-head">
+      <p class="eyebrow">Why we win</p>
+      <span class="section-num">03 · Difference</span>
+    </div>
+    <h2>Built on autonomy, not manipulation.</h2>
+    <div class="grid-2" style="margin-top:26px;">
+      <div class="card">
+        <p class="compare-title dim">Typical attention apps</p>
+        <ul class="x-list">
+          <li>Guilt-based streak pressure</li>
+          <li>One-tap exits that undo any commitment</li>
+          <li>Solo, scheduled-call accountability</li>
+          <li>Growth funded by engagement-maximizing ads</li>
+        </ul>
+      </div>
+      <div class="card hl">
+        <p class="compare-title brand-c">Wynko</p>
+        <ul class="check-list">
+          <li><span><b>Friction-based commitment</b>, not guilt</span></li>
+          <li><span><b>Six-layer enforcement</b> + effortful emergency exit</span></li>
+          <li><span><b>Ambient, spatial presence</b> — the 3D Library</span></li>
+          <li><span>Growth funded by <b>creators (RevHead)</b> who benefit alongside the platform</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WHAT'S INSIDE ============ -->
+  <section class="block">
+    <div class="section-head">
+      <p class="eyebrow">What you're getting early access to</p>
+      <span class="section-num">04 · Early access</span>
+    </div>
+    <h2>Early access includes the full core — free.</h2>
+    <p class="lead">Your queue position is decided by more than a signup date. Refer friends to flatten your wait curve — every invite moves you up, live.</p>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-top"><div class="swatch" style="background:var(--cyan);"></div><span class="pill pill-cyan">Live at launch</span></div>
+        <h3>Focus Lock</h3>
+        <p>Distraction-locked sessions with a hand-typed passphrase for early exit.</p>
+      </div>
+      <div class="card">
+        <div class="card-top"><div class="swatch" style="background:var(--violet);"></div><span class="pill pill-violet">Building now</span></div>
+        <h3>3D Library</h3>
+        <p>Walk into a real study room with real people, rendered live.</p>
+      </div>
+      <div class="card">
+        <div class="card-top"><div class="swatch" style="background:var(--amber);"></div><span class="pill pill-cyan">Live at launch</span></div>
+        <h3>RevHead</h3>
+        <p>Bring your community, earn a real revenue share as it grows.</p>
+      </div>
+      <div class="card">
+        <div class="card-top"><div class="swatch" style="background:var(--mint);"></div><span class="pill pill-violet">Building now</span></div>
+        <h3>Exam Track</h3>
+        <p>A revision calendar built around your actual exam date.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FINALE ============ -->
+  <section class="finale">
+    <div class="logo-tile"><img src="wynko-icon.png" alt="" /></div>
+    <h2>Let's build the platform students actually deserve.</h2>
+    <p class="sub">Focus, without manipulation. Community, without noise. Progress, that's actually real.</p>
+    <div class="meta-cols">
+      <div class="meta-col">
+        <div class="k">Status</div>
+        <div class="v">Web · Desktop · Extension live — Android in progress</div>
+      </div>
+      <div class="meta-col">
+        <div class="k">Stage</div>
+        <div class="v">Seed</div>
+      </div>
+      <div class="meta-col">
+        <div class="k">Cohort</div>
+        <div class="v">Founding — JEE · NEET · CAT · UPSC · GATE</div>
+      </div>
+    </div>
+    <div class="callout">No paywall between a new student and their first accountability session — the core stays free.</div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <div class="foot-brand"><img src="wynko-icon.png" alt="" />Wynko · © <span id="year"></span></div>
+    <div class="foot-tagline">Focus · Study · Together</div>
+  </div>
+</footer>
+
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+
+/* ============ Supabase (REVM^2 project) ============ */
+const SUPABASE_URL = 'https://dhzjtjekbvxxsauzhadl.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_9xK5LeyVdu2d4bVE1aFlNg_ef435Jkr';
+
+async function sb(path, body){
+  const res = await fetch(SUPABASE_URL + path, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal',
+    },
+    body: JSON.stringify(body || {}),
+  });
+  return res;
+}
+
+async function getTotalCount(){
+  try {
+    const res = await sb('/rest/v1/rpc/get_waitlist_count');
+    if (!res.ok) return null;
+    const data = await res.json();
+    return typeof data === 'number' ? data : (Array.isArray(data) ? data[0] : null);
+  } catch(e){ console.error(e); return null; }
+}
+
+async function insertSignup(email, referredBy){
+  const body = { email, source: 'coming_soon' };
+  if (referredBy) body.referred_by = referredBy;
+  try {
+    const res = await sb('/rest/v1/waitlist_signups', body);
+    if (res.status === 201 || res.status === 204) return { ok:true };
+    if (res.status === 409) return { ok:true, existed:true }; // already on the list
+    const text = await res.text();
+    return { ok:false, error:text };
+  } catch(e){ return { ok:false, error:String(e) }; }
+}
+
+async function getStatus(email){
+  try {
+    const res = await sb('/rest/v1/rpc/get_waitlist_status', { p_email: email });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return Array.isArray(data) ? data[0] : data;
+  } catch(e){ console.error(e); return null; }
+}
+
+/* identity persistence — real localStorage on a deployed domain;
+   degrades to an in-memory fallback if storage is blocked (e.g. sandboxed preview) */
+const memoryFallback = {};
+function saveMyEmail(email){
+  try { localStorage.setItem('wynko_waitlist_email', email); }
+  catch(e){ memoryFallback.email = email; }
+}
+function loadMyEmail(){
+  try { return localStorage.getItem('wynko_waitlist_email') || memoryFallback.email || null; }
+  catch(e){ return memoryFallback.email || null; }
+}
+
+function fmtNum(n){ return Number(n||0).toLocaleString('en-IN'); }
+
+/* ============ countdown ============
+   Set this to your real target launch date/time (ISO 8601, with timezone) to
+   switch on the "18 DAYS 06 HRS 42 MIN 09 SEC" readout from the design kit.
+   Leave it null to show the honest "date isn't locked yet" state instead. */
+const LAUNCH_DATE = null; // e.g. '2026-10-01T00:00:00+05:30'
+
+function initCountdown(){
+  if (!LAUNCH_DATE) return; // countdownNote's default text already covers this state
+  const target = new Date(LAUNCH_DATE).getTime();
+  if (isNaN(target)) return;
+
+  document.getElementById('countdownNote').textContent =
+    "We're not opening on a marketing date — we're opening the moment Focus Lock and the Recall Engine are ready.";
+
+  function tick(){
+    const diff = target - Date.now();
+    if (diff <= 0) {
+      document.getElementById('countdownNote').textContent = "We're opening the doors right now.";
+      document.getElementById('cdDays').textContent = '00';
+      document.getElementById('cdHours').textContent = '00';
+      document.getElementById('cdMins').textContent = '00';
+      document.getElementById('cdSecs').textContent = '00';
+      clearInterval(timer);
+      return;
+    }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    document.getElementById('cdDays').textContent = String(d).padStart(2, '0');
+    document.getElementById('cdHours').textContent = String(h).padStart(2, '0');
+    document.getElementById('cdMins').textContent = String(m).padStart(2, '0');
+    document.getElementById('cdSecs').textContent = String(s).padStart(2, '0');
+  }
+  tick();
+  const timer = setInterval(tick, 1000);
+}
+
+/* ============ page refs ============ */
+const joinPanel = document.getElementById('joinPanel');
+const confirmPanel = document.getElementById('confirmPanel');
+const joinForm = document.getElementById('joinForm');
+const joinBtn = document.getElementById('joinBtn');
+const joinError = document.getElementById('joinError');
+const invitedNote = document.getElementById('invitedNote');
+const totalCountEl = document.getElementById('totalCount');
+
+const urlParams = new URLSearchParams(window.location.search);
+const referredByCode = urlParams.get('ref');
+
+async function refreshTotalCount(){
+  const total = await getTotalCount();
+  if (total !== null) totalCountEl.textContent = fmtNum(total);
+}
+
+/* hero CTA scrolls to whichever panel is live */
+document.getElementById('heroJoinBtn').addEventListener('click', () => {
+  const live = confirmPanel.style.display !== 'none' ? confirmPanel : joinPanel;
+  live.scrollIntoView({ behavior:'smooth', block:'center' });
+  if (live === joinPanel) setTimeout(() => document.getElementById('emailInput').focus({ preventScroll:true }), 450);
+});
+
+const GAUGE_LEN = 251.4; // πr of the referral gauge arc
+
+function renderConfirmation(status, email){
+  joinPanel.style.display = 'none';
+  confirmPanel.style.display = 'block';
+
+  const rank = status.queue_position;
+  document.getElementById('rankNum').textContent = '#' + fmtNum(rank);
+
+  const inZone = !!status.in_premium_zone;
+  const refCount = status.referral_count || 0;
+  const toGo = status.referrals_to_go || 0;
+
+  document.getElementById('rankSub').textContent = inZone
+    ? "You're inside the Top 200 free-Premium zone right now."
+    : "Refer friends to move up — every referral flattens your wait curve.";
+
+  document.getElementById('referralMilestoneNote').textContent = inZone
+    ? '✓ Top 200 zone'
+    : toGo + ' referral' + (toGo === 1 ? '' : 's') + ' from Top 200';
+
+  document.getElementById('referralCountLabel').textContent = refCount + (refCount === 1 ? ' referral' : ' referrals');
+
+  const gauge = document.getElementById('referralMeterFill');
+  const target = inZone ? Math.max(refCount, 1) : (refCount + toGo);
+  const pct = target > 0 ? Math.min(100, (refCount / target) * 100) : 0;
+  gauge.style.strokeDashoffset = String(GAUGE_LEN * (1 - pct / 100));
+
+  document.getElementById('meterCaption').textContent = inZone
+    ? 'Guarantee unlocked — thank you for bringing your squad.'
+    : toGo + ' more referral' + (toGo === 1 ? '' : 's') + ' moves you into the Top 200 zone, based on where the cutoff sits right now.';
+  document.getElementById('guaranteeBadge').style.display = inZone ? 'flex' : 'none';
+
+  const link = window.location.origin + window.location.pathname + '?ref=' + status.referral_code;
+  document.getElementById('refLinkInput').value = link;
+
+  document.getElementById('copyBtn').onclick = async () => {
+    const btn = document.getElementById('copyBtn');
+    try { await navigator.clipboard.writeText(link); }
+    catch(e) { const input = document.getElementById('refLinkInput'); input.select(); document.execCommand('copy'); }
+    btn.textContent = 'Copied ✓';
+    setTimeout(() => btn.textContent = 'Copy invite link', 1600);
+  };
+
+  document.getElementById('waBtn').onclick = () => {
+    const msg = "I just joined the Wynko founding cohort — a study app that actually locks out distraction. Join with my link and we both move up the list: " + link;
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+  };
+}
+
+joinForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  joinError.textContent = '';
+  const email = document.getElementById('emailInput').value.trim();
+  if (!email) { joinError.textContent = 'Please enter your email.'; return; }
+
+  joinBtn.disabled = true;
+  joinBtn.textContent = 'Joining…';
+  try {
+    const result = await insertSignup(email, referredByCode);
+    if (!result.ok) {
+      joinError.textContent = "Something went wrong — please try again.";
+      return;
+    }
+    saveMyEmail(email);
+    const status = await getStatus(email);
+    await refreshTotalCount();
+    if (status) renderConfirmation(status, email);
+    else joinError.textContent = "You're signed up, but we couldn't load your queue position — refresh to see it.";
+  } catch(err) {
+    console.error(err);
+    joinError.textContent = "Something went wrong — please try again.";
+  } finally {
+    joinBtn.disabled = false;
+    joinBtn.textContent = 'Notify me →';
+  }
+});
+
+async function init(){
+  initCountdown();
+  await refreshTotalCount();
+
+  if (referredByCode) {
+    invitedNote.style.display = 'block';
+    invitedNote.textContent = "You were invited by a friend — join and you'll both move up the queue.";
+  }
+
+  const savedEmail = loadMyEmail();
+  if (savedEmail) {
+    const status = await getStatus(savedEmail);
+    if (status) renderConfirmation(status, savedEmail);
+  }
+}
+init();
+</script>
+</body>
+</html>
