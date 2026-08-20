@@ -6,24 +6,39 @@
 <title>Wynko — Focus. Study. Together. Opening soon.</title>
 <meta name="description" content="Wynko locks out distraction, times your revisions to the minute your memory actually needs them, and puts you in a room with people who show up. Join the founding cohort." />
 <link rel="icon" href="wynko-icon.png" />
+
+<!-- Open Graph / social share preview -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://wynko.in/" />
+<meta property="og:title" content="Wynko — Focus. Study. Together." />
+<meta property="og:description" content="Study like someone's watching. Because someone is. Join the founding cohort — NEET, JEE, CAT, UPSC & GATE." />
+<meta property="og:image" content="https://wynko.in/wynko-lockup.png" />
+<meta property="og:image:width" content="1187" />
+<meta property="og:image:height" content="1145" />
+
+<!-- Twitter/X card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Wynko — Focus. Study. Together." />
+<meta name="twitter:description" content="Study like someone's watching. Because someone is. Join the founding cohort." />
+<meta name="twitter:image" content="https://wynko.in/wynko-lockup.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#0e0e17;
-    --ink-2:#10101a;
-    --ink-card:#14141f;
-    --ink-raised:#171724;
+    --ink:#1a1a2e;
+    --ink-2:#1c1c33;
+    --ink-card:#20203a;
+    --ink-raised:#232340;
     --border: rgba(255,255,255,.08);
     --border-strong: rgba(255,255,255,.16);
     --text:#f5f5f8;
     --text-dim:#9c9cad;
     --text-faint:#6b6b7a;
-    --violet:#8b5cf6;
-    --violet-soft:#a78bfa;
-    --blue:#3b82f6;
-    --cyan:#22d3ee;
+    --violet:#6c43ff;
+    --violet-soft:#9b7dff;
+    --blue:#4a6bff;
+    --cyan:#00d4ff;
     --amber:#f5a623;
     --mint:#34d399;
     --coral:#fb7185;
@@ -84,15 +99,15 @@
     display:flex; align-items:center; justify-content:space-between;
     padding:14px 28px; max-width:var(--maxw); margin:0 auto;
   }
-  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand{ display:flex; align-items:center; gap:13px; }
   .logo-tile{
-    width:38px; height:38px; border-radius:11px;
+    width:42px; height:42px; border-radius:12px;
     background:#0a0a10; border:1px solid var(--border-strong);
     display:flex; align-items:center; justify-content:center;
-    box-shadow:0 0 24px rgba(139,92,246,.25);
+    box-shadow:0 0 28px rgba(108,67,255,.32);
   }
-  .logo-tile img{ height:22px; width:auto; display:block; }
-  .brand-name{ font-weight:700; font-size:16px; letter-spacing:.06em; }
+  .logo-tile img{ height:25px; width:auto; display:block; }
+  .brand-name{ font-weight:700; font-size:17px; letter-spacing:.08em; }
   .header-meta{
     font-family:'IBM Plex Mono', monospace;
     font-size:11px; letter-spacing:.14em; text-transform:uppercase;
@@ -338,8 +353,12 @@
 
   /* ---------- finale ---------- */
   .finale{ padding:96px 0 60px; text-align:center; }
-  .finale .logo-tile{ width:64px; height:64px; border-radius:18px; margin:0 auto 26px; }
-  .finale .logo-tile img{ height:38px; }
+  .finale-lockup{
+    max-width:280px; margin:0 auto 30px; border-radius:22px; overflow:hidden;
+    border:1px solid var(--border-strong);
+    box-shadow:0 0 60px rgba(108,67,255,.22), 0 20px 50px rgba(0,0,0,.4);
+  }
+  .finale-lockup img{ display:block; width:100%; height:auto; }
   .finale h2{
     font-size:clamp(30px, 4.4vw, 46px); max-width:760px; margin:0 auto 18px;
     background:linear-gradient(120deg, var(--violet-soft), var(--violet) 60%, var(--blue));
@@ -647,7 +666,7 @@
 
   <!-- ============ FINALE ============ -->
   <section class="finale">
-    <div class="logo-tile"><img src="wynko-icon.png" alt="" /></div>
+    <div class="finale-lockup"><img src="wynko-lockup.png" alt="Wynko — Focus. Study. Together." /></div>
     <h2>Let's build the platform students actually deserve.</h2>
     <p class="sub">Focus, without manipulation. Community, without noise. Progress, that's actually real.</p>
     <div class="meta-cols">
