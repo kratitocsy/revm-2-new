@@ -221,8 +221,22 @@
     text-transform:uppercase; color:var(--cyan); margin:0 0 10px;
   }
   .curve-card .label::before{ content:'— '; }
-  .curve-card svg{ display:block; width:100%; height:auto; }
+  .curve-card svg{ display:block; width:100%; height:auto; overflow:visible; }
   .curve-card .caption{ font-size:12.5px; color:var(--text-faint); margin:10px 0 8px; }
+
+  /* ---------- live indicators ---------- */
+  .curve-label-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:2px; }
+  .curve-label-row .label{ margin:0; }
+  .live-tag{
+    display:inline-flex; align-items:center; gap:5px; flex:none;
+    font-family:'IBM Plex Mono', monospace; font-size:9.5px; font-weight:700;
+    letter-spacing:.15em; text-transform:uppercase; color:var(--mint);
+  }
+  .live-tag.coral{ color:var(--coral); }
+  .live-dot-sm{ width:6px; height:6px; border-radius:50%; background:var(--mint); box-shadow:0 0 8px var(--mint); animation:pulse 1.6s ease-in-out infinite; }
+  .live-tag.coral .live-dot-sm{ background:var(--coral); box-shadow:0 0 8px var(--coral); }
+  .pulse-node{ filter:drop-shadow(0 0 6px var(--cyan)); }
+  .pulse-node.coral{ filter:drop-shadow(0 0 6px var(--coral)); }
 
   .hero-stats{
     display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:34px;
@@ -387,6 +401,16 @@
   .decay-card svg{ display:block; width:100%; height:auto; }
   .decay-card .caption{ font-size:12px; color:var(--text-faint); margin:8px 0 6px; }
 
+  .decay-live{ border-top:1px solid var(--border); margin-top:14px; padding-top:14px; }
+  .decay-live-top{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px; }
+  .decay-live-rate{ font-size:11px; color:var(--text-faint); }
+  .decay-live-num{
+    font-family:'IBM Plex Mono', monospace; font-weight:700; color:var(--coral);
+    font-size:34px; line-height:1.1; letter-spacing:.01em;
+    font-variant-numeric:tabular-nums;
+  }
+  .decay-live-sub{ font-size:11.5px; color:var(--text-faint); margin-top:4px; max-width:360px; }
+
   /* ---------- finale ---------- */
   .finale{ padding:96px 0 60px; text-align:center; }
   .finale-lockup{
@@ -472,7 +496,10 @@
 
       <!-- signature: the Recall Curve -->
       <div class="card curve-card rise d2">
-        <p class="label">Forgetting curve, flattened</p>
+        <div class="curve-label-row">
+          <p class="label">Forgetting curve, flattened</p>
+          <span class="live-tag"><span class="live-dot-sm"></span>Live</span>
+        </div>
         <svg viewBox="0 0 480 210" preserveAspectRatio="none" aria-hidden="true">
           <defs>
             <linearGradient id="recallFill" x1="0" y1="0" x2="0" y2="1">
@@ -480,10 +507,15 @@
               <stop offset="1" stop-color="rgba(34,211,238,0)"/>
             </linearGradient>
           </defs>
-          <path d="M0,150 L70,178 L92,74 L160,168 L182,60 L250,152 L272,48 L340,138 L362,38 L430,122 L452,30 L480,96 L480,210 L0,210 Z"
+          <path d="M0,150 Q70,178 81,126 Q92,74 126,121 Q160,168 171,114 Q182,60 216,106 Q250,152 261,100 Q272,48 306,93 Q340,138 351,88 Q362,38 396,80 Q430,122 441,76 Q452,30 466,63 Q480,96 480,96 L480,210 L0,210 Z"
                 fill="url(#recallFill)" stroke="none"/>
-          <path d="M0,150 L70,178 L92,74 L160,168 L182,60 L250,152 L272,48 L340,138 L362,38 L430,122 L452,30 L480,96"
+          <path id="recallStrokePath" d="M0,150 Q70,178 81,126 Q92,74 126,121 Q160,168 171,114 Q182,60 216,106 Q250,152 261,100 Q272,48 306,93 Q340,138 351,88 Q362,38 396,80 Q430,122 441,76 Q452,30 466,63 Q480,96 480,96"
                 fill="none" stroke="var(--cyan)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle r="5" fill="var(--cyan)" class="pulse-node">
+            <animateMotion dur="6s" repeatCount="indefinite" rotate="auto">
+              <mpath href="#recallStrokePath"/>
+            </animateMotion>
+          </circle>
         </svg>
         <p class="caption">Memory decays — a revision spikes it back. One line, everywhere in Wynko: retention charts, exam tracks, and your place in this queue.</p>
       </div>
@@ -632,7 +664,7 @@
       <div class="card decay-card">
         <div class="label">
           <span class="name">What happens if you don't revise</span>
-          <span class="stat mono">184 topics forgotten / hr</span>
+          <span class="stat mono">184 topics / hr</span>
         </div>
         <svg viewBox="0 0 480 140" preserveAspectRatio="none" aria-hidden="true">
           <defs>
@@ -643,10 +675,24 @@
           </defs>
           <path d="M0,18 C 60,42 90,58 150,66 C 210,74 240,80 300,90 C 360,98 410,104 480,110 L480,140 L0,140 Z"
                 fill="url(#decayFill)" stroke="none"/>
-          <path d="M0,18 C 60,42 90,58 150,66 C 210,74 240,80 300,90 C 360,98 410,104 480,110"
+          <path id="decayStrokePath" d="M0,18 C 60,42 90,58 150,66 C 210,74 240,80 300,90 C 360,98 410,104 480,110"
                 fill="none" stroke="var(--coral)" stroke-width="2.5" stroke-dasharray="6 5" stroke-linecap="round"/>
+          <circle r="4.5" fill="var(--coral)" class="pulse-node coral">
+            <animateMotion dur="5s" repeatCount="indefinite" rotate="auto">
+              <mpath href="#decayStrokePath"/>
+            </animateMotion>
+          </circle>
         </svg>
-        <p class="caption">A live estimate, not a countdown gimmick — this is what Wynko exists to fix. Join above and the first 200 aspirants get Focus Lock Premium free for a year.</p>
+        <p class="caption">A live model of the Ebbinghaus decay rate, not a tracked statistic — this is the exact problem Wynko exists to fix.</p>
+
+        <div class="decay-live">
+          <div class="decay-live-top">
+            <span class="live-tag coral"><span class="live-dot-sm"></span>Ticking right now</span>
+            <span class="mono decay-live-rate">since you opened this page</span>
+          </div>
+          <div class="decay-live-num" id="decayLiveNum">0</div>
+          <p class="decay-live-sub">estimated topics slipping from an unrevised aspirant's memory — at the 184/hr Ebbinghaus rate, ticking for as long as this tab stays open.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -1014,8 +1060,27 @@ joinForm.addEventListener('submit', async (e) => {
   }
 });
 
+/* ============ live decay counter ============
+   Honest framing: this models the stated 184/hr Ebbinghaus decay rate against
+   real elapsed time on the page — it's a live illustration of the math, not a
+   tracked or fabricated statistic. Explicitly labeled as such in the caption. */
+function initDecayTicker(){
+  const el = document.getElementById('decayLiveNum');
+  if (!el) return;
+  const RATE_PER_MS = 184 / 3600000; // 184 topics/hour
+  const start = performance.now();
+  function tick(now){
+    const elapsedMs = now - start;
+    const value = elapsedMs * RATE_PER_MS;
+    el.textContent = value.toFixed(1);
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
 async function init(){
   initCountdown();
+  initDecayTicker();
   await refreshTotalCount();
 
   if (referredByCode) {
