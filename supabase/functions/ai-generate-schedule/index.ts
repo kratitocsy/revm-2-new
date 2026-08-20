@@ -170,7 +170,7 @@ Deno.serve(async (req: Request) => {
 
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) return json({ error: "AI not configured" }, 500);
-    const model = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash";
+    const model = Deno.env.get("GEMINI_MODEL") || "gemini-3.5-flash";
 
     let userPrompt: string;
     const presetList = (presets || []).map(
