@@ -1,0 +1,204 @@
+/* ══════════════════════════════════════════════════════════════════
+   WYNKO BRAND THEME — Blocks page
+   ──────────────────────────────────────────────────────────────────
+   Scoped override, loaded after style.css + blocks.css. Everything in
+   the base stylesheets is written against CSS custom properties
+   (--gold, --s1, --font, etc.), so redefining those tokens here
+   re-skins the whole page without touching markup or JS. On top of
+   that, a handful of targeted rules soften the sharp/flat "trading
+   terminal" edges into the rounder, gradient-accented instrument-panel
+   look from the Wynko UI concept (violet → cyan, Poppins, glow on the
+   one screen that matters: an active Focus Lock session).
+
+   Scope: this file is only linked from blocks.html. Nothing here
+   changes style.css/blocks.css, so every other page is unaffected.
+   ══════════════════════════════════════════════════════════════════ */
+
+:root{
+  /* ── Surfaces — near-black navy instead of pure black/graphite ── */
+  --bg:#0b0b16;
+  --s1:#15152a;
+  --s2:#1b1b36;
+  --s3:#242446;
+  --black:#0a0a12;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.14);
+
+  /* ── Wynko accents ──
+     --gold/--gold-dim/--gold-border are kept (base stylesheets
+     reference them everywhere) but now carry the brand's cyan
+     "active state / signal" color instead of tan/gold. */
+  --gold:#00d4ff;
+  --gold-dim:rgba(0,212,255,0.12);
+  --gold-border:rgba(0,212,255,0.38);
+  --cyan:#00d4ff;
+  --cyan-glow:rgba(0,212,255,0.45);
+
+  /* New: primary brand accent + tertiary highlight + signature gradient.
+     The logo mark itself isn't a flat violet→cyan blend — the left
+     stroke of the "W" opens on a magenta-pink before it turns violet,
+     then the right stroke carries on into cyan. Matching that 3-stop
+     read (magenta → violet → cyan) is what makes this feel like the
+     actual mark instead of a generic two-tone gradient. */
+  --magenta:#c13fef;
+  --magenta-dim:rgba(193,63,239,0.14);
+  --violet:#6c43ff;
+  --violet-dim:rgba(108,67,255,0.14);
+  --violet-border:rgba(108,67,255,0.4);
+  --tertiary:#8af5ff;
+  --gradient-primary:linear-gradient(135deg,#c13fef 0%,#6c43ff 50%,#00d4ff 100%);
+
+  /* ── Text ── */
+  --white:#ffffff;
+  --text:#e7e7f2;
+  --muted:#9a9ab2;
+  --dim:#45455c;
+
+  /* Semantic colors stay put — success/warn/danger keep their job */
+  --success:#4ade80;
+  --warn:#fbbf24;
+  --danger:#f87171;
+
+  /* ── Type ── */
+  --font:'Poppins',sans-serif;
+  --font-display:'Poppins',sans-serif;
+  --font-mono:'JetBrains Mono','DejaVu Sans Mono',monospace;
+}
+
+body{ letter-spacing:-0.005em; }
+
+/* ══ SURFACE SHAPE — soften every flat/sharp rectangle ══ */
+.bl-card,.modal,.ext-step,.sch-slot-card,.preset-row,.yt-panel,
+.device-row,.site-chip,.ext-mock,.ext-mock-browser,.ai-modal-textarea{
+  border-radius:14px;
+}
+.mode-opt,.dur-opt,.btn,.chip,.tab-count,.badge-track,.badge-day,
+.field input,.field select,.field textarea,
+.bl-field input[type=text],.sch-slot-grid select,.sch-slot-grid input,
+.dur-custom input,.token-box input,.ext-mock-btn,.ext-mock-toggle,
+.ext-mock-addressbar,.ext-mock-folder-pick,.sch-remove-btn{
+  border-radius:9px;
+}
+.verified-pill,.unverified-pill{ border-radius:999px; }
+.site-chip{ border-radius:8px; }
+
+/* Card identity: a thin gradient rail on the left instead of a flat
+   border — echoes the sidebar's active-item rail, ties the page
+   together without adding a new decorative motif. */
+.bl-card{
+  border-left:2px solid transparent;
+  border-image:linear-gradient(180deg,var(--violet),var(--cyan)) 1;
+  background:
+    linear-gradient(180deg,rgba(108,67,255,0.05),transparent 18%),
+    var(--s2);
+  box-shadow:0 1px 0 rgba(255,255,255,0.02) inset;
+}
+.bl-card-title{ font-weight:600; letter-spacing:0.12em; }
+
+/* ══ BUTTONS — gradient primary action, quieter ghost ══ */
+.btn{ font-weight:600; letter-spacing:0.05em; transition:all 0.18s ease; }
+.btn-gold{
+  background:var(--gradient-primary);
+  color:#fff;
+  border-color:transparent;
+  box-shadow:0 2px 14px rgba(193,63,239,0.22),0 2px 14px rgba(0,212,255,0.16);
+}
+.btn-gold:hover:not(:disabled){
+  opacity:1; filter:brightness(1.08);
+  box-shadow:0 4px 20px rgba(193,63,239,0.28),0 4px 20px rgba(0,212,255,0.3);
+  transform:translateY(-1px);
+}
+.btn-ghost:hover:not(:disabled){ border-color:var(--cyan); color:var(--cyan); }
+.btn:active:not(:disabled){ transform:translateY(0) scale(0.98); }
+
+/* AI-generate button — same gradient family as the rest of the brand
+   instead of its own separate gold/tan treatment. */
+.btn-ai{
+  background:var(--gradient-primary)!important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,0.18)!important;
+  box-shadow:0 2px 14px rgba(193,63,239,0.24);
+}
+.btn-ai:hover{
+  filter:brightness(1.08);
+  box-shadow:0 4px 22px rgba(0,212,255,0.4)!important;
+}
+
+/* ══ ACTIVE / SELECTED STATES — cyan signal, violet-dim fill ══ */
+.mode-opt.active,.dur-opt.active,.chip.selected,.tab.active .tab-count{
+  background:var(--violet-dim);
+  border-color:var(--cyan);
+  color:var(--cyan);
+  box-shadow:0 0 0 1px rgba(0,212,255,0.12) inset;
+}
+.mode-opt:hover,.dur-opt:hover{ border-color:var(--violet-border); }
+.sch-sleep-toggle:has(input:checked){
+  background:var(--violet-dim); border-color:var(--cyan); color:var(--cyan);
+}
+
+/* Focus rings — visible, soft glow instead of a hard color snap */
+.bl-field input[type=text]:focus,.sch-slot-grid select:focus,
+.sch-slot-grid input:focus,.dur-custom input:focus,
+.field input:focus,.field select:focus,.field textarea:focus,
+.ai-modal-textarea:focus{
+  border-color:var(--cyan);
+  box-shadow:0 0 0 3px rgba(0,212,255,0.14);
+}
+
+/* ══ SIGNATURE MOMENT — the active Focus Lock session card ══
+   This is the one screen the brand deck gives its own dedicated
+   spread to ("Focus Lock — Active Session"), so it's the one place
+   the gradient gets to be loud; everything else stays quiet. */
+.active-block-card{
+  border-color:transparent;
+  border-image:var(--gradient-primary) 1;
+  box-shadow:0 0 0 1px rgba(0,212,255,0.15) inset,0 8px 32px rgba(193,63,239,0.14),0 8px 32px rgba(0,212,255,0.12);
+  position:relative;
+}
+.active-block-timer{
+  font-family:var(--font-mono);
+  background:var(--gradient-primary);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 14px rgba(0,212,255,0.35));
+}
+.active-block-name{ font-family:var(--font); }
+
+/* ══ MONOSPACE UTILITY FACE — codes, tokens, timers ══ */
+.token-box input,.sch-code-track,.ext-mock-addressbar{
+  font-family:var(--font-mono);
+}
+.sch-code-char.ok{ color:var(--cyan); }
+.sch-code-char.current{ text-decoration-color:var(--violet); }
+.token-box input{ color:var(--cyan); }
+
+/* ══ HOVER LIFT — quiet micro-interaction on list rows ══ */
+.preset-row,.sch-slot-card,.ext-step{ transition:border-color 0.18s ease,transform 0.18s ease,box-shadow 0.18s ease; }
+.preset-row:hover{ border-color:var(--violet-border); transform:translateY(-1px); }
+.sch-slot-card:hover{ border-color:var(--violet-border); }
+.sch-slot-card.is-sleep{
+  border-color:var(--violet-border);
+  background:linear-gradient(180deg,var(--violet-dim),var(--s1) 65%);
+}
+.sch-slot-card.is-sleep .sch-slot-num{ border-color:var(--violet-border); color:var(--tertiary); }
+
+/* ══ PILLS — tinted fills instead of flat outline-only ══ */
+.verified-pill{ background:rgba(74,222,128,0.1); }
+.unverified-pill{ background:rgba(251,191,36,0.1); }
+
+/* ══ SIDEBAR — bring the shell along so the page reads as one whole ══ */
+.nav-item.active{ color:var(--cyan); border-left-color:var(--cyan); background:var(--gold-dim); }
+.sidebar .nav-item-invite{ color:var(--violet)!important; background:var(--violet-dim); }
+.sidebar .nav-item-invite:hover{ background:rgba(108,67,255,0.2); }
+.sidebar .nav-item-invite .nav-icon{ filter:drop-shadow(0 0 4px rgba(108,67,255,0.55)); }
+.sidebar-track{ color:var(--cyan); }
+.badge-track{ font-weight:600; }
+
+/* ══ BROWSER-MOCK ILLUSTRATION (extension install guide) ══ */
+.ext-mock-toggle.on{ background:var(--violet-dim); border-color:var(--cyan); }
+.ext-mock-toggle.on .knob{ background:var(--cyan); }
+.ext-step-num{ background:var(--violet-dim); border-color:var(--violet-border); color:var(--tertiary); }
+
+/* ══ SCROLLBAR — match the new palette (style.css defines the base rule) ══ */
+::-webkit-scrollbar-thumb{ background:var(--s3); }
+::-webkit-scrollbar-thumb:hover{ background:var(--violet-border); }
