@@ -36,7 +36,8 @@ Generate a schedule as JSON with this exact shape — no markdown, no commentary
     {
       "start_time": "HH:MM",
       "end_time": "HH:MM",
-      "subject": "Subject or activity label",
+      "preset_name": "MUST be copied exactly (same case) from the AVAILABLE BLOCK PRESETS list given to you",
+      "subject": "Subject or topic being studied in this slot, e.g. Physics, Chemistry, Revision",
       "is_sleep": false,
       "break_after_minutes": 15
     }
@@ -54,10 +55,11 @@ Rules:
   "00:00"-"08:00" (midnight to 8am) — never a start_time later in the
   clock than end_time.
 - Include 10-20 min breaks between study slots.
-- Include exactly ONE sleep slot (is_sleep:true, subject:"Sleep") for 7-9
+- Include exactly ONE sleep slot (is_sleep:true, subject:"Sleep", preset_name:"") for 7-9
   hours, respecting the same-day rule above.
 - Total study time (non-sleep) between 2-8 hours depending on goals.
-- subject: short label (Physics, Chemistry, Math, Revision, Practice, etc.)
+- preset_name: for every non-sleep slot, this MUST be one of the exact strings given in AVAILABLE BLOCK PRESETS — do not invent new preset names, do not rephrase them. If only one preset is available, use it for every slot.
+- subject: short topic label (Physics, Chemistry, Math, Revision, Practice, etc.) — independent of preset_name, describes WHAT is being studied, not WHICH block/mode is active.
 - Distribute harder subjects during likely peak hours, lighter ones otherwise.
 - Return ONLY valid JSON. No markdown fences. No explanation.`;
 
@@ -162,6 +164,8 @@ function validateSchedule(sched: Record<string, unknown>): string | null {
       return `end_time must be after start_time: ${slot.start_time}-${slot.end_time}`;
     if (!slot.is_sleep && !slot.subject)
       return "Non-sleep slot needs a subject";
+    if (!slot.is_sleep && !slot.preset_name)
+      return "Non-sleep slot needs a preset_name";
   }
   return null;
 }

@@ -1987,13 +1987,22 @@ async function populateBuilderFromAi(schedule){
   document.getElementById('schSlots').innerHTML='';
   scheduleSlotSeq=0;
   const slots = (schedule.slots||[]).sort((a,b)=>a.start_time.localeCompare(b.start_time));
+  let unmatchedCount = 0;
   slots.forEach(slot=>{
-    const matchedPreset = schedulePresetsCache.find(p=>
-      p.name.toLowerCase() === (slot.subject||'').toLowerCase()
+    // Match on preset_name (which the AI was told to copy verbatim from the
+    // presets we sent it) rather than the free-text `subject` — subject is
+    // a topic label ("Physics"), not a block name, and matching against it
+    // was silently defaulting every unmatched slot to schedulePresetsCache[0].
+    const matchedPreset = !slot.is_sleep && schedulePresetsCache.find(p=>
+      p.name.toLowerCase() === (slot.preset_name||'').toLowerCase()
     );
+    if(!slot.is_sleep && !matchedPreset) unmatchedCount++;
     addScheduleSlotRow({
       id: null,
-      preset_id: matchedPreset ? matchedPreset.id : (schedulePresetsCache[0]?.id || null),
+      // Leave unmatched slots with no preset selected (triggers the
+      // "-- choose a block --" placeholder) instead of silently guessing —
+      // same safeguard slotRowHtml already applies to OCR-detected slots.
+      preset_id: matchedPreset ? matchedPreset.id : null,
       subject: slot.subject || null,
       start_time: slot.start_time,
       end_time: slot.end_time,
@@ -2001,6 +2010,9 @@ async function populateBuilderFromAi(schedule){
       is_sleep: !!slot.is_sleep
     });
   });
+  if(unmatchedCount>0){
+    alert(`${unmatchedCount} slot(s) came back from the AI without a clear block match — pick a block for those manually before saving (they're marked "-- choose a block --").`);
+  }
 }
 
 /* ── 500-char "ultra gibberish" edit-lock gate ──
