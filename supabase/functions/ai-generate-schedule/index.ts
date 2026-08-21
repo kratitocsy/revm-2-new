@@ -79,7 +79,14 @@ async function callGemini(
         // Gemini 3.x models (including gemini-3.5-flash) are tuned for
         // their default sampling params — overriding temperature/top_p/
         // top_k is no longer recommended and can hurt output quality.
-        maxOutputTokens: 2048,
+        //
+        // 2048 was too tight: a realistic 7-day schedule with multiple
+        // subjects/day plus breaks and a sleep slot commonly needs 15-20+
+        // slot objects, which routinely got cut off mid-generation —
+        // the truncated JSON (unclosed brackets) then failed to parse
+        // with the opaque "Unexpected end of JSON input", which is what
+        // was surfacing directly in the UI. Raised with real headroom.
+        maxOutputTokens: 8192,
         responseMimeType: "application/json",
       },
       safetySettings: [
@@ -313,7 +320,26 @@ Create a balanced, realistic schedule that addresses these goals.`;
     }
 
     const rawText = await callGemini(userPrompt, apiKey, model);
-    const schedule = extractJson(rawText);
+
+    let schedule: unknown;
+    try {
+      schedule = extractJson(rawText);
+    } catch (parseErr) {
+      // Log the raw text (truncated) server-side so a recurrence is
+      // actually debuggable — the client only ever sees the friendly
+      // message below, never the raw parser error.
+      console.error(
+        "ai-generate-schedule: failed to parse Gemini output.",
+        "Raw text (first 500 chars):",
+        rawText.slice(0, 500),
+        "Parse error:",
+        parseErr instanceof Error ? parseErr.message : parseErr,
+      );
+      return json({
+        error:
+          "The AI's response got cut off before it finished. Try describing fewer days or subjects, or just try again.",
+      }, 500);
+    }
 
     const err = validateSchedule(
       schedule as Record<string, unknown>,
