@@ -285,7 +285,7 @@
           </div>
           <div class="modal-footer">
             <button class="btn btn-ghost" onclick="closeAiModal()">Cancel</button>
-            <button class="btn btn-ai" id="aiGenerateBtn" onclick="submitAiGoal()">Generate schedule</button>
+            <button class="btn btn-ai" id="aiGenerateBtn" onclick="retryAiGenerate()">Generate schedule</button>
           </div>
         </div>
       </div>
@@ -1875,11 +1875,16 @@ async function openScheduleBuilderFromDetectedSlots(detectedSlots){
    Both call the ai-generate-schedule edge function, then populate the
    normal schedule builder for the user to review/edit before saving. */
 
+let currentAiMode = 'text'; // tracks which mode is active so the modal's
+                             // generate/retry button and error-recovery
+                             // path behave correctly for both
+
 function openAiGoalModal(){
   if(!schedulePresetsCache?.length){
     alert('Save at least one block preset first — the AI needs to know which blocks to schedule.');
     return;
   }
+  currentAiMode = 'text';
   document.getElementById('aiGoalText').value='';
   document.getElementById('aiGoalInput').style.display='';
   document.getElementById('aiLoadingState').style.display='none';
@@ -1899,13 +1904,35 @@ async function generateSmartSchedule(){
     schedulePresetsCache=presets||[];
     if(!schedulePresetsCache.length){ alert('Save at least one block preset first — the AI needs to know which blocks to schedule.'); return; }
   }
+  currentAiMode = 'stats';
+  // Smart schedule has no goal-text step — it skips straight to
+  // generating, so open the modal directly in its loading state.
+  // (Bug fixed here: this used to call callAiSchedule('stats') without
+  // ever adding the 'show' class to #aiScheduleModal, so the loading
+  // spinner/result/error all rendered inside a modal that was never
+  // actually visible — clicking the button looked like it did nothing.)
+  document.getElementById('aiGoalInput').style.display='none';
+  document.getElementById('aiLoadingState').style.display='';
+  document.getElementById('aiErrorState').style.display='none';
+  document.getElementById('aiScheduleModal').classList.add('show');
   await callAiSchedule('stats');
 }
 
 async function submitAiGoal(){
   const text=document.getElementById('aiGoalText').value.trim();
   if(!text){ alert('Describe your goals first.'); return; }
+  currentAiMode = 'text';
   await callAiSchedule('text', text);
+}
+
+// Single entry point for the modal's "Generate schedule" button, so
+// retrying after an error re-runs whichever mode actually failed instead
+// of always calling submitAiGoal() (which previously broke retry for
+// Smart Schedule entirely — it would just alert "Describe your goals
+// first" since stats mode never has goal text typed in).
+async function retryAiGenerate(){
+  if(currentAiMode === 'stats') await callAiSchedule('stats');
+  else await submitAiGoal();
 }
 
 async function callAiSchedule(mode, goalText){
@@ -1945,7 +1972,7 @@ async function callAiSchedule(mode, goalText){
     document.getElementById('aiLoadingState').style.display='none';
     document.getElementById('aiErrorState').style.display='';
     document.getElementById('aiErrorMsg').textContent = e.message || 'Something went wrong. Please try again.';
-    document.getElementById('aiGoalInput').style.display='';
+    if(currentAiMode !== 'stats') document.getElementById('aiGoalInput').style.display='';
     document.getElementById('aiGenerateBtn').disabled=false;
   }
 }
