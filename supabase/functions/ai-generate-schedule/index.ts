@@ -46,8 +46,16 @@ Generate a schedule as JSON with this exact shape — no markdown, no commentary
 Rules:
 - days_of_week: 0=Sun 1=Mon … 6=Sat. Pick sensible days.
 - Times: 24-hour "HH:MM" format. Slots ordered chronologically. No overlaps.
+- CRITICAL: every slot, including the sleep slot, must fit inside a single
+  calendar day — end_time must always be strictly LATER than start_time
+  (e.g. "07:30" > "06:00"). Times can NEVER wrap past midnight: a sleep
+  slot written as "23:00"-"07:00" is INVALID and will be rejected. If you
+  want to represent overnight sleep, pick a same-day window instead, e.g.
+  "00:00"-"08:00" (midnight to 8am) — never a start_time later in the
+  clock than end_time.
 - Include 10-20 min breaks between study slots.
-- Include exactly ONE sleep slot (is_sleep:true, subject:"Sleep") for 7-9 hours.
+- Include exactly ONE sleep slot (is_sleep:true, subject:"Sleep") for 7-9
+  hours, respecting the same-day rule above.
 - Total study time (non-sleep) between 2-8 hours depending on goals.
 - subject: short label (Physics, Chemistry, Math, Revision, Practice, etc.)
 - Distribute harder subjects during likely peak hours, lighter ones otherwise.
@@ -68,7 +76,9 @@ async function callGemini(
       system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
       contents: [{ parts: [{ text: userPrompt }] }],
       generationConfig: {
-        temperature: 0.8,
+        // Gemini 3.x models (including gemini-3.5-flash) are tuned for
+        // their default sampling params — overriding temperature/top_p/
+        // top_k is no longer recommended and can hurt output quality.
         maxOutputTokens: 2048,
         responseMimeType: "application/json",
       },
@@ -133,6 +143,14 @@ function validateSchedule(sched: Record<string, unknown>): string | null {
       return `Bad start_time: ${slot.start_time}`;
     if (typeof slot.end_time !== "string" || !/^\d{2}:\d{2}$/.test(slot.end_time))
       return `Bad end_time: ${slot.end_time}`;
+    // NOTE: schedule-tick (the cron that actually fires these slots) and
+    // the schedule builder's own save-time check both compare "HH:MM"
+    // strings lexicographically and never handle a slot wrapping past
+    // midnight, so end_time must stay strictly after start_time for every
+    // slot, sleep included. Since the AI naturally reaches for realistic
+    // overnight sleep like "23:00"-"07:00", that constraint has to be
+    // spelled out for it in SYSTEM_PROMPT (see below) rather than enforced
+    // only here — otherwise valid-looking schedules get rejected.
     if (slot.end_time <= slot.start_time)
       return `end_time must be after start_time: ${slot.start_time}-${slot.end_time}`;
     if (!slot.is_sleep && !slot.subject)
@@ -170,7 +188,7 @@ Deno.serve(async (req: Request) => {
 
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) return json({ error: "AI not configured" }, 500);
-    const model = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash";
+    const model = Deno.env.get("GEMINI_MODEL") || "gemini-3.5-flash";
 
     let userPrompt: string;
     const presetList = (presets || []).map(
@@ -188,10 +206,22 @@ Deno.serve(async (req: Request) => {
         .order("started_at", { ascending: false })
         .limit(200);
 
+      // user_profiles' primary key / FK-to-auth.users column is "id", not
+      // "user_id" (every other query in this app uses .eq('id', ...) for
+      // this table - schedule-tick.ts, tracker-sync.js, groups.page.js,
+      // etc.). This was filtering on a column that doesn't match any row,
+      // so `profile` was always null/undefined here.
+      //
+      // Also "exam_date" isn't a real column (confirmed against the live
+      // schema) - onboarding.html/tracker-sync.js write the student's
+      // target date to "end_date", with "exam" holding just the exam name
+      // (e.g. "JEE"). Selecting exam_date silently returned no such field,
+      // so profile.exam_date was always undefined too - the AI never once
+      // saw the student's real exam date in "smart schedule" mode.
       const { data: profile } = await supabase
         .from("user_profiles")
-        .select("subjects, exam_date")
-        .eq("user_id", user.id)
+        .select("subjects, exam, end_date")
+        .eq("id", user.id)
         .maybeSingle();
 
       // Build study analytics summary
@@ -258,7 +288,8 @@ STUDY DATA (last 30 days):
 
 STUDENT PROFILE:
 - Subjects: ${(profile?.subjects || subjectList || []).join(", ")}
-- Exam date: ${profile?.exam_date || "not specified"}
+- Exam: ${profile?.exam || "not specified"}
+- Exam date: ${profile?.end_date || "not specified"}
 
 AVAILABLE BLOCK PRESETS: ${presetList.join(", ") || "none specified"}
 
