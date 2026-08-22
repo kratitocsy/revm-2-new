@@ -204,6 +204,7 @@
         <div class="bl-card-head">
           <span class="bl-card-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4V3Z"/></svg></span>
           <div class="bl-card-title">Saved blocks</div>
+          <button class="btn btn-ai btn-sm" style="margin-left:auto;" onclick="openAiCmdModal()">✨ AI Command</button>
         </div>
         <div class="preset-list" id="presetList">
           <div class="bl-empty">
@@ -322,6 +323,39 @@
           <div class="modal-footer">
             <button class="btn btn-ghost" onclick="closeAiModal()">Cancel</button>
             <button class="btn btn-ai" id="aiGenerateBtn" onclick="retryAiGenerate()">Generate schedule</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Command Modal: create/delete blocks & schedules by natural-language request -->
+      <div class="modal-overlay" id="aiCommandModal">
+        <div class="modal" style="max-width:600px;max-height:85vh;overflow-y:auto;">
+          <h3>✨ AI Command</h3>
+          <p class="empty-note" style="margin-bottom:0.8rem;">Tell it what to change — "create a chemistry-only block", "delete my physics+maths block", "make a schedule with chemistry every day". Nothing happens until you approve the plan below.</p>
+          <div id="aiCmdInput">
+            <textarea class="ai-modal-textarea" id="aiCmdText" placeholder="e.g. Delete my coding session block, and create a chemistry-only block using the same sites as physics+chemistry"></textarea>
+            <div class="ai-gen-info">Sites on any new block are reused from your existing blocks or a small list of well-known sites — never guessed exam-platform domains. Apps and YouTube channels are never auto-added; add those yourself afterward via the normal pickers.</div>
+          </div>
+          <div id="aiCmdLoading" style="display:none;">
+            <div class="ai-loading-box">
+              <div class="ai-spinner"></div>
+              <p class="empty-note">Working out a plan...</p>
+            </div>
+          </div>
+          <div id="aiCmdError" style="display:none;">
+            <p class="empty-note" style="color:var(--warn);" id="aiCmdErrorMsg"></p>
+          </div>
+          <div id="aiCmdPlan" style="display:none;">
+            <p class="empty-note" id="aiCmdSummary" style="margin-bottom:0.7rem;color:var(--text);"></p>
+            <div id="aiCmdActionList" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+          </div>
+          <div class="modal-footer" id="aiCmdFooterInput">
+            <button class="btn btn-ghost" onclick="closeAiCmdModal()">Cancel</button>
+            <button class="btn btn-ai" id="aiCmdSubmitBtn" onclick="submitAiCommand()">Work out a plan</button>
+          </div>
+          <div class="modal-footer" id="aiCmdFooterConfirm" style="display:none;">
+            <button class="btn btn-ghost" onclick="closeAiCmdModal()">Cancel</button>
+            <button class="btn btn-gold" id="aiCmdConfirmBtn" style="border-color:var(--warn);" onclick="executeAiCommandPlan()">Approve &amp; apply</button>
           </div>
         </div>
       </div>
@@ -2037,6 +2071,150 @@ async function generateSmartSchedule(){
   document.getElementById('aiErrorState').style.display='none';
   document.getElementById('aiScheduleModal').classList.add('show');
   await callAiSchedule('stats');
+}
+
+/* ── AI Command: create/delete blocks & schedules by natural-language request ──
+   Calls ai-manage-blocks, which returns a structured, pre-validated action
+   plan (never executes anything itself). The plan is always shown as a
+   plain-English confirmation — nothing is created or deleted until the
+   user explicitly clicks "Approve & apply". */
+let aiCmdPlan = null;
+
+function openAiCmdModal(){
+  aiCmdPlan = null;
+  document.getElementById('aiCmdText').value='';
+  document.getElementById('aiCmdInput').style.display='';
+  document.getElementById('aiCmdLoading').style.display='none';
+  document.getElementById('aiCmdError').style.display='none';
+  document.getElementById('aiCmdPlan').style.display='none';
+  document.getElementById('aiCmdFooterInput').style.display='';
+  document.getElementById('aiCmdFooterConfirm').style.display='none';
+  document.getElementById('aiCommandModal').classList.add('show');
+}
+function closeAiCmdModal(){
+  document.getElementById('aiCommandModal').classList.remove('show');
+}
+
+const AI_CMD_ACTION_LABELS = {
+  create_preset: a => `➕ Create block "<b>${escHtml(a.name)}</b>" — sites: ${escHtml((a.sites||[]).join(', '))}`,
+  delete_preset: a => `🗑️ Delete block "<b>${escHtml(a.name)}</b>"`,
+  create_schedule: a => `➕ Create schedule "<b>${escHtml(a.name)}</b>" — ${(a.slots||[]).length} slots`,
+  delete_schedule: a => `🗑️ Delete schedule "<b>${escHtml(a.name)}</b>"`
+};
+
+async function submitAiCommand(){
+  const command = document.getElementById('aiCmdText').value.trim();
+  if(!command){ alert('Describe what you want changed first.'); return; }
+
+  document.getElementById('aiCmdInput').style.display='none';
+  document.getElementById('aiCmdError').style.display='none';
+  document.getElementById('aiCmdPlan').style.display='none';
+  document.getElementById('aiCmdLoading').style.display='';
+  document.getElementById('aiCmdSubmitBtn').disabled=true;
+
+  try{
+    const { data: presetRows } = await sb.from('focus_lock_presets').select('id,name,sites,apps,apps_mode').eq('user_id', myUserId);
+    const { data: scheduleRows } = await sb.from('focus_lock_schedules').select('id,name,days_of_week,focus_lock_schedule_slots(id)').eq('user_id', myUserId);
+
+    const presets = (presetRows||[]).map(p=>({id:p.id, name:p.name, sites:p.sites||[], apps:p.apps||[], apps_mode:p.apps_mode||'blacklist'}));
+    const schedules = (scheduleRows||[]).map(s=>({id:s.id, name:s.name, days_of_week:s.days_of_week||[], slot_count:(s.focus_lock_schedule_slots||[]).length}));
+
+    const { data: { session: authSession } } = await sb.auth.getSession();
+    const res = await fetch(`${REVM2_CONFIG.SUPABASE_URL}/functions/v1/ai-manage-blocks`,{
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${authSession.access_token}` },
+      body: JSON.stringify({ command, presets, schedules })
+    });
+    const data = await res.json();
+    if(!res.ok || !data.success) throw new Error(data.error || 'Could not work out a plan');
+
+    aiCmdPlan = data.plan;
+    document.getElementById('aiCmdLoading').style.display='none';
+    document.getElementById('aiCmdSummary').textContent = data.plan.summary;
+    const actions = data.plan.actions || [];
+    if(!actions.length){
+      document.getElementById('aiCmdActionList').innerHTML = '<div class="empty-note">No changes proposed — see the note above.</div>';
+      document.getElementById('aiCmdFooterInput').style.display='';
+      document.getElementById('aiCmdFooterConfirm').style.display='none';
+    } else {
+      document.getElementById('aiCmdActionList').innerHTML = actions.map(a=>{
+        const render = AI_CMD_ACTION_LABELS[a.type];
+        return `<div class="preset-row" style="padding:0.6rem 0.8rem;">${render ? render(a) : escHtml(a.type)}</div>`;
+      }).join('');
+      document.getElementById('aiCmdFooterInput').style.display='none';
+      document.getElementById('aiCmdFooterConfirm').style.display='';
+    }
+    document.getElementById('aiCmdPlan').style.display='';
+  }catch(e){
+    document.getElementById('aiCmdLoading').style.display='none';
+    document.getElementById('aiCmdError').style.display='';
+    document.getElementById('aiCmdErrorMsg').textContent = e.message || 'Something went wrong. Please try again.';
+    document.getElementById('aiCmdInput').style.display='';
+  } finally {
+    document.getElementById('aiCmdSubmitBtn').disabled=false;
+  }
+}
+
+async function executeAiCommandPlan(){
+  if(!aiCmdPlan || !aiCmdPlan.actions?.length) return;
+  document.getElementById('aiCmdConfirmBtn').disabled=true;
+  document.getElementById('aiCmdConfirmBtn').textContent='Applying...';
+
+  try{
+    // Resolve preset_name -> preset_id across BOTH already-saved presets and
+    // ones this same plan is about to create, so a create_schedule action
+    // referencing a preset created earlier in the same plan can find it.
+    const { data: existingPresets } = await sb.from('focus_lock_presets').select('id,name').eq('user_id', myUserId);
+    const presetIdByName = {};
+    (existingPresets||[]).forEach(p=>{ presetIdByName[p.name.toLowerCase()] = p.id; });
+
+    for(const action of aiCmdPlan.actions){
+      if(action.type === 'create_preset'){
+        const { data, error } = await sb.from('focus_lock_presets').insert({
+          user_id: myUserId, name: action.name, sites: action.sites||[],
+          mode: 'blacklist', apps: [], apps_mode: 'blacklist'
+        }).select('id,name').single();
+        if(error) throw new Error(`Creating "${action.name}": ${error.message}`);
+        presetIdByName[data.name.toLowerCase()] = data.id;
+
+      } else if(action.type === 'delete_preset'){
+        const { error } = await sb.from('focus_lock_presets').delete().eq('id', action.id).eq('user_id', myUserId);
+        if(error) throw new Error(`Deleting "${action.name}": ${error.message}`);
+
+      } else if(action.type === 'delete_schedule'){
+        const { error } = await sb.from('focus_lock_schedules').delete().eq('id', action.id).eq('user_id', myUserId);
+        if(error) throw new Error(`Deleting "${action.name}": ${error.message}`);
+
+      } else if(action.type === 'create_schedule'){
+        const { data: sched, error: schedErr } = await sb.from('focus_lock_schedules').insert({
+          user_id: myUserId, name: action.name, days_of_week: action.days_of_week, active: true
+        }).select('id').single();
+        if(schedErr) throw new Error(`Creating schedule "${action.name}": ${schedErr.message}`);
+
+        const slotRows = (action.slots||[]).map((slot, i) => ({
+          schedule_id: sched.id,
+          slot_order: i,
+          preset_id: slot.is_sleep ? null : (presetIdByName[(slot.preset_name||'').toLowerCase()] || null),
+          start_time: slot.start_time,
+          end_time: slot.end_time,
+          subject: slot.subject || null,
+          is_sleep: !!slot.is_sleep,
+          break_after_minutes: slot.break_after_minutes ?? (slot.is_sleep ? 0 : 15)
+        }));
+        const { error: slotsErr } = await sb.from('focus_lock_schedule_slots').insert(slotRows);
+        if(slotsErr) throw new Error(`Adding slots to "${action.name}": ${slotsErr.message}`);
+      }
+    }
+
+    closeAiCmdModal();
+    await loadPresets();
+    await loadSchedules();
+  }catch(e){
+    alert(e.message || 'Something went wrong applying the plan. Some steps may have partially completed — check your blocks/schedules list below.');
+  } finally {
+    document.getElementById('aiCmdConfirmBtn').disabled=false;
+    document.getElementById('aiCmdConfirmBtn').textContent='Approve & apply';
+  }
 }
 
 async function submitAiGoal(){
