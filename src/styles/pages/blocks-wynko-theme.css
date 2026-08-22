@@ -202,3 +202,109 @@ body{ letter-spacing:-0.005em; }
 /* ══ SCROLLBAR — match the new palette (style.css defines the base rule) ══ */
 ::-webkit-scrollbar-thumb{ background:var(--s3); }
 ::-webkit-scrollbar-thumb:hover{ background:var(--violet-border); }
+
+
+/* ══════════════════════════════════════════════════════════════════
+   STRUCTURE PASS — hierarchy, empty states, grouping
+   ──────────────────────────────────────────────────────────────────
+   Everything below goes past re-coloring: it gives each card a
+   scannable icon+title header, turns bare "No X yet." strings into
+   proper empty states, groups the AI actions as their own labeled
+   unit, elevates the active-session card into a real status banner,
+   and tucks the 5-step install guide behind a disclosure so the
+   Connect card isn't a wall of steps by default. All additive —
+   no existing id/class was removed, so none of the page's JS needed
+   to change.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* 8pt rhythm on the page shell */
+.blocks-wrap{ padding:1.5rem; }
+.bl-card{ padding:1.5rem; margin-bottom:1.25rem; }
+
+/* ── Card headers: icon + title, replaces the bare uppercase label ── */
+.bl-card-head{ display:flex; align-items:center; gap:0.6rem; margin-bottom:1rem; }
+.bl-card-head .bl-card-title{ margin-bottom:0; }
+.bl-card-icon{
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  width:28px; height:28px; border-radius:8px;
+  background:var(--violet-dim); color:var(--cyan);
+}
+.active-block-card .bl-card-icon{ background:rgba(0,212,255,0.14); }
+
+/* ── Live status pill on the active-session card ── */
+.ab-live-pill{
+  display:inline-flex; align-items:center; gap:0.5rem;
+  font-size:0.66rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+  color:var(--cyan); background:rgba(0,212,255,0.1); border:1px solid var(--gold-border);
+  padding:0.32rem 0.75rem; border-radius:999px; margin-bottom:1rem;
+}
+.ab-live-dot{
+  width:7px; height:7px; border-radius:50%; background:var(--cyan); flex-shrink:0;
+  animation:ab-pulse 1.8s ease-out infinite;
+}
+@keyframes ab-pulse{
+  0%{ box-shadow:0 0 0 0 rgba(0,212,255,0.55); }
+  70%{ box-shadow:0 0 0 8px rgba(0,212,255,0); }
+  100%{ box-shadow:0 0 0 0 rgba(0,212,255,0); }
+}
+@media(prefers-reduced-motion:reduce){ .ab-live-dot{ animation:none; } }
+
+/* ── Empty states: icon + heading + one line, not a lone gray sentence ── */
+.bl-empty{
+  display:flex; flex-direction:column; align-items:flex-start; gap:0.4rem;
+  padding:1.35rem 0.25rem 0.5rem;
+}
+.bl-empty-icon{
+  display:flex; align-items:center; justify-content:center;
+  width:36px; height:36px; border-radius:10px; margin-bottom:0.3rem;
+  background:var(--s1); border:1px dashed var(--border2); color:var(--dim);
+}
+.bl-empty-title{ font-size:0.85rem; font-weight:600; color:var(--text); }
+.bl-empty-sub{ font-size:0.75rem; color:var(--muted); line-height:1.55; max-width:46ch; }
+
+/* ── Preset/schedule rows: leading icon avatar ── */
+.preset-row{ align-items:flex-start; flex-wrap:wrap; }
+.preset-row-main{ display:flex; align-items:flex-start; gap:0.65rem; min-width:0; flex:1 1 260px; }
+.preset-icon{
+  display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:0.05rem;
+  width:30px; height:30px; border-radius:8px; background:var(--violet-dim); color:var(--cyan);
+}
+.preset-actions{ flex-shrink:0; }
+
+/* ── Schedule action buttons: plain actions vs. the AI-assisted group ── */
+.sch-actions-row{ display:flex; flex-wrap:wrap; gap:0.6rem; align-items:center; margin-top:0.9rem; }
+.sch-ai-group{
+  margin-top:0.9rem; padding:0.85rem 0.9rem 0.9rem;
+  background:var(--magenta-dim); border:1px solid var(--violet-border); border-radius:12px;
+}
+.sch-ai-label{
+  display:block; font-size:0.62rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+  color:var(--tertiary); margin-bottom:0.6rem;
+}
+.sch-ai-group .sch-actions-row{ margin-top:0; }
+
+/* ── Collapsible extension install guide — one line by default ── */
+.ext-guide-details{ margin-top:0.2rem; }
+.ext-guide-details summary{
+  cursor:pointer; list-style:none; user-select:none;
+  display:inline-flex; align-items:center; gap:0.4rem;
+  font-size:0.78rem; font-weight:600; color:var(--cyan);
+  padding:0.3rem 0; margin-bottom:0.9rem;
+}
+.ext-guide-details summary::-webkit-details-marker{ display:none; }
+.ext-guide-details summary::before{
+  content:'▸'; display:inline-block; font-size:0.65rem; color:var(--cyan);
+  transition:transform 0.18s ease;
+}
+.ext-guide-details[open] summary::before{ transform:rotate(90deg); }
+.ext-guide-details[open] summary{ margin-bottom:0.9rem; }
+.ext-guide-details summary:hover{ color:var(--tertiary); }
+
+/* ── Topbar identity badge ── */
+.topbar-heading{ display:flex; align-items:center; gap:0.65rem; }
+.topbar-icon{
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  width:32px; height:32px; border-radius:9px;
+  background:var(--gradient-primary); color:#fff;
+  box-shadow:0 2px 10px rgba(193,63,239,0.25);
+}

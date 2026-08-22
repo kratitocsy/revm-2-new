@@ -53,7 +53,10 @@
   <div class="app-main">
     <div class="topbar">
       <button class="hamburger-btn" onclick="openMobileSidebar()" aria-label="Open menu">☰</button>
-      <div><div class="topbar-title">Blocks</div><div class="topbar-sub">Name a block, pick sites, start it — the extension picks it up within a minute</div></div>
+      <div class="topbar-heading">
+        <span class="topbar-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+        <div><div class="topbar-title">Blocks</div><div class="topbar-sub">Name a block, pick sites, start it — the extension picks it up within a minute</div></div>
+      </div>
       <div class="topbar-right"><span class="badge-track" id="topTrack">—</span></div>
     </div>
 
@@ -65,7 +68,10 @@
            mobile/android/.../locking/RevM2LockingPlugin.kt for what each
            button actually opens. -->
       <div id="mobilePermCard" style="display:none;" class="bl-card">
-        <div class="bl-card-title">Enable full blocking on this device</div>
+        <div class="bl-card-head">
+          <span class="bl-card-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <div class="bl-card-title">Enable full blocking on this device</div>
+        </div>
         <p class="empty-note" style="margin-bottom:0.9rem;">
           Each of these opens a system settings screen — nothing here is silent or automatic.
           You can revoke any of them later from Android Settings. Website blocking (VPN) needs Accessibility
@@ -76,7 +82,11 @@
 
       <!-- ACTIVE BLOCK (shown only while one is running) -->
       <div id="activeBlockCard" style="display:none;" class="bl-card active-block-card">
-        <div class="bl-card-title">Currently active</div>
+        <div class="bl-card-head">
+          <span class="bl-card-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+          <div class="bl-card-title">Currently active</div>
+        </div>
+        <div class="ab-live-pill"><span class="ab-live-dot"></span>Focus Lock active</div>
         <div class="active-block-name" id="abName">—</div>
         <div class="active-block-timer" id="abTimer">—</div>
         <div class="active-block-sites" id="abSites">—</div>
@@ -91,7 +101,10 @@
 
       <!-- START A NEW BLOCK -->
       <div class="bl-card" id="startCard">
-        <div class="bl-card-title" id="startCardTitle">Start a block</div>
+        <div class="bl-card-head">
+          <span class="bl-card-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+          <div class="bl-card-title" id="startCardTitle">Start a block</div>
+        </div>
         <div class="empty-note" id="editModeBanner" style="display:none;margin-bottom:0.9rem;padding:0.6rem 0.75rem;background:var(--gold-dim);border:1px solid var(--gold-border);color:var(--text);"></div>
 
         <div class="bl-field">
@@ -188,23 +201,46 @@
 
       <!-- SAVED PRESETS -->
       <div class="bl-card">
-        <div class="bl-card-title">Saved blocks</div>
-        <div class="preset-list" id="presetList"><p class="empty-note">No saved blocks yet.</p></div>
+        <div class="bl-card-head">
+          <span class="bl-card-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4V3Z"/></svg></span>
+          <div class="bl-card-title">Saved blocks</div>
+        </div>
+        <div class="preset-list" id="presetList">
+          <div class="bl-empty">
+            <span class="bl-empty-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4V3Z"/></svg></span>
+            <div class="bl-empty-title">No saved blocks yet</div>
+            <div class="bl-empty-sub">Set up a block above and hit "Save as preset" to reuse it without retyping sites and durations every time.</div>
+          </div>
+        </div>
       </div>
 
       <!-- SCHEDULES: repeat a sequence of saved blocks automatically on
            chosen days of the week, enforced server-side (schedule-tick
            edge function via pg_cron) so it fires even with nothing open. -->
       <div class="bl-card">
-        <div class="bl-card-title">Schedules</div>
+        <div class="bl-card-head">
+          <span class="bl-card-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span>
+          <div class="bl-card-title">Schedules</div>
+        </div>
         <p class="empty-note" style="margin-bottom:0.9rem;">Chain your saved blocks into a repeating day plan — e.g. Physics 7-9am, a break, then Chemistry 9:30-11am — and pick which days it repeats on.</p>
-        <div class="preset-list" id="scheduleList"><p class="empty-note">No schedules yet.</p></div>
-        <div style="display:flex;flex-wrap:wrap;gap:0.6rem;align-items:center;margin-top:0.9rem;">
+        <div class="preset-list" id="scheduleList">
+          <div class="bl-empty">
+            <span class="bl-empty-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span>
+            <div class="bl-empty-title">No schedules yet</div>
+            <div class="bl-empty-sub">Build one manually, scan it from a screenshot, or let AI draft one from your goals or study history below.</div>
+          </div>
+        </div>
+        <div class="sch-actions-row">
           <button class="btn btn-ghost btn-sm" onclick="openScheduleBuilder()">+ New schedule</button>
           <button class="btn btn-ghost btn-sm" id="ocrScanBtn" onclick="document.getElementById('ocrFileInput').click()">📷 Scan from screenshot</button>
-          <button class="btn btn-ai btn-sm" onclick="openAiGoalModal()">✨ Describe goals</button>
-          <button class="btn btn-ai btn-sm" onclick="generateSmartSchedule()">⚡ Smart schedule</button>
           <input type="file" id="ocrFileInput" accept="image/*" style="display:none;" onchange="handleScheduleScreenshot(event)">
+        </div>
+        <div class="sch-ai-group">
+          <span class="sch-ai-label">✨ AI-assisted</span>
+          <div class="sch-actions-row">
+            <button class="btn btn-ai btn-sm" onclick="openAiGoalModal()">Describe goals</button>
+            <button class="btn btn-ai btn-sm" onclick="generateSmartSchedule()">⚡ Smart schedule from my stats</button>
+          </div>
         </div>
         <p class="empty-note" id="ocrStatus" style="margin-top:0.6rem;display:none;"></p>
       </div>
@@ -292,7 +328,10 @@
 
       <!-- CONNECT EXTENSION -->
       <div class="bl-card">
-        <div class="bl-card-title">Connect the extension</div>
+        <div class="bl-card-head">
+          <span class="bl-card-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0V7Z"/><path d="M12 17v5"/></svg></span>
+          <div class="bl-card-title">Connect the extension</div>
+        </div>
         <p class="empty-note" id="connectExplainer" style="margin-bottom:0.9rem;">One click — if the extension is installed we send it the token directly, no copy/paste.</p>
         <p class="empty-note" style="margin-bottom:0.9rem;color:var(--warn);">⚠ Also required, separately from connecting: open <code>chrome://extensions</code> → RevM² → Details → turn on <strong>Allow in Incognito</strong>. Without it the desktop app can't run in a Private/Incognito window at all and will keep closing your browser, even during normal browsing.</p>
         <button class="btn btn-gold btn-sm" id="connectBtn" onclick="showTokenLabelPrompt()">+ Connect extension</button>
@@ -313,6 +352,8 @@
           <p class="empty-note" style="margin-bottom:0.9rem;">Don't have the extension yet? It's not on the Chrome Web Store, so it has to be added by hand — takes about a minute, follow the pictures below exactly and you can't go wrong.</p>
           <a href="downloads/revm2-extension.zip" download class="btn btn-gold btn-sm" style="display:inline-block;text-decoration:none;margin-bottom:1.1rem;">⬇ Download extension (.zip)</a>
 
+          <details class="ext-guide-details">
+          <summary>Show the 5-step setup guide</summary>
           <div class="ext-guide">
 
             <!-- STEP 1 -->
@@ -402,6 +443,7 @@
             </div>
 
           </div>
+          </details>
 
           <p class="empty-note" style="margin-top:1rem;">That's it — the extension icon will appear in your browser toolbar. Come back to this tab and hit the button below.</p>
           <button class="btn btn-ghost btn-sm" style="margin-top:0.6rem;" onclick="autoConnectExtension()">✓ Check again</button>
@@ -422,6 +464,11 @@
 <script>
 const sb=window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL,REVM2_CONFIG.SUPABASE_ANON);
 let myUserId=null;
+
+// Small inline icons reused across the dynamic list rows below — keeps the
+// preset/schedule row markup free of duplicated SVG strings.
+const PRESET_ICON_SVG='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
+const SCHEDULE_ICON_SVG='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>';
 requireAuth().then(session=>{
   if(!session) return;
   myUserId=session.user.id;
@@ -1118,15 +1165,25 @@ async function loadActiveBlock(){
 async function loadPresets(){
   const { data } = await sb.from('focus_lock_presets').select('*').eq('user_id', myUserId).order('created_at',{ascending:false});
   const list=document.getElementById('presetList');
-  if(!data || !data.length){ list.innerHTML='<p class="empty-note">No saved blocks yet.</p>'; return; }
+  if(!data || !data.length){
+    list.innerHTML=`<div class="bl-empty">
+      <span class="bl-empty-icon">${PRESET_ICON_SVG}</span>
+      <div class="bl-empty-title">No saved blocks yet</div>
+      <div class="bl-empty-sub">Set up a block above and hit "Save as preset" to reuse it without retyping sites and durations every time.</div>
+    </div>`;
+    return;
+  }
   list.innerHTML=data.map(p=>{
     const editsLeft=Math.max(0, 2-(p.edit_count||0));
     const editNote=editsLeft>0 ? `${editsLeft} free edit${editsLeft===1?'':'s'} left` : 'edits locked — code required';
     return `
     <div class="preset-row">
-      <div>
-        <div class="preset-name">${escHtml(p.name)}</div>
-        <div class="preset-sites">${p.mode==='whitelist'?'Allow only':'Block'}: ${escHtml((p.sites||[]).join(', '))} · ${p.duration_minutes ? p.duration_minutes+'m' : 'unlimited'}${(p.apps&&p.apps.length) ? ` · ${p.apps.length} app${p.apps.length===1?'':'s'} ${p.apps_mode==='whitelist'?'allowed':'blocked'}` : ''}${p.no_early_unlock ? ' · 🔒 locked' : ''} · <span title="Editing a saved block is free for its first 2 edits, then needs the 250-character code">${editNote}</span></div>
+      <div class="preset-row-main">
+        <span class="preset-icon">${PRESET_ICON_SVG}</span>
+        <div>
+          <div class="preset-name">${escHtml(p.name)}</div>
+          <div class="preset-sites">${p.mode==='whitelist'?'Allow only':'Block'}: ${escHtml((p.sites||[]).join(', '))} · ${p.duration_minutes ? p.duration_minutes+'m' : 'unlimited'}${(p.apps&&p.apps.length) ? ` · ${p.apps.length} app${p.apps.length===1?'':'s'} ${p.apps_mode==='whitelist'?'allowed':'blocked'}` : ''}${p.no_early_unlock ? ' · 🔒 locked' : ''} · <span title="Editing a saved block is free for its first 2 edits, then needs the 250-character code">${editNote}</span></div>
+        </div>
       </div>
       <div class="preset-actions">
         <button class="btn btn-gold btn-sm" onclick="startPreset('${p.id}')">Start</button>
@@ -1347,7 +1404,14 @@ async function loadSchedules(){
     .select('*, focus_lock_schedule_slots(id, slot_order, preset_id, start_time, end_time, break_after_minutes, subject, is_sleep)')
     .eq('user_id', myUserId).order('created_at',{ascending:false});
   const list=document.getElementById('scheduleList');
-  if(!schedules || !schedules.length){ list.innerHTML='<p class="empty-note">No schedules yet.</p>'; return; }
+  if(!schedules || !schedules.length){
+    list.innerHTML=`<div class="bl-empty">
+      <span class="bl-empty-icon">${SCHEDULE_ICON_SVG}</span>
+      <div class="bl-empty-title">No schedules yet</div>
+      <div class="bl-empty-sub">Build one manually, scan it from a screenshot, or let AI draft one from your goals or study history below.</div>
+    </div>`;
+    return;
+  }
 
   const { data: presets } = await sb.from('focus_lock_presets').select('id,name').eq('user_id', myUserId);
   const presetNameById={}; (presets||[]).forEach(p=>presetNameById[p.id]=p.name);
@@ -1361,9 +1425,12 @@ async function loadSchedules(){
     const overrideCountNote=(s.override_count||0)>0 ? `<br><span style="color:var(--muted);">overridden ${s.override_count}/2 times</span>` : '';
     return `
     <div class="preset-row">
-      <div>
-        <div class="preset-name">${escHtml(s.name)} ${s.active?'':'<span style="color:var(--muted);">(paused)</span>'}</div>
-        <div class="preset-sites">${escHtml(days)}<br>${escHtml(slotSummary)}${overrideNote}${overrideCountNote}</div>
+      <div class="preset-row-main">
+        <span class="preset-icon">${SCHEDULE_ICON_SVG}</span>
+        <div>
+          <div class="preset-name">${escHtml(s.name)} ${s.active?'':'<span style="color:var(--muted);">(paused)</span>'}</div>
+          <div class="preset-sites">${escHtml(days)}<br>${escHtml(slotSummary)}${overrideNote}${overrideCountNote}</div>
+        </div>
       </div>
       <div class="preset-actions">
         <button class="btn btn-ghost btn-sm" onclick="requestToggleScheduleActive('${s.id}', ${!s.active})">${s.active?'Pause':'Resume'}</button>
