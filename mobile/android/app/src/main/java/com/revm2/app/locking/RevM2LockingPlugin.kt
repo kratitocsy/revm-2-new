@@ -61,9 +61,16 @@ class RevM2LockingPlugin : Plugin() {
     }
 
     // ── Permission checks ──────────────────────────────────────────
+    // Named checkLockPermissions, NOT checkPermissions - Capacitor's base
+    // Plugin class already declares an open checkPermissions(call) for its
+    // own @Permission-annotation system, and Kotlin refuses to compile a
+    // same-signature method that silently hides it without `override`
+    // (compile error: "hides member of supertype and needs 'override'
+    // modifier"). Deliberately not overriding that one either - it's not
+    // what we want here, we want our own four-flag JSON shape.
 
     @PluginMethod
-    fun checkPermissions(call: PluginCall) {
+    fun checkLockPermissions(call: PluginCall) {
         val result = JSObject()
         result.put("accessibility", isAccessibilityServiceEnabled())
         result.put("overlay", Settings.canDrawOverlays(context))

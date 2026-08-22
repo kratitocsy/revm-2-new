@@ -799,7 +799,7 @@ async function refreshMobilePermCard(){
   const list = document.getElementById('mobilePermList');
   if(!plugin || !card || !list) return;
   let status = {};
-  try{ status = (await plugin.checkPermissions()) || {}; }catch(e){ console.error('RM2 checkPermissions error:', e); }
+  try{ status = (await plugin.checkLockPermissions()) || {}; }catch(e){ console.error('RM2 checkLockPermissions error:', e); }
   const allGranted = MOBILE_PERMS.every(p => status[p.key]);
   if(allGranted){ card.style.display='none'; return; }
   card.style.display='block';
