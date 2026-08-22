@@ -144,9 +144,9 @@
           <div class="site-chips" id="ytChannelChips"></div>
         </div>
 
-        <!-- Native apps (desktop only - extension can't reach these). Only
-             shown/usable when running inside the RevM2 desktop app; a plain
-             browser tab has no way to see or close local processes. -->
+        <!-- Native apps: desktop (running processes) or mobile (installed
+             apps via Tier 2 Accessibility blocking). Browser-tab-only
+             sessions have no way to see or close/block local apps at all. -->
         <div class="bl-field yt-panel" id="appsPanel" style="display:none;">
           <div class="yt-panel-title" id="appsPanelTitle">Apps to block</div>
           <div class="yt-panel-hint" id="appsPanelHint">Optional — close these while this block is active. Only the desktop app can enforce this, not the browser extension.</div>
@@ -157,13 +157,13 @@
           <div class="site-add-row">
             <input type="text" id="appInput" placeholder="e.g. steam.exe" onkeydown="if(event.key==='Enter'){event.preventDefault();addApp();}">
             <button class="btn btn-ghost btn-sm" onclick="addApp()">Add</button>
-            <button class="btn btn-ghost btn-sm" onclick="refreshRunningApps()">Pick from running apps</button>
+            <button class="btn btn-ghost btn-sm" id="pickAppsBtn" onclick="refreshPickableApps()">Pick from running apps</button>
           </div>
           <div class="site-chips" id="appChips"></div>
           <div id="runningAppsPicker" style="display:none;margin-top:0.6rem;max-height:180px;overflow-y:auto;border:1px solid var(--border2);padding:0.5rem;"></div>
         </div>
         <div class="bl-field yt-panel" id="appsPanelUnavailable" style="display:none;">
-          <div class="yt-panel-hint">Open this page inside the RevM2 desktop app to also block specific apps during this session.</div>
+          <div class="yt-panel-hint">Open this page inside the RevM2 desktop or mobile app to also block specific apps during this session.</div>
         </div>
 
         <div class="bl-field">
@@ -752,13 +752,10 @@ function currentYoutubeRulesPayload(){
    isDesktopApp) but talks to Capacitor.Plugins.RevM2Locking instead
    of window.__TAURI__. See mobile/README.md for what's built vs not.
 
-   NOTE — apps blocking is web/desktop only for now: desktop's app
-   list holds process names (e.g. "chrome.exe"), which don't map to
-   Android package names at all. Until there's a dedicated Android
-   app picker producing real package names, only SITE/domain
-   blocking (the VPN side) is wired through to mobile — passing
-   desktop-style app names into RevM2Locking would silently block
-   nothing (or the wrong thing), which is worse than not wiring it. */
+   App-blocking now reaches mobile too, via RevM2LockingPlugin's
+   listInstalledApps() (real Android package names from PackageManager,
+   unlike desktop's process-name strings) - see refreshInstalledApps()
+   below in the apps-panel section. */
 function isMobileApp(){
   return typeof RM2Native !== 'undefined' && RM2Native.isNative();
 }
@@ -774,8 +771,8 @@ async function syncSessionToMobile(active, session){
       await plugin.setBlockListAndStart({
         sessionId: session.sessionId || 'web-mirrored-session',
         noEarlyUnlock: !!session.noEarlyUnlock,
-        appsMode: 'blacklist',
-        apps: [], // see note above — not wired yet, web/desktop only
+        appsMode: session.appsMode==='whitelist' ? 'whitelist' : 'blacklist',
+        apps: session.apps || [],
         domains: (session.sites || []).map(normalizeDomain).filter(Boolean)
       });
     } else {
@@ -825,19 +822,30 @@ async function requestMobilePerm(method){
   setTimeout(refreshMobilePermCard, 2000);
 }
 
-/* ── native apps (desktop only) ──
-   Only the Tauri-wrapped window has window.__TAURI__ - a plain browser
-   tab visiting this same URL doesn't, and has no way to enumerate or
-   close local processes anyway, so the whole panel is hidden there. */
-let pendingApps=[]; // process names, e.g. "steam.exe"
+/* ── native apps (desktop: running processes, mobile: installed apps) ──
+   Only the Tauri-wrapped window has window.__TAURI__, and only the
+   Capacitor-wrapped app has Capacitor.Plugins.RevM2Locking - a plain
+   browser tab has neither and can't enumerate or act on local
+   apps/processes at all, so the whole panel is hidden there. */
+let pendingApps=[]; // desktop: process names (e.g. "steam.exe"); mobile: Android package names
 let pendingAppMode='blacklist'; // 'blacklist' = block these apps, 'whitelist' = allow only these apps
+let appLabelsByPkg={}; // mobile only - packageName -> friendly display label, purely cosmetic
 function isDesktopApp(){
   return typeof window.__TAURI__ !== 'undefined' && !!window.__TAURI__.core;
 }
 function initAppsPanel(){
-  const available = isDesktopApp();
+  const available = isDesktopApp() || isMobileApp();
   document.getElementById('appsPanel').style.display = available ? 'block' : 'none';
   document.getElementById('appsPanelUnavailable').style.display = available ? 'none' : 'block';
+  const input = document.getElementById('appInput');
+  const pickBtn = document.getElementById('pickAppsBtn');
+  if(isMobileApp()){
+    if(input) input.placeholder = 'Android package name, e.g. com.instagram.android';
+    if(pickBtn) pickBtn.textContent = 'Pick installed apps';
+  } else {
+    if(input) input.placeholder = 'e.g. steam.exe';
+    if(pickBtn) pickBtn.textContent = 'Pick from running apps';
+  }
 }
 function pickAppMode(mode, btn){
   pendingAppMode = mode==='whitelist' ? 'whitelist' : 'blacklist';
@@ -845,12 +853,12 @@ function pickAppMode(mode, btn){
   const isWhitelist = pendingAppMode==='whitelist';
   document.getElementById('appsPanelTitle').textContent = isWhitelist ? 'Apps to allow' : 'Apps to block';
   document.getElementById('appsPanelHint').textContent = isWhitelist
-    ? 'Only these apps stay open — everything else gets closed while this block is active. Core system apps and your browser are never closed by this. Only the desktop app can enforce this, not the browser extension.'
-    : 'Optional — close these while this block is active. Only the desktop app can enforce this, not the browser extension.';
+    ? 'Only these apps stay open — everything else gets closed while this block is active. Core system apps and your browser are never closed by this. Only the desktop or mobile app can enforce this, not the browser extension.'
+    : 'Optional — close these while this block is active. Only the desktop or mobile app can enforce this, not the browser extension.';
 }
 function renderAppChips(){
   const wrap=document.getElementById('appChips');
-  wrap.innerHTML = pendingApps.map((a,i)=>`<span class="site-chip">${escHtml(a)}<button onclick="removeApp(${i})">✕</button></span>`).join('');
+  wrap.innerHTML = pendingApps.map((a,i)=>`<span class="site-chip">${escHtml(appLabelsByPkg[a] || a)}<button onclick="removeApp(${i})">✕</button></span>`).join('');
 }
 function addApp(name){
   const input=document.getElementById('appInput');
@@ -862,10 +870,15 @@ function addApp(name){
 }
 function removeApp(i){ pendingApps.splice(i,1); renderAppChips(); }
 function resetAppsPanel(){
-  pendingApps=[]; renderAppChips();
+  pendingApps=[]; appLabelsByPkg={}; renderAppChips();
   document.getElementById('runningAppsPicker').style.display='none';
   const blacklistBtn = document.querySelector('#appsPanel .mode-opts [data-app-mode="blacklist"]');
   if(blacklistBtn) pickAppMode('blacklist', blacklistBtn);
+}
+
+function refreshPickableApps(){
+  if(isMobileApp()) return refreshInstalledApps();
+  return refreshRunningApps();
 }
 
 async function refreshRunningApps(){
@@ -883,6 +896,34 @@ async function refreshRunningApps(){
       </label>`).join('');
   }catch(e){
     picker.innerHTML='<div class="empty-note">Could not list running apps.</div>';
+  }
+}
+
+// Tier 2 counterpart of refreshRunningApps() above - lists installed
+// (launcher-visible) Android apps via RevM2LockingPlugin.listInstalledApps,
+// which reads PackageManager on the native side. Package name is the real
+// blocking key (matched against event.packageName in
+// RevM2AccessibilityService); label is cosmetic only, for the chips/list.
+async function refreshInstalledApps(){
+  if(!isMobileApp()) return;
+  const plugin = mobileLockingPlugin();
+  const picker=document.getElementById('runningAppsPicker');
+  picker.style.display='block';
+  picker.innerHTML='<div class="empty-note">Loading…</div>';
+  if(!plugin){ picker.innerHTML='<div class="empty-note">Locking plugin unavailable.</div>'; return; }
+  try{
+    const { apps } = await plugin.listInstalledApps();
+    if(!apps || !apps.length){ picker.innerHTML='<div class="empty-note">No apps found.</div>'; return; }
+    apps.sort((a,b)=>(a.label||'').localeCompare(b.label||''));
+    apps.forEach(a=>{ appLabelsByPkg[a.packageName]=a.label; });
+    picker.innerHTML = apps.map(a=>`
+      <label style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0;font-size:0.8rem;">
+        <input type="checkbox" ${pendingApps.includes(a.packageName)?'checked':''} onchange="toggleAppPick('${escHtml(a.packageName).replace(/'/g,"\\'")}', this.checked)">
+        ${escHtml(a.label)} <span style="opacity:0.5;">(${escHtml(a.packageName)})</span>
+      </label>`).join('');
+  }catch(e){
+    console.error('RM2 listInstalledApps error:', e);
+    picker.innerHTML='<div class="empty-note">Could not list installed apps.</div>';
   }
 }
 function toggleAppPick(name, checked){
@@ -987,7 +1028,7 @@ async function startBlock(){
   const startedSessionPayload={ blockName:name, sites:startedSites, durationMinutes: startedMinutes>0 ? startedMinutes : null, mode:startedMode, youtubeRules, noEarlyUnlock: startedNoEarlyUnlock };
   sendToExtension({ type:'RM2_START_SESSION', payload:startedSessionPayload });
   pushSessionEventToDesktop(true, startedSessionPayload);
-  syncSessionToMobile(true, { sites: startedSites, noEarlyUnlock: startedNoEarlyUnlock }); // sessionId corrected moments later by loadActiveBlock()
+  syncSessionToMobile(true, { sites: startedSites, apps: startedApps, appsMode: startedAppMode, noEarlyUnlock: startedNoEarlyUnlock }); // sessionId corrected moments later by loadActiveBlock()
   loadActiveBlock();
 }
 
@@ -1083,7 +1124,7 @@ async function loadActiveBlock(){
       youtubeRules: data.youtube_rules || null,
       noEarlyUnlock: !!data.no_early_unlock,
     });
-    syncSessionToMobile(true, { sessionId: data.id, sites: data.sites, noEarlyUnlock: !!data.no_early_unlock });
+    syncSessionToMobile(true, { sessionId: data.id, sites: data.sites, apps: data.apps, appsMode: data.apps_mode, noEarlyUnlock: !!data.no_early_unlock });
   }
   startCard.style.display='none';
   card.style.display='block';
@@ -1946,8 +1987,21 @@ let currentAiMode = 'text'; // tracks which mode is active so the modal's
                              // generate/retry button and error-recovery
                              // path behave correctly for both
 
-function openAiGoalModal(){
-  if(!schedulePresetsCache?.length){
+async function openAiGoalModal(){
+  // Always refetch here rather than trusting whatever schedulePresetsCache
+  // was last left holding (e.g. from an earlier openScheduleBuilder() call
+  // in this same page session). If the user renamed, deleted, or added a
+  // preset since then, the stale cache would get sent to the AI as
+  // presetsForAi with outdated names — the AI would then return
+  // preset_name values that no longer exist. populateBuilderFromAi()
+  // itself always matches against a FRESH fetch (via openScheduleBuilder()),
+  // so a stale presetsForAi silently produced every slot coming back
+  // unmatched ("-- choose a block --"), even though the AI's response was
+  // otherwise perfectly valid. Fetching fresh right before use here closes
+  // that gap.
+  const { data: presets } = await sb.from('focus_lock_presets').select('id,name').eq('user_id', myUserId).order('name');
+  schedulePresetsCache=presets||[];
+  if(!schedulePresetsCache.length){
     alert('Save at least one block preset first — the AI needs to know which blocks to schedule.');
     return;
   }

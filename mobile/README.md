@@ -41,11 +41,17 @@ copy.
   exists inside the WebView to mediate the usual extension-hosted gate) —
   see the comment above that branch in `stopActiveBlock()` for what's
   NOT yet verified equivalent to the real extension flow.
-- **App blocking is web/desktop-only for now** — desktop's app list holds
-  process names, which don't map to Android package names. Site/domain
-  blocking (VPN) IS wired through to mobile. A real Android app picker
-  (package name + label, likely via `PackageManager.getInstalledApplications`)
-  is still needed before app-blocking can extend to mobile.
+- **App blocking now reaches mobile too** — `RevM2LockingPlugin.listInstalledApps()`
+  lists launcher-visible apps via `PackageManager.queryIntentActivities`,
+  returning real Android package names (not desktop's process-name
+  strings). Wired into the same "Start a block" apps panel in
+  `blocks.html` (`refreshInstalledApps()` / `refreshPickableApps()`),
+  and `syncSessionToMobile()` now forwards `apps`/`appsMode` instead of
+  hardcoding an empty list. **Still needs a real-device pass** — package
+  visibility (Android 11+) can hide some apps from `queryIntentActivities`
+  depending on manifest `<queries>` declarations; `QUERY_ALL_PACKAGES` is
+  already declared, but hasn't been verified against a real device's
+  installed-app set yet.
 - **Not started:** Tier 4 (Device Owner) opt-in flow; a `productFlavors`
   split so a Play-distributed build can exclude Tier 4 entirely while a
   direct-download build includes it (see the Play Store discussion this

@@ -914,19 +914,64 @@ async function startSelectedBlockPreset(){
   sendToExtension({ type:'RM2_START_SESSION', payload:{ blockName:preset.name, sites:preset.sites, durationMinutes: preset.duration_minutes || null, mode:presetMode, youtubeRules: preset.youtube_rules || null } });
 }
 
+// Local copy of blocks.html's normalizeDomain - these pages don't share
+// a JS module with blocks.html, and the mobile sync below (which sends
+// real hostnames to the native VPN's domain blocklist) needs the exact
+// same normalization desktop/web already store in focus_lock_sessions.sites,
+// or a session started with e.g. "https://youtube.com/" in sites would
+// never match the plugin's plain-hostname domain comparison.
+function normalizeDomain(input){
+  let value=(input||'').trim().toLowerCase();
+  if(!value) return '';
+  try{
+    if(!value.startsWith('http')) value=`https://${value}`;
+    const url=new URL(value);
+    return url.hostname.replace(/^www\./,'');
+  }catch{
+    return value.replace(/^www\./,'').split('/')[0];
+  }
+}
+
 // Sole source of truth for whether the desktop app should be
 // enforcing anything - deliberately NOT tied to the local pomodoro
 // timer's pause/resume (see stopRemoteSession below for why). Mirrors
 // blocks.html's loadActiveBlock poller so both pages agree.
+//
+// Also relays to the mobile native locking plugin (Tier 2+3), same as
+// blocks.html's loadActiveBlock() - this page's own poller is the ONLY
+// thing that keeps the Android app's on-device enforcement (Accessibility
+// overlay + VPN) in sync while the user is sitting on the Timer tab
+// specifically, since Capacitor navigates between pages inside the same
+// app rather than opening blocks.html separately. Without this, a
+// session started on another device would correctly reach desktop via
+// window.__TAURI__ above, but silently never reach the phone at all if
+// the user happened to be on this tab instead of Blocks.
 async function pollBlockStatusForDesktop(){
   if(!myUserId) return;
   const { data } = await sb.from('focus_lock_sessions')
-    .select('apps, apps_mode, ends_at').eq('user_id', myUserId).eq('active', true).maybeSingle();
+    .select('id, sites, apps, apps_mode, ends_at, no_early_unlock').eq('user_id', myUserId).eq('active', true).maybeSingle();
   if(isDesktopApp()){
     try{ await window.__TAURI__.core.invoke('set_session_active', {active: !!data, endsAt: data?.ends_at || null}); }
     catch(e){ console.error('RM2 desktop invoke error (poll):', e); }
     try{ await window.__TAURI__.core.invoke('set_blocked_apps', {apps: data?.apps || [], mode: data?.apps_mode==='whitelist' ? 'whitelist' : 'blacklist'}); }
     catch(e){ console.error('RM2 desktop invoke error (set_blocked_apps):', e); }
+  }
+  if(typeof RM2Native !== 'undefined' && RM2Native.isNative()){
+    const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.RevM2Locking;
+    if(plugin){
+      try{
+        if(data){
+          await plugin.setBlockListAndStart({
+            sessionId: data.id, noEarlyUnlock: !!data.no_early_unlock,
+            appsMode: data.apps_mode==='whitelist' ? 'whitelist' : 'blacklist',
+            apps: data.apps || [],
+            domains: (data.sites || []).map(normalizeDomain).filter(Boolean)
+          });
+        } else {
+          await plugin.endSession({});
+        }
+      }catch(e){ console.error('RM2 mobile locking sync error (timer poll):', e); }
+    }
   }
 }
 function startBlockStatusPoller(){

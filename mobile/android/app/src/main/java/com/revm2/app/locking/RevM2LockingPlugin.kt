@@ -33,6 +33,33 @@ class RevM2LockingPlugin : Plugin() {
     private val adminComponent: ComponentName
         get() = ComponentName(context, RevM2DeviceAdminReceiver::class.java)
 
+    // ── Installed-apps picker (Tier 2 app-blocking) ──────────────────
+    // Package name is what BlockStore/isAppBlocked actually match against
+    // (see RevM2AccessibilityService — event.packageName is a real Android
+    // package name, unlike desktop's process-name strings). label is
+    // purely for display in the JS-side picker UI.
+    @PluginMethod
+    fun listInstalledApps(call: PluginCall) {
+        val pm = context.packageManager
+        val launchable = pm.queryIntentActivities(
+            Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0
+        )
+        val seen = HashSet<String>()
+        val result = JSONArray()
+        for (info in launchable) {
+            val pkg = info.activityInfo.packageName
+            if (pkg == context.packageName) continue // never let RevM2 block itself
+            if (!seen.add(pkg)) continue
+            val entry = JSObject()
+            entry.put("packageName", pkg)
+            entry.put("label", info.loadLabel(pm).toString())
+            result.put(entry)
+        }
+        val out = JSObject()
+        out.put("apps", result)
+        call.resolve(out)
+    }
+
     // ── Permission checks ──────────────────────────────────────────
 
     @PluginMethod
