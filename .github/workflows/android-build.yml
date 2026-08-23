@@ -79,3 +79,28 @@ jobs:
         with:
           name: app-debug
           path: mobile/android/app/build/outputs/apk/debug/*.apk
+
+      # Uploads the debug APK to Firebase App Distribution and posts a
+      # shareable install link. Only runs on main (not every PR build).
+      # Guarded so the whole workflow doesn't break before Firebase is
+      # set up -- see the setup steps for FIREBASE_APP_ID and
+      # FIREBASE_SERVICE_ACCOUNT repo secrets.
+      - name: Check Firebase secrets present
+        id: firebase_check
+        run: |
+          if [ -n "${{ secrets.FIREBASE_APP_ID }}" ] && [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping Firebase App Distribution -- FIREBASE_APP_ID / FIREBASE_SERVICE_ACCOUNT secrets not set yet."
+          fi
+
+      - name: Distribute via Firebase App Distribution
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && steps.firebase_check.outputs.ready == 'true'
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          groups: testers
+          file: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          releaseNotes: ${{ github.event.head_commit.message }}
