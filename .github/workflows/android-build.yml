@@ -48,7 +48,13 @@ jobs:
           key: gradle-${{ hashFiles('mobile/android/**/*.gradle*') }}
 
       - run: npm install
-      - run: npm run sync-web
+      # `sync-web` alone only copies HTML/CSS/JS into www/. It does NOT
+      # regenerate capacitor.build.gradle / capacitor.settings.gradle or
+      # the capacitor-cordova-android-plugins/ dir that android/settings.gradle
+      # and android/app/build.gradle both `apply from`/`include` unconditionally.
+      # Those are gitignored, generated-on-sync files, so without this step
+      # Gradle fails to even evaluate the project on a fresh checkout.
+      - run: npm run build
 
       - name: Lint
         working-directory: mobile/android
