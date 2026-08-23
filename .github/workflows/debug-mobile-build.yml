@@ -1,6 +1,10 @@
 name: Debug mobile build
 on:
   workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/debug-mobile-build.yml'
 
 jobs:
   debug:
