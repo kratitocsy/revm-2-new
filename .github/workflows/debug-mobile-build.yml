@@ -1,0 +1,38 @@
+name: Debug mobile build
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/debug-mobile-build.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - run: node --version >> debug-log.txt
+      - run: npm --version >> debug-log.txt
+      - run: (npm install 2>&1 || true) | tee -a debug-log.txt
+      - run: (npm run build 2>&1 || true) | tee -a debug-log.txt
+
+      - name: Commit debug log
+        if: always()
+        run: |
+          git config user.email "ci@revm2"
+          git config user.name "CI Debug"
+          git add debug-log.txt
+          git commit -m "debug log" || true
+          git push origin HEAD:debug-log --force
