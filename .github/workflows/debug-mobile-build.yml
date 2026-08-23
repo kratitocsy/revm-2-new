@@ -6,6 +6,9 @@ on:
     paths:
       - '.github/workflows/debug-mobile-build.yml'
 
+permissions:
+  contents: write
+
 jobs:
   debug:
     runs-on: ubuntu-latest
