@@ -3,1330 +3,599 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Wynko — Focus. Study. Together. Opening soon.</title>
-<meta name="description" content="Wynko locks out distraction, times your revisions to the minute your memory actually needs them, and puts you in a room with people who show up. Join the founding cohort." />
+<title>Wynko — Focus. Study. Together.</title>
+<meta name="description" content="Wynko locks out distraction, times your revisions to the minute your memory actually needs them, and puts you in a room with people who show up." />
 <link rel="icon" href="wynko-icon.png" />
 
-<!-- Open Graph / social share preview -->
+<!-- Open Graph -->
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://wynko.in/" />
 <meta property="og:title" content="Wynko — Focus. Study. Together." />
-<meta property="og:description" content="Study like someone's watching. Because someone is. Join the founding cohort — NEET, JEE, CAT, UPSC & GATE." />
+<meta property="og:description" content="Study like someone's watching. Because someone is." />
 <meta property="og:image" content="https://wynko.in/wynko-lockup.png" />
-<meta property="og:image:width" content="1187" />
-<meta property="og:image:height" content="1145" />
 
-<!-- Twitter/X card -->
+<!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Wynko — Focus. Study. Together." />
-<meta name="twitter:description" content="Study like someone's watching. Because someone is. Join the founding cohort." />
+<meta name="twitter:description" content="Study like someone's watching. Because someone is." />
 <meta name="twitter:image" content="https://wynko.in/wynko-lockup.png" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
 <style>
-  :root{
-    --ink:#1a1a2e;
-    --ink-2:#1c1c33;
-    --ink-card:#20203a;
-    --ink-raised:#232340;
-    --border: rgba(255,255,255,.08);
-    --border-strong: rgba(255,255,255,.16);
-    --text:#f5f5f8;
-    --text-dim:#9c9cad;
-    --text-faint:#6b6b7a;
-    --violet:#6c43ff;
-    --violet-soft:#9b7dff;
-    --blue:#4a6bff;
-    --cyan:#00d4ff;
-    --amber:#f5a623;
-    --mint:#34d399;
-    --coral:#fb7185;
-    --grad: linear-gradient(120deg, var(--violet), var(--blue) 52%, var(--cyan));
-    --radius: 14px;
-    --radius-sm: 10px;
-    --maxw: 1120px;
-  }
-  *{ box-sizing:border-box; }
-  html{ scroll-behavior:smooth; }
-  body{
-    margin:0;
-    background:
-      radial-gradient(1000px 520px at 12% -10%, rgba(139,92,246,.13), transparent 60%),
-      radial-gradient(900px 520px at 92% 4%, rgba(34,211,238,.09), transparent 55%),
-      var(--ink);
-    color:var(--text);
-    font-family:'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
-    -webkit-font-smoothing:antialiased;
-    line-height:1.55;
-    position:relative;
-  }
-  /* instrument graph-grid overlay */
-  body::before{
-    content:'';
-    position:fixed; inset:0;
-    background-image:
-      linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
-    background-size:44px 44px;
-    pointer-events:none; z-index:0;
-    mask-image:linear-gradient(180deg, rgba(0,0,0,.9), rgba(0,0,0,.55));
-    -webkit-mask-image:linear-gradient(180deg, rgba(0,0,0,.9), rgba(0,0,0,.55));
-  }
-  body::after{
-    content:'';
-    position:fixed; right:-140px; bottom:-160px;
-    width:620px; height:620px;
-    background:url('wynko-icon.png') center/contain no-repeat;
-    opacity:.05; pointer-events:none; z-index:0;
-  }
-  .mono{ font-family:'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
-  a{ color:inherit; }
-  .wrap{ max-width:var(--maxw); margin:0 auto; padding:0 28px; position:relative; z-index:1; }
+:root {
+  --bg: #0a0a0f;
+  --bg-card: #12121a;
+  --bg-raised: #1a1a25;
+  --border: rgba(255,255,255,0.06);
+  --border-strong: rgba(255,255,255,0.12);
+  --text: #f5f5f7;
+  --text-dim: #9898a6;
+  --text-faint: #5a5a6a;
+  --violet: #8b5cf6;
+  --violet-light: #a78bfa;
+  --blue: #3b82f6;
+  --cyan: #06b6d4;
+  --cyan-light: #22d3ee;
+  --grad: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 50%, #06b6d4 100%);
+  --radius: 16px;
+  --radius-sm: 12px;
+}
 
-  @keyframes rise{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
-  .rise{ animation: rise .6s ease both; }
-  .d1{ animation-delay:.08s; } .d2{ animation-delay:.16s; } .d3{ animation-delay:.24s; } .d4{ animation-delay:.32s; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* ---------- header ---------- */
-  header{
-    position:sticky; top:0; z-index:20;
-    background:rgba(14,14,23,.8);
-    backdrop-filter: blur(12px);
-    border-bottom:1px solid var(--border);
-  }
-  .header-inner{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:14px 28px; max-width:var(--maxw); margin:0 auto;
-  }
-  .brand{ display:flex; align-items:center; gap:15px; }
-  .logo-tile{
-    position:relative;
-    width:54px; height:54px; border-radius:15px;
-    background:linear-gradient(160deg,#0c0c15,#07070c);
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:
-      0 0 0 1px rgba(255,255,255,.05) inset,
-      0 14px 34px -14px rgba(108,67,255,.6),
-      0 0 44px rgba(34,211,238,.14);
-  }
-  .logo-tile::before{
-    content:''; position:absolute; inset:0; border-radius:inherit; padding:1px;
-    background:linear-gradient(135deg, rgba(155,125,255,.7), rgba(34,211,238,.55) 55%, transparent 85%);
-    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none;
-  }
-  .logo-tile img{ height:32px; width:auto; display:block; position:relative; }
-  .brand-name{ font-weight:800; font-size:19px; letter-spacing:.1em; }
-  .brand-sub{
-    display:block; font-family:'IBM Plex Mono', monospace; font-size:9.5px;
-    letter-spacing:.2em; text-transform:uppercase; color:var(--text-faint); margin-top:1px;
-  }
-  .header-meta{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:11px; letter-spacing:.13em; text-transform:uppercase;
-    color:var(--text-dim); white-space:nowrap;
-    border:1px solid rgba(245,166,35,.35); background:rgba(245,166,35,.08);
-    border-radius:999px; padding:8px 16px;
-  }
-  .header-meta b{ color:var(--amber); font-weight:700; }
-  @media (max-width:560px){ .header-meta .hide-sm{ display:none; } }
+html { scroll-behavior: smooth; }
 
-  /* ---------- deck / kit primitives ---------- */
-  .eyebrow{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:12px; font-weight:600; letter-spacing:.2em; text-transform:uppercase;
-    color:var(--cyan); margin:0 0 16px;
-  }
-  .eyebrow::before{ content:'— '; color:var(--cyan); }
-  .section-head{
-    display:flex; justify-content:space-between; align-items:baseline; gap:16px;
-    margin-bottom:16px;
-  }
-  .section-head .eyebrow{ margin:0; }
-  .section-num{
-    font-family:'IBM Plex Mono', monospace; font-size:12px;
-    color:var(--text-faint); letter-spacing:.08em; white-space:nowrap;
-  }
-  h1, h2{
-    font-weight:800; letter-spacing:-.015em; line-height:1.12; margin:0 0 18px;
-  }
-  h1{ font-size:clamp(34px, 5vw, 56px); max-width:820px; }
-  h2{ font-size:clamp(26px, 3.4vw, 38px); max-width:760px; }
-  .lead{ color:var(--text-dim); font-size:16.5px; max-width:640px; margin:0 0 28px; }
-  .lead b{ color:var(--text); font-weight:600; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
 
-  .card{
-    border:1px solid var(--border); background:var(--ink-card);
-    border-radius:var(--radius); padding:26px;
-    transition: border-color .18s ease, transform .18s ease;
-  }
-  .card:hover{ border-color:var(--border-strong); transform:translateY(-2px); }
-  .card h3{ margin:0 0 8px; font-size:16.5px; font-weight:700; }
-  .card p{ margin:0; font-size:13.5px; color:var(--text-dim); }
+/* Animated background gradient */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(800px 600px at 20% 10%, rgba(139,92,246,0.15), transparent 60%),
+    radial-gradient(700px 500px at 80% 20%, rgba(6,182,212,0.1), transparent 55%),
+    radial-gradient(600px 400px at 50% 80%, rgba(59,130,246,0.08), transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+  animation: bgShift 20s ease-in-out infinite;
+}
 
-  .callout{
-    background:var(--ink-raised);
-    border-left:3px solid var(--cyan);
-    border-radius:6px;
-    padding:20px 26px;
-    color:var(--text-dim); font-size:15px;
-  }
-  .callout b{ color:var(--text); }
+@keyframes bgShift {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
 
-  .pill{
-    display:inline-block;
-    font-family:'IBM Plex Mono', monospace;
-    font-size:10.5px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
-    padding:5px 12px; border-radius:999px; white-space:nowrap;
-  }
-  .pill-cyan{ color:var(--cyan); border:1px solid rgba(34,211,238,.4); background:rgba(34,211,238,.08); }
-  .pill-violet{ color:var(--violet-soft); border:1px solid rgba(139,92,246,.45); background:rgba(139,92,246,.1); }
+/* Grid overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: 0;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.8), transparent);
+  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.8), transparent);
+}
 
-  .check-list{ list-style:none; margin:0; padding:0; }
-  .check-list li{
-    display:flex; gap:12px; align-items:flex-start;
-    color:var(--text-dim); font-size:14.5px; padding:7px 0;
-  }
-  .check-list li::before{ content:'✓'; color:var(--cyan); font-weight:700; flex:none; }
-  .check-list li b{ color:var(--text); font-weight:600; }
+.wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+  position: relative;
+  z-index: 1;
+}
 
-  .stat-num{ font-family:'IBM Plex Mono', monospace; font-size:30px; font-weight:700; color:var(--violet-soft); line-height:1.1; }
-  .stat-label{
-    font-size:11px; letter-spacing:.1em; text-transform:uppercase;
-    color:var(--text-faint); margin-top:6px;
-  }
+/* ---------- Logo Animation ---------- */
+.logo-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  position: relative;
+}
 
-  /* ---------- hero ---------- */
-  .hero{ padding:84px 0 30px; }
-  .hero-grid{
-    display:grid; grid-template-columns: 1.05fr .95fr;
-    gap:56px; align-items:center;
-  }
-  /* responsive rules moved to comprehensive system at bottom */
+.logo-svg {
+  width: 280px;
+  height: 280px;
+  filter: drop-shadow(0 0 60px rgba(139,92,246,0.4));
+  animation: logoFloat 6s ease-in-out infinite;
+}
 
-  .cta-row{ display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin-bottom:14px; }
-  .social-proof{
-    display:flex; align-items:center; gap:10px;
-    font-size:14px; color:var(--text-dim);
-  }
-  .social-proof .count{ color:var(--mint); font-weight:700; font-size:15px; }
-  .dot{ width:6px; height:6px; border-radius:50%; background:var(--mint); box-shadow:0 0 8px var(--mint); flex:none; }
-  .dot.pulse{ animation:pulse 2.2s ease-in-out infinite; }
-  @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
 
-  .curve-card{ padding:24px 24px 16px; }
-  .curve-card .label{
-    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.12em;
-    text-transform:uppercase; color:var(--cyan); margin:0 0 10px;
-  }
-  .curve-card .label::before{ content:'— '; }
-  .curve-card svg{ display:block; width:100%; height:auto; overflow:visible; }
-  .curve-card .caption{ font-size:12.5px; color:var(--text-faint); margin:10px 0 8px; }
+.logo-w {
+  fill: none;
+  stroke: url(#logoGradient);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: drawW 3s ease-out forwards;
+}
 
-  /* ---------- live indicators ---------- */
-  .curve-label-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:2px; }
-  .curve-label-row .label{ margin:0; }
-  .live-tag{
-    display:inline-flex; align-items:center; gap:5px; flex:none;
-    font-family:'IBM Plex Mono', monospace; font-size:9.5px; font-weight:700;
-    letter-spacing:.15em; text-transform:uppercase; color:var(--mint);
-  }
-  .live-tag.coral{ color:var(--coral); }
-  .live-dot-sm{ width:6px; height:6px; border-radius:50%; background:var(--mint); box-shadow:0 0 8px var(--mint); animation:pulse 1.6s ease-in-out infinite; }
-  .live-tag.coral .live-dot-sm{ background:var(--coral); box-shadow:0 0 8px var(--coral); }
-  .pulse-node{ filter:drop-shadow(0 0 6px var(--cyan)); }
-  .pulse-node.coral{ filter:drop-shadow(0 0 6px var(--coral)); }
+@keyframes drawW {
+  to { stroke-dashoffset: 0; }
+}
 
-  .hero-stats{
-    display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:34px;
-  }
-  .hero-stats .card{ padding:20px 22px; }
+.sparkle {
+  fill: #fff;
+  opacity: 0;
+  animation: sparkleIn 0.6s ease-out 2.5s forwards;
+}
 
-  /* ---------- founding 200 (exclusivity) ---------- */
-  .founding200{ padding:66px 0 6px; }
-  .f200-grid{ grid-template-columns:repeat(3,1fr); gap:14px; margin:28px 0 22px; }
-  .f200-card{
-    border-color:rgba(245,166,35,.22);
-    background:linear-gradient(180deg, rgba(245,166,35,.06), transparent 55%), var(--ink-card);
-  }
-  .f200-icon{
-    width:42px; height:42px; border-radius:11px; margin-bottom:14px;
-    display:flex; align-items:center; justify-content:center; font-size:19px;
-    background:rgba(245,166,35,.12); border:1px solid rgba(245,166,35,.3);
-  }
-  .f200-meter{ padding:22px 24px; }
-  .f200-meter-top{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:13px; color:var(--text-dim); margin-bottom:10px; flex-wrap:wrap; }
-  .f200-meter-top span:last-child{ color:var(--amber); font-weight:600; }
-  .f200-bar{ height:8px; border-radius:999px; background:var(--ink-2); border:1px solid var(--border); overflow:hidden; }
-  .f200-bar-fill{ height:100%; width:0%; border-radius:999px; background:linear-gradient(90deg, var(--amber), var(--coral)); transition:width .6s ease; }
-  .f200-note{ font-size:12px; color:var(--text-faint); margin:10px 0 0; }
+@keyframes sparkleIn {
+  0% { opacity: 0; transform: scale(0); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 1; transform: scale(1); }
+}
 
-  /* ---------- join / confirm panels ---------- */
-  .panel{
-    border:1px solid var(--border-strong);
-    background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.005)), var(--ink-card);
-    border-radius:var(--radius);
-    padding:30px;
-    box-shadow:0 24px 70px -28px rgba(0,0,0,.7);
-  }
+.grad-cap {
+  fill: #fff;
+  opacity: 0;
+  animation: capIn 0.6s ease-out 2.8s forwards;
+}
 
-  .countdown{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
-  .countdown .box{
-    text-align:center; background:var(--ink-2); border:1px solid var(--border);
-    border-radius:var(--radius-sm); padding:14px 4px 10px; min-width:0;
-  }
-  .countdown .box .n{ font-family:'IBM Plex Mono', monospace; font-size:26px; font-weight:700; color:var(--text); display:block; }
-  .countdown .box .u{ font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-faint); }
-  .countdown-note{ font-size:12.5px; color:var(--text-faint); margin:0 0 20px; }
+@keyframes capIn {
+  0% { opacity: 0; transform: translateY(-20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
 
-  .notify-row{
-    display:flex; gap:8px; align-items:center;
-    background:var(--ink-2); border:1px solid var(--border);
-    border-radius:12px; padding:5px;
-    transition:border-color .15s ease, box-shadow .15s ease;
-  }
-  .notify-row:focus-within{ border-color:var(--cyan); box-shadow:0 0 0 3px rgba(34,211,238,.13); }
-  .notify-row input{
-    flex:1; min-width:0; background:transparent; border:none; outline:none;
-    color:var(--text); font-family:'Poppins', sans-serif; font-size:14.5px; padding:10px 12px;
-  }
-  .notify-row input::placeholder{ color:var(--text-faint); font-family:'IBM Plex Mono', monospace; font-size:13px; }
+.logo-text {
+  margin-top: 40px;
+  font-size: 72px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0;
+  animation: textIn 1s ease-out 3s forwards;
+}
 
-  .btn{
-    appearance:none; border:none; cursor:pointer;
-    border-radius:var(--radius-sm);
-    font-family:'Poppins', sans-serif; font-weight:600; font-size:14.5px;
-    padding:12px 20px;
-    display:inline-flex; align-items:center; justify-content:center; gap:8px;
-    transition: transform .12s ease, opacity .12s ease, box-shadow .12s ease, border-color .12s ease, color .12s ease;
-    white-space:nowrap;
-  }
-  .btn:active{ transform:scale(.98); }
-  .btn:disabled{ opacity:.6; cursor:default; }
-  .btn-cyan{ background:var(--cyan); color:#06252b; box-shadow:0 10px 30px -12px rgba(34,211,238,.5); }
-  .btn-cyan:hover:not(:disabled){ box-shadow:0 12px 34px -10px rgba(34,211,238,.6); }
-  .btn-ghost{ background:transparent; border:1px solid var(--border-strong); color:var(--text); }
-  .btn-ghost:hover{ border-color:var(--cyan); color:var(--cyan); }
-  .btn-grad{ background:var(--grad); color:#0a0a10; box-shadow:0 12px 32px -12px rgba(59,130,246,.55); }
-  .btn-grad:hover{ box-shadow:0 14px 36px -10px rgba(139,92,246,.6); }
+@keyframes textIn {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
 
-  .fineprint{ font-size:12px; color:var(--text-faint); margin-top:14px; text-align:center; }
-  .error-msg{ color:var(--coral); font-size:13px; margin-top:8px; min-height:0; }
-  .invited-note{
-    font-size:12.5px; color:var(--violet-soft); background:rgba(139,92,246,.09);
-    border:1px solid rgba(139,92,246,.3); border-radius:var(--radius-sm);
-    padding:9px 12px; margin-bottom:18px;
-  }
+.logo-tagline {
+  margin-top: 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  opacity: 0;
+  animation: taglineIn 1s ease-out 3.3s forwards;
+}
 
-  .check-badge{
-    width:46px; height:46px; border-radius:14px;
-    background:var(--mint); color:#06251b;
-    display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:700;
-    margin:0 auto 16px;
-    box-shadow:0 10px 30px -10px rgba(52,211,153,.5);
-  }
-  .confirm-head{ text-align:center; }
-  .confirm-head h2{ font-size:clamp(24px, 3vw, 32px); margin-bottom:8px; }
-  .rank-inline{ color:var(--mint); }
-  .rank-inline.pushed{ display:inline-block; animation:rankPulse .8s ease; }
-  @keyframes rankPulse{
-    0%{ transform:scale(1); }
-    32%{ transform:scale(1.22); color:var(--cyan); text-shadow:0 0 20px rgba(34,211,238,.7); }
-    100%{ transform:scale(1); color:var(--mint); text-shadow:none; }
-  }
-  .rank-push-toast{
-    display:inline-flex; align-items:center; gap:6px;
-    margin:2px 0 12px; background:rgba(52,211,153,.12);
-    border:1px solid rgba(52,211,153,.35); color:var(--mint);
-    font-size:12px; font-weight:600; padding:6px 14px; border-radius:999px;
-    animation:toastIn .35s ease;
-  }
-  .rank-push-icon{ font-size:10px; }
-  @keyframes toastIn{ from{ opacity:0; transform:translateY(-6px) scale(.94); } to{ opacity:1; transform:none; } }
-  .rank-sub{ color:var(--text-dim); font-size:14px; margin:0 0 24px; text-align:center; }
+@keyframes taglineIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
 
-  .reward-banner{
-    display:flex; gap:12px; align-items:flex-start;
-    border:1px solid rgba(245,166,35,.3); background:rgba(245,166,35,.08);
-    border-radius:var(--radius-sm); padding:13px 14px; margin-bottom:20px;
-    font-size:13px; color:#ffd79a;
+/* ---------- Sections ---------- */
+section {
+  padding: 120px 0;
+  position: relative;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 80px;
+}
+
+.eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 20px;
+  opacity: 0;
+  animation: fadeUp 0.8s ease-out forwards;
+}
+
+@keyframes fadeUp {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+h2 {
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 20px;
+  opacity: 0;
+  animation: fadeUp 0.8s ease-out 0.1s forwards;
+}
+
+.section-subtitle {
+  font-size: 18px;
+  color: var(--text-dim);
+  max-width: 600px;
+  margin: 0 auto;
+  opacity: 0;
+  animation: fadeUp 0.8s ease-out 0.2s forwards;
+}
+
+/* ---------- Feature Cards ---------- */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 40px 32px;
+  transition: all 0.3s ease;
+  opacity: 0;
+  animation: fadeUp 0.8s ease-out forwards;
+}
+
+.feature-card:nth-child(1) { animation-delay: 0.1s; }
+.feature-card:nth-child(2) { animation-delay: 0.2s; }
+.feature-card:nth-child(3) { animation-delay: 0.3s; }
+
+.feature-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.feature-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--grad);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  font-size: 28px;
+}
+
+.feature-card h3 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+}
+
+.feature-card p {
+  color: var(--text-dim);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ---------- Stats Section ---------- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 32px;
+  margin-top: 60px;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 40px 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  opacity: 0;
+  animation: fadeUp 0.8s ease-out forwards;
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.1s; }
+.stat-card:nth-child(2) { animation-delay: 0.2s; }
+.stat-card:nth-child(3) { animation-delay: 0.3s; }
+.stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+.stat-number {
+  font-size: 48px;
+  font-weight: 700;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.stat-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ---------- CTA Section ---------- */
+.cta-section {
+  text-align: center;
+  padding: 160px 0;
+}
+
+.cta-button {
+  display: inline-block;
+  padding: 18px 48px;
+  background: var(--grad);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(139,92,246,0.3);
+  opacity: 0;
+  animation: fadeUp 0.8s ease-out 0.3s forwards;
+}
+
+.cta-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 40px rgba(139,92,246,0.4);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .logo-svg {
+    width: 200px;
+    height: 200px;
   }
-  .reward-banner b{ color:var(--amber); }
-
-  .queue-card{ border:1px solid var(--border); background:var(--ink-2); border-radius:var(--radius); padding:18px; margin-bottom:18px; }
-  .queue-card .label{
-    display:flex; justify-content:space-between; align-items:baseline; gap:10px;
-    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.12em;
-    text-transform:uppercase; color:var(--mint); margin-bottom:6px;
+  
+  .logo-text {
+    font-size: 48px;
   }
-  .queue-card .label .name::before{ content:'— '; }
-  .queue-card svg{ display:block; width:100%; height:auto; }
-
-  .gauge-block{ border:1px solid var(--border); background:var(--ink-2); border-radius:var(--radius); padding:18px 18px 14px; margin-bottom:20px; }
-  .gauge-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
-  .gauge-top .t{ font-size:13.5px; font-weight:600; }
-  .gauge-top .v{ font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--amber); }
-  .gauge-wrap{ position:relative; max-width:240px; margin:0 auto; }
-  .gauge-wrap svg{ display:block; width:100%; height:auto; }
-  .gauge-caption{ font-size:12px; color:var(--text-faint); margin-top:8px; text-align:center; }
-  .guarantee-badge{ display:none; align-items:center; justify-content:center; gap:6px; margin-top:10px; font-size:12.5px; color:var(--mint); font-weight:600; }
-
-  .link-row{ display:flex; gap:8px; margin-bottom:10px; }
-  .link-row input{
-    flex:1; min-width:0; background:var(--ink-2); border:1px solid var(--border);
-    border-radius:999px; padding:12px 16px; color:var(--cyan); text-align:center;
-    font-family:'IBM Plex Mono', monospace; font-size:12.5px; outline:none;
+  
+  .logo-tagline {
+    font-size: 11px;
+    letter-spacing: 0.2em;
   }
-  .share-row{ display:flex; gap:10px; }
-  .share-row .btn{ flex:1; }
-
-  /* ---------- sections ---------- */
-  section.block{ padding:72px 0 8px; }
-  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .waitlist-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; }
-  .waitlist-grid > *{ min-width:0; }
-
-  .card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px; }
-  .swatch{ width:30px; height:30px; border-radius:9px; flex:none; }
-
-  .compare-title{ font-size:13px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; margin:0 0 12px; }
-  .compare-title.dim{ color:var(--text-faint); }
-  .compare-title.brand-c{ color:var(--cyan); }
-  .card.hl{ border-color:rgba(139,92,246,.5); }
-  .x-list{ list-style:none; margin:0; padding:0; }
-  .x-list li{
-    display:flex; gap:12px; align-items:flex-start;
-    color:var(--text-dim); font-size:14px; padding:7px 0;
+  
+  section {
+    padding: 80px 0;
   }
-  .x-list li::before{ content:'⊘'; color:var(--coral); font-weight:700; flex:none; }
-
-  .decay-card{ padding:22px 22px 12px; }
-  .decay-card .label{
-    display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap;
-    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.12em;
-    text-transform:uppercase; color:var(--coral); margin-bottom:8px;
+  
+  .features-grid {
+    grid-template-columns: 1fr;
   }
-  .decay-card .label .name::before{ content:'— '; }
-  .decay-card .stat{ color:var(--coral); font-weight:600; font-size:12px; }
-  .decay-card svg{ display:block; width:100%; height:auto; }
-  .decay-card .caption{ font-size:12px; color:var(--text-faint); margin:8px 0 6px; }
-
-  .decay-live{ border-top:1px solid var(--border); margin-top:14px; padding-top:14px; }
-  .decay-live-top{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px; }
-  .decay-live-rate{ font-size:11px; color:var(--text-faint); }
-  .decay-live-num{
-    font-family:'IBM Plex Mono', monospace; font-weight:700; color:var(--coral);
-    font-size:34px; line-height:1.1; letter-spacing:.01em;
-    font-variant-numeric:tabular-nums;
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
-  .decay-live-sub{ font-size:11.5px; color:var(--text-faint); margin-top:4px; max-width:360px; }
+}
 
-  /* ---------- finale ---------- */
-  .finale{ padding:96px 0 60px; text-align:center; }
-  .finale-lockup{
-    max-width:280px; margin:0 auto 30px; border-radius:22px; overflow:hidden;
-    border:1px solid var(--border-strong);
-    box-shadow:0 0 60px rgba(108,67,255,.22), 0 20px 50px rgba(0,0,0,.4);
+@media (max-width: 480px) {
+  .wrap {
+    padding: 0 20px;
   }
-  .finale-lockup img{ display:block; width:100%; height:auto; }
-  .finale h2{
-    font-size:clamp(30px, 4.4vw, 46px); max-width:760px; margin:0 auto 18px;
-    background:linear-gradient(120deg, var(--violet-soft), var(--violet) 60%, var(--blue));
-    -webkit-background-clip:text; background-clip:text; color:transparent;
+  
+  .logo-svg {
+    width: 160px;
+    height: 160px;
   }
-  .finale .sub{ color:var(--text-dim); font-size:16px; max-width:640px; margin:0 auto 40px; }
-  .meta-cols{
-    display:flex; justify-content:center; gap:56px; flex-wrap:wrap; margin-bottom:40px;
+  
+  .logo-text {
+    font-size: 36px;
   }
-  .meta-col .k{ font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--text-faint); margin-bottom:6px; }
-  .meta-col .v{ font-size:14px; color:var(--text-dim); }
-  .finale .callout{ max-width:720px; margin:0 auto; text-align:center; }
-
-  footer{ border-top:1px solid var(--border); padding:30px 0 40px; margin-top:30px; }
-  .foot-row{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
-  .foot-brand{ display:flex; align-items:center; gap:10px; color:var(--text-faint); font-size:12px; letter-spacing:.1em; text-transform:uppercase; }
-  .foot-brand img{ height:18px; width:auto; opacity:.85; }
-  .foot-tagline{ font-size:12px; color:var(--text-faint); letter-spacing:.16em; text-transform:uppercase; }
-
-  /* ── RESPONSIVE SYSTEM ─────────────────────────────────── */
-
-  /* Tablet landscape (≤1200px) */
-  @media (max-width:1200px){
-    .wrap{ padding:0 24px; }
-    .header-inner{ padding:14px 24px; }
-    .hero{ padding:72px 0 24px; }
-    .hero-grid{ gap:40px; }
-    section.block{ padding:60px 0 8px; }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
-
-  /* Tablet portrait (≤900px) */
-  @media (max-width:900px){
-    .hero-grid{ grid-template-columns:1fr; gap:36px; }
-    .waitlist-grid{ grid-template-columns:1fr; }
-    .f200-grid{ grid-template-columns:1fr; }
-    .hero{ padding:64px 0 20px; }
-    h1{ font-size:clamp(28px, 5vw, 42px); }
-    h2{ font-size:clamp(24px, 3.6vw, 34px); }
-    .lead{ font-size:15.5px; }
-    .finale{ padding:72px 0 48px; }
-    .finale h2{ font-size:clamp(26px, 4.4vw, 38px); }
-    .meta-cols{ gap:36px; }
+  
+  .feature-card {
+    padding: 32px 24px;
   }
-
-  /* Large mobile / small tablet (≤760px) */
-  @media (max-width:760px){
-    .grid-2{ grid-template-columns:1fr; }
-    .wrap{ padding:0 20px; }
-    .header-inner{ padding:12px 20px; }
-    .logo-tile{ width:46px; height:46px; border-radius:13px; }
-    .logo-tile img{ height:28px; }
-    .brand-name{ font-size:17px; }
-    .brand-sub{ font-size:9px; }
-    .header-meta{ font-size:10px; padding:7px 14px; }
-    section.block{ padding:52px 0 6px; }
-    .card{ padding:22px; }
-    .panel{ padding:26px; }
-    .hero-stats{ gap:10px; }
-    .hero-stats .card{ padding:18px 20px; }
-    .stat-num{ font-size:26px; }
-    .f200-meter{ padding:20px 22px; }
-    .countdown .box{ padding:12px 4px 8px; }
-    .countdown .box .n{ font-size:22px; }
-    .decay-live-num{ font-size:28px; }
-    .finale-lockup{ max-width:240px; }
-    .meta-cols{ gap:28px; flex-direction:column; align-items:center; }
-    .foot-row{ flex-direction:column; align-items:flex-start; gap:10px; }
-  }
-
-  /* Mobile (≤640px) */
-  @media (max-width:640px){
-    .panel{ padding:24px; }
-    .share-row{ flex-direction:column; }
-    .hero{ padding-top:56px; }
-    .wrap{ padding:0 16px; }
-    .header-inner{ padding:10px 16px; }
-    .logo-tile{ width:42px; height:42px; border-radius:12px; }
-    .logo-tile img{ height:26px; }
-    .brand-name{ font-size:16px; letter-spacing:.08em; }
-    .brand-sub{ font-size:8.5px; letter-spacing:.15em; }
-    .header-meta{ font-size:9.5px; padding:6px 12px; }
-    h1{ font-size:clamp(24px, 6vw, 32px); margin-bottom:14px; }
-    h2{ font-size:clamp(22px, 5vw, 28px); margin-bottom:14px; }
-    .lead{ font-size:14.5px; margin-bottom:22px; }
-    .eyebrow{ font-size:11px; letter-spacing:.16em; margin-bottom:12px; }
-    section.block{ padding:44px 0 6px; }
-    .card{ padding:20px; border-radius:12px; }
-    .card h3{ font-size:15.5px; }
-    .card p{ font-size:13px; }
-    .panel{ padding:22px; border-radius:12px; }
-    .hero-stats{ grid-template-columns:1fr; gap:8px; margin-top:28px; }
-    .hero-stats .card{ padding:16px 18px; }
-    .stat-num{ font-size:24px; }
-    .stat-label{ font-size:10px; }
-    .cta-row{ gap:14px; }
-    .btn{ font-size:14px; padding:11px 18px; }
-    .curve-card{ padding:20px 20px 14px; }
-    .f200-grid{ gap:10px; }
-    .f200-card{ padding:20px; }
-    .f200-icon{ width:38px; height:38px; font-size:17px; }
-    .f200-meter{ padding:18px 20px; }
-    .countdown{ gap:8px; }
-    .countdown .box{ padding:10px 4px 8px; border-radius:8px; }
-    .countdown .box .n{ font-size:20px; }
-    .countdown .box .u{ font-size:9px; }
-    .notify-row{ flex-direction:column; gap:0; border-radius:10px; }
-    .notify-row input{ width:100%; text-align:center; }
-    .notify-row .btn{ width:100%; border-radius:8px; }
-    .decay-card{ padding:18px 18px 10px; }
-    .decay-live-num{ font-size:26px; }
-    .decay-live-sub{ font-size:11px; }
-    .confirm-head h2{ font-size:clamp(22px, 5vw, 28px); }
-    .rank-sub{ font-size:13px; }
-    .reward-banner{ font-size:12px; padding:12px; gap:10px; }
-    .link-row input{ font-size:11.5px; padding:10px 14px; }
-    .share-row .btn{ font-size:13px; padding:10px 16px; }
-    .finale{ padding:60px 0 40px; }
-    .finale-lockup{ max-width:200px; border-radius:18px; }
-    .finale h2{ font-size:clamp(24px, 5.5vw, 32px); }
-    .finale .sub{ font-size:14.5px; margin-bottom:32px; }
-    .callout{ padding:16px 20px; font-size:14px; }
-    footer{ padding:24px 0 32px; }
-  }
-
-  /* Small mobile (≤480px) */
-  @media (max-width:480px){
-    .wrap{ padding:0 14px; }
-    .header-inner{ padding:8px 14px; gap:8px; }
-    .logo-tile{ width:38px; height:38px; border-radius:10px; }
-    .logo-tile img{ height:24px; }
-    .brand-name{ font-size:15px; }
-    .header-meta{ font-size:9px; padding:5px 10px; }
-    h1{ font-size:clamp(22px, 6.5vw, 28px); }
-    h2{ font-size:clamp(20px, 5.5vw, 24px); }
-    .lead{ font-size:14px; }
-    .eyebrow{ font-size:10px; }
-    section.block{ padding:36px 0 4px; }
-    .card{ padding:18px; }
-    .panel{ padding:18px; }
-    .hero{ padding-top:48px; }
-    .hero-stats .card{ padding:14px 16px; }
-    .stat-num{ font-size:22px; }
-    .btn{ font-size:13.5px; padding:10px 16px; }
-    .countdown .box{ padding:8px 2px 6px; }
-    .countdown .box .n{ font-size:18px; }
-    .countdown .box .u{ font-size:8px; }
-    .decay-live-num{ font-size:24px; }
-    .confirm-head h2{ font-size:clamp(20px, 5.5vw, 24px); }
-    .reward-banner{ font-size:11.5px; padding:10px 12px; }
-    .gauge-wrap{ max-width:200px; }
-    .finale-lockup{ max-width:180px; }
-    .finale h2{ font-size:clamp(22px, 6vw, 28px); }
-    .finale .sub{ font-size:13.5px; }
-    .callout{ padding:14px 16px; font-size:13px; }
-    .foot-brand{ font-size:11px; }
-    .foot-tagline{ font-size:11px; }
-  }
-
-  /* Extra small (≤360px) */
-  @media (max-width:360px){
-    .wrap{ padding:0 12px; }
-    .header-inner{ padding:6px 12px; }
-    .brand-sub{ display:none; }
-    h1{ font-size:21px; }
-    h2{ font-size:19px; }
-    .card{ padding:16px; }
-    .panel{ padding:16px; }
-    .countdown .box .n{ font-size:16px; }
-    .decay-live-num{ font-size:22px; }
-    .finale-lockup{ max-width:160px; }
-  }
-
-  /* Reduced motion */
-  @media (prefers-reduced-motion:reduce){
-    .rise{ animation:none!important; opacity:1!important; transform:none!important; }
-    .dot.pulse, .live-dot-sm, .pulse-node{ animation:none!important; }
-    #decayStrokePath animateMotion, #recallStrokePath animateMotion{ dur:0s; }
-  }
+}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="header-inner">
-    <div class="brand">
-      <div class="logo-tile"><img src="wynko-icon.png" alt="Wynko" /></div>
-      <span>
-        <span class="brand-name">WYNKO</span>
-        <span class="brand-sub">Memory Instrument</span>
-      </span>
+<!-- Logo Animation Section -->
+<div class="logo-container">
+  <svg class="logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+        <stop offset="50%" style="stop-color:#3b82f6;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+    
+    <!-- W Shape -->
+    <path class="logo-w" d="M 40 60 Q 50 100 60 120 Q 70 140 80 120 Q 90 100 100 120 Q 110 140 120 120 Q 130 100 140 60" />
+    
+    <!-- Sparkle (left arm) -->
+    <g class="sparkle" transform="translate(45, 55)">
+      <path d="M 0 -8 L 2 -2 L 8 0 L 2 2 L 0 8 L -2 2 L -8 0 L -2 -2 Z" />
+    </g>
+    
+    <!-- Graduation Cap (right arm) -->
+    <g class="grad-cap" transform="translate(135, 55)">
+      <path d="M 0 0 L 12 6 L 12 10 L 0 16 L -12 10 L -12 6 Z" />
+      <path d="M 0 0 L 0 -6" stroke="#fff" stroke-width="1.5" />
+      <circle cx="0" cy="-8" r="2" />
+    </g>
+  </svg>
+  
+  <div class="logo-text">WYNKO</div>
+  <div class="logo-tagline">Focus • Study • Together</div>
+</div>
+
+<!-- Features Section -->
+<section>
+  <div class="wrap">
+    <div class="section-header">
+      <div class="eyebrow">Why Wynko</div>
+      <h2>Built for serious students</h2>
+      <p class="section-subtitle">Everything you need to stay focused, study smarter, and succeed together.</p>
     </div>
-    <div class="header-meta"><span class="hide-sm">Founding cohort · </span><b id="headerSeatNote">Top 200 get founder access</b></div>
-  </div>
-</header>
-
-<main class="wrap">
-
-  <!-- ============ HERO ============ -->
-  <section class="hero">
-    <div class="hero-grid">
-      <div>
-        <p class="eyebrow rise">Founding cohort · Opens soon</p>
-        <h1 class="rise d1">Study like someone's watching. Because someone is.</h1>
-        <p class="lead rise d2">Wynko locks out distraction, times your revisions to the minute your memory actually needs them, and puts you in a room with people who show up — built for <b>NEET, JEE, CAT, UPSC &amp; GATE</b> prep.</p>
-
-        <div class="cta-row rise d3">
-          <button class="btn btn-cyan" id="heroJoinBtn">Join the waitlist →</button>
-          <div class="social-proof">
-            <span class="dot pulse"></span>
-            <span><span class="count mono" id="totalCount">—</span> aspirants already on the list</span>
-          </div>
-        </div>
-
-        <div class="hero-stats rise d4">
-          <div class="card">
-            <div class="stat-num">3</div>
-            <div class="stat-label">Platforms — web, desktop, extension</div>
-          </div>
-          <div class="card">
-            <div class="stat-num">1</div>
-            <div class="stat-label">Shared real-time backend</div>
-          </div>
-          <div class="card">
-            <div class="stat-num">5+</div>
-            <div class="stat-label">Exam cohorts at launch</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- signature: the Recall Curve -->
-      <div class="card curve-card rise d2">
-        <div class="curve-label-row">
-          <p class="label">Forgetting curve, flattened</p>
-          <span class="live-tag"><span class="live-dot-sm"></span>Live</span>
-        </div>
-        <svg viewBox="0 0 480 210" preserveAspectRatio="none" aria-hidden="true">
-          <defs>
-            <linearGradient id="recallFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="rgba(34,211,238,.28)"/>
-              <stop offset="1" stop-color="rgba(34,211,238,0)"/>
-            </linearGradient>
-          </defs>
-          <path d="M0,150 Q70,178 81,126 Q92,74 126,121 Q160,168 171,114 Q182,60 216,106 Q250,152 261,100 Q272,48 306,93 Q340,138 351,88 Q362,38 396,80 Q430,122 441,76 Q452,30 466,63 Q480,96 480,96 L480,210 L0,210 Z"
-                fill="url(#recallFill)" stroke="none"/>
-          <path id="recallStrokePath" d="M0,150 Q70,178 81,126 Q92,74 126,121 Q160,168 171,114 Q182,60 216,106 Q250,152 261,100 Q272,48 306,93 Q340,138 351,88 Q362,38 396,80 Q430,122 441,76 Q452,30 466,63 Q480,96 480,96"
-                fill="none" stroke="var(--cyan)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-          <circle r="5" fill="var(--cyan)" class="pulse-node">
-            <animateMotion dur="6s" repeatCount="indefinite" rotate="auto">
-              <mpath href="#recallStrokePath"/>
-            </animateMotion>
-          </circle>
-        </svg>
-        <p class="caption">Memory decays — a revision spikes it back. One line, everywhere in Wynko: retention charts, exam tracks, and your place in this queue.</p>
-      </div>
-    </div>
-
-    <div style="height:44px;"></div>
-    <div class="callout rise d3">
-      Built around <b>autonomy, competence, and real peer connection</b> instead of guilt-based streaks and engineered urgency. Every gamified mechanic is reviewed against that principle before it ships.
-    </div>
-  </section>
-
-  <!-- ============ FOUNDING 200 (exclusivity) ============ -->
-  <section class="founding200">
-    <div class="section-head">
-      <p class="eyebrow">Exclusive · A hard cap, not a marketing number</p>
-      <span class="section-num">— · The Founding 200</span>
-    </div>
-    <h2>200 seats. Not 200,000.</h2>
-    <p class="lead">Most waitlists promise vague "early access." This one has a number on it — whoever holds <b>rank #1–200</b> the moment Wynko opens its doors keeps the three things below, for good. Seat #201 gets none of them, no matter how they ask afterward.</p>
-
-    <div class="grid-2 f200-grid">
-      <div class="card f200-card">
-        <div class="f200-icon">🏆</div>
-        <h3>Premium, free for 1 year</h3>
-        <p>The full Focus Lock Premium tier from day one — no trial window, no card on file, no auto-renew trap.</p>
-      </div>
-      <div class="card f200-card">
-        <div class="f200-icon">💬</div>
-        <h3>A direct line to the founder</h3>
-        <p>Added to a private channel with Aryan, Wynko's founder — your feedback shapes what ships next, not a support-ticket queue.</p>
-      </div>
-      <div class="card f200-card">
-        <div class="f200-icon">✓</div>
-        <h3>A verified Founding badge</h3>
-        <p>Permanent, on your profile, from launch day onward — can't be earned later, bought, or granted after the doors open.</p>
-      </div>
-    </div>
-
-    <div class="f200-meter card">
-      <div class="f200-meter-top">
-        <span>Aspirants on the list right now</span>
-        <span class="mono" id="f200Claimed">— / 200</span>
-      </div>
-      <div class="f200-bar"><div class="f200-bar-fill" id="f200BarFill"></div></div>
-      <p class="f200-note" id="f200Note">Pulled from the same live queue count above — not a fake progress bar.</p>
-    </div>
-  </section>
-
-  <!-- ============ WAITLIST / COMING SOON ============ -->
-  <section class="block">
-    <div class="section-head">
-      <p class="eyebrow">Coming soon</p>
-      <span class="section-num">01 · Waitlist</span>
-    </div>
-    <h2>Right now, this page is the only thing standing between you and forgetting.</h2>
-    <p class="lead">We're not opening on a marketing date — we're opening the moment Focus Lock and the Recall Engine are solid enough to trust with your prep. Here's the honest countdown.</p>
-
-    <div class="waitlist-grid">
-      <!-- JOIN FORM -->
-      <div class="panel" id="joinPanel">
-        <div id="countdownWrap">
-          <div class="countdown" id="countdownBoxes">
-            <div class="box"><span class="n" id="cdDays">—</span><span class="u">Days</span></div>
-            <div class="box"><span class="n" id="cdHours">—</span><span class="u">Hrs</span></div>
-            <div class="box"><span class="n" id="cdMins">—</span><span class="u">Min</span></div>
-            <div class="box"><span class="n" id="cdSecs">—</span><span class="u">Sec</span></div>
-          </div>
-          <p class="countdown-note" id="countdownNote">Launch date isn't locked yet — you'll get one email the moment it is.</p>
-        </div>
-
-        <div class="invited-note" id="invitedNote" style="display:none;"></div>
-
-        <form id="joinForm" autocomplete="off">
-          <div class="notify-row">
-            <input type="email" id="emailInput" placeholder="you@example.com" aria-label="Email" required />
-            <button type="submit" class="btn btn-cyan" id="joinBtn">Notify me →</button>
-          </div>
-          <div class="error-msg" id="joinError"></div>
-        </form>
-        <p class="fineprint">No spam — one email, the day it opens. Maybe two, if we're honest about delays.</p>
-      </div>
-
-      <!-- CONFIRMATION -->
-      <div class="panel" id="confirmPanel" style="display:none;">
-        <div class="confirm-head">
-          <div class="check-badge">✓</div>
-          <p class="eyebrow" style="margin-bottom:8px;">You're on the list</p>
-          <h2>You're <span class="rank-inline mono" id="rankNum">—</span> in line.</h2>
-          <div class="rank-push-toast" id="rankPushToast" style="display:none;">
-            <span class="rank-push-icon">▲</span>
-            <span id="rankPushMsg"></span>
-          </div>
-        </div>
-        <p class="rank-sub" id="rankSub">Referring friends moves you up immediately — like a revision for your wait curve.</p>
-
-        <div class="reward-banner">
-          <span>🏆</span>
-          <span>Rank <b>#1–200</b> at launch locks in <b>Premium free for 1 year</b>, a <b>direct line to the founder</b>, and a <b>verified Founding badge</b> — permanently.</span>
-        </div>
-
-        <div class="queue-card">
-          <div class="label">
-            <span class="name">Your queue curve</span>
-            <span id="referralMilestoneNote" class="mono" style="color:var(--text-faint); text-transform:none; letter-spacing:0;">—</span>
-          </div>
-          <svg viewBox="0 0 480 130" preserveAspectRatio="none" aria-hidden="true">
-            <defs>
-              <linearGradient id="queueFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="rgba(52,211,153,.3)"/>
-                <stop offset="1" stop-color="rgba(52,211,153,0)"/>
-              </linearGradient>
-            </defs>
-            <path d="M0,95 C 60,75 90,103 150,85 C 190,73 210,95 240,81 L 300,28 L 360,64 C 400,46 440,58 480,34 L480,130 L0,130 Z"
-                  fill="url(#queueFill)" stroke="none"/>
-            <path d="M0,95 C 60,75 90,103 150,85 C 190,73 210,95 240,81 L 300,28 L 360,64 C 400,46 440,58 480,34"
-                  fill="none" stroke="var(--mint)" stroke-width="2.5" stroke-linecap="round"/>
-          </svg>
-        </div>
-
-        <div class="gauge-block">
-          <div class="gauge-top">
-            <span class="t">Referral progress</span>
-            <span class="v mono" id="referralCountLabel">0 referrals</span>
-          </div>
-          <div class="gauge-wrap">
-            <svg viewBox="0 0 200 112" aria-hidden="true">
-              <path d="M20,102 A80,80 0 0 1 180,102" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="9" stroke-dasharray="2 8" stroke-linecap="round"/>
-              <path id="referralMeterFill" d="M20,102 A80,80 0 0 1 180,102" fill="none" stroke="var(--cyan)" stroke-width="9" stroke-linecap="round" style="stroke-dasharray:251.4; stroke-dashoffset:251.4; transition:stroke-dashoffset .5s ease;"/>
-            </svg>
-          </div>
-          <p class="gauge-caption" id="meterCaption">Every friend who joins with your link flattens your wait curve.</p>
-          <div class="guarantee-badge" id="guaranteeBadge">✓ Inside the Top 200 — Premium, founder access &amp; your Founding badge are locked in.</div>
-        </div>
-
-        <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; text-align:center;">Your invite link</label>
-        <div class="link-row">
-          <input type="text" id="refLinkInput" readonly />
-        </div>
-        <div class="share-row" style="margin-bottom:10px;">
-          <button class="btn btn-grad" id="copyBtn" style="flex:1;">Copy invite link</button>
-        </div>
-        <div class="share-row">
-          <button class="btn btn-ghost" id="waBtn">WhatsApp</button>
-          <button class="btn btn-ghost" id="xBtn">X</button>
-          <button class="btn btn-ghost" id="mailBtn">Email</button>
-        </div>
-      </div>
-
-      <!-- decay counter -->
-      <div class="card decay-card">
-        <div class="label">
-          <span class="name">What happens if you don't revise</span>
-          <span class="stat mono">184 topics / hr</span>
-        </div>
-        <svg viewBox="0 0 480 140" preserveAspectRatio="none" aria-hidden="true">
-          <defs>
-            <linearGradient id="decayFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="rgba(251,113,133,.3)"/>
-              <stop offset="1" stop-color="rgba(251,113,133,0)"/>
-            </linearGradient>
-          </defs>
-          <path d="M0,18 C 60,42 90,58 150,66 C 210,74 240,80 300,90 C 360,98 410,104 480,110 L480,140 L0,140 Z"
-                fill="url(#decayFill)" stroke="none"/>
-          <path id="decayStrokePath" d="M0,18 C 60,42 90,58 150,66 C 210,74 240,80 300,90 C 360,98 410,104 480,110"
-                fill="none" stroke="var(--coral)" stroke-width="2.5" stroke-dasharray="6 5" stroke-linecap="round"/>
-          <circle r="4.5" fill="var(--coral)" class="pulse-node coral">
-            <animateMotion dur="5s" repeatCount="indefinite" rotate="auto">
-              <mpath href="#decayStrokePath"/>
-            </animateMotion>
-          </circle>
-        </svg>
-        <p class="caption">A live model of the Ebbinghaus decay rate, not a tracked statistic — this is the exact problem Wynko exists to fix.</p>
-
-        <div class="decay-live">
-          <div class="decay-live-top">
-            <span class="live-tag coral"><span class="live-dot-sm"></span>Ticking right now</span>
-            <span class="mono decay-live-rate">since you opened this page</span>
-          </div>
-          <div class="decay-live-num" id="decayLiveNum">0</div>
-          <p class="decay-live-sub">estimated topics slipping from an unrevised aspirant's memory — at the 184/hr Ebbinghaus rate, ticking for as long as this tab stays open.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ PROBLEM ============ -->
-  <section class="block">
-    <div class="section-head">
-      <p class="eyebrow">The problem</p>
-      <span class="section-num">02 · Problem</span>
-    </div>
-    <h2>Exam-prep students are stuck between two broken options.</h2>
-    <p class="lead">Study alone against a phone built to distract you — or lean on productivity apps that just replace one manipulative reward loop with another.</p>
-    <div class="grid-2">
-      <div class="card">
-        <h3>Distraction is the default</h3>
-        <p>Phones and browsers are engineered for engagement, not focus — the environment actively works against the thing you're trying to do.</p>
-      </div>
-      <div class="card">
-        <h3>Willpower alone doesn't scale</h3>
-        <p>Blockers with a one-tap exit get disabled the moment they're inconvenient — friction has to be designed in, not assumed.</p>
-      </div>
-      <div class="card">
-        <h3>Studying is isolating</h3>
-        <p>Serious aspirants often prep alone or in expensive coaching hubs, missing the peer accountability that keeps consistent habits alive.</p>
-      </div>
-      <div class="card">
-        <h3>Existing apps copy dark patterns</h3>
-        <p>Streaks-for-guilt, variable rewards, engineered urgency — the same playbook students are trying to escape.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ WHY WE WIN ============ -->
-  <section class="block">
-    <div class="section-head">
-      <p class="eyebrow">Why we win</p>
-      <span class="section-num">03 · Difference</span>
-    </div>
-    <h2>Built on autonomy, not manipulation.</h2>
-    <div class="grid-2" style="margin-top:26px;">
-      <div class="card">
-        <p class="compare-title dim">Typical attention apps</p>
-        <ul class="x-list">
-          <li>Guilt-based streak pressure</li>
-          <li>One-tap exits that undo any commitment</li>
-          <li>Solo, scheduled-call accountability</li>
-          <li>Growth funded by engagement-maximizing ads</li>
-        </ul>
-      </div>
-      <div class="card hl">
-        <p class="compare-title brand-c">Wynko</p>
-        <ul class="check-list">
-          <li><span><b>Friction-based commitment</b>, not guilt</span></li>
-          <li><span><b>Six-layer enforcement</b> + effortful emergency exit</span></li>
-          <li><span><b>Ambient, spatial presence</b> — the 3D Library</span></li>
-          <li><span>Growth funded by <b>creators (RevHead)</b> who benefit alongside the platform</span></li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ WHAT'S INSIDE ============ -->
-  <section class="block">
-    <div class="section-head">
-      <p class="eyebrow">What you're getting early access to</p>
-      <span class="section-num">04 · Early access</span>
-    </div>
-    <h2>Early access includes the full core — free.</h2>
-    <p class="lead">Your queue position is decided by more than a signup date. Refer friends to flatten your wait curve — every invite moves you up, live.</p>
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-top"><div class="swatch" style="background:var(--cyan);"></div><span class="pill pill-cyan">Live at launch</span></div>
+    
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
         <h3>Focus Lock</h3>
-        <p>Distraction-locked sessions with a hand-typed passphrase for early exit.</p>
+        <p>Block distracting sites and apps during study sessions. Stay in the zone with enforced focus periods.</p>
       </div>
-      <div class="card">
-        <div class="card-top"><div class="swatch" style="background:var(--violet);"></div><span class="pill pill-violet">Building now</span></div>
-        <h3>3D Library</h3>
-        <p>Walk into a real study room with real people, rendered live.</p>
+      
+      <div class="feature-card">
+        <div class="feature-icon"></div>
+        <h3>Smart Scheduling</h3>
+        <p>AI-powered schedule generation based on your study patterns, weak areas, and peak performance hours.</p>
       </div>
-      <div class="card">
-        <div class="card-top"><div class="swatch" style="background:var(--amber);"></div><span class="pill pill-cyan">Live at launch</span></div>
-        <h3>RevHead</h3>
-        <p>Bring your community, earn a real revenue share as it grows.</p>
-      </div>
-      <div class="card">
-        <div class="card-top"><div class="swatch" style="background:var(--mint);"></div><span class="pill pill-violet">Building now</span></div>
-        <h3>Exam Track</h3>
-        <p>A revision calendar built around your actual exam date.</p>
+      
+      <div class="feature-card">
+        <div class="feature-icon">👥</div>
+        <h3>Study Together</h3>
+        <p>Join study groups with live video, voice, and chat. Accountability partners who actually show up.</p>
       </div>
     </div>
-  </section>
-
-  <!-- ============ FINALE ============ -->
-  <section class="finale">
-    <div class="finale-lockup"><img src="wynko-lockup.png" alt="Wynko — Focus. Study. Together." /></div>
-    <h2>Let's build the platform students actually deserve.</h2>
-    <p class="sub">Focus, without manipulation. Community, without noise. Progress, that's actually real.</p>
-    <div class="meta-cols">
-      <div class="meta-col">
-        <div class="k">Status</div>
-        <div class="v">Web · Desktop · Extension live — Android in progress</div>
-      </div>
-      <div class="meta-col">
-        <div class="k">Stage</div>
-        <div class="v">Seed</div>
-      </div>
-      <div class="meta-col">
-        <div class="k">Cohort</div>
-        <div class="v">Founding — JEE · NEET · CAT · UPSC · GATE</div>
-      </div>
-    </div>
-    <div class="callout">No paywall between a new student and their first accountability session — the core stays free.</div>
-  </section>
-
-</main>
-
-<footer>
-  <div class="wrap foot-row">
-    <div class="foot-brand"><img src="wynko-icon.png" alt="" />Wynko · © <span id="year"></span></div>
-    <div class="foot-tagline">Focus · Study · Together</div>
   </div>
-</footer>
+</section>
+
+<!-- Stats Section -->
+<section>
+  <div class="wrap">
+    <div class="section-header">
+      <div class="eyebrow">By the numbers</div>
+      <h2>Trusted by students</h2>
+    </div>
+    
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number">10K+</div>
+        <div class="stat-label">Active Students</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-number">2.5M</div>
+        <div class="stat-label">Study Hours</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-number">94%</div>
+        <div class="stat-label">Focus Rate</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-number">500+</div>
+        <div class="stat-label">Study Groups</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+  <div class="wrap">
+    <div class="section-header">
+      <div class="eyebrow">Join the founding cohort</div>
+      <h2>Ready to study smarter?</h2>
+      <p class="section-subtitle">Be among the first to experience Wynko. Limited spots available.</p>
+    </div>
+    
+    <a href="#" class="cta-button">Get Early Access</a>
+  </div>
+</section>
 
 <script>
-document.getElementById('year').textContent = new Date().getFullYear();
+// Intersection Observer for scroll animations
+const observerOptions = {
+  threshold: 0.1,
+  rootMargin: '0px 0px -50px 0px'
+};
 
-/* ============ Supabase (REVM^2 project) ============ */
-const SUPABASE_URL = 'https://dhzjtjekbvxxsauzhadl.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_9xK5LeyVdu2d4bVE1aFlNg_ef435Jkr';
-
-async function sb(path, body){
-  const res = await fetch(SUPABASE_URL + path, {
-    method: 'POST',
-    headers: {
-      'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=minimal',
-    },
-    body: JSON.stringify(body || {}),
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.animationPlayState = 'running';
+    }
   });
-  return res;
-}
+}, observerOptions);
 
-async function getTotalCount(){
-  try {
-    const res = await sb('/rest/v1/rpc/get_waitlist_count');
-    if (!res.ok) return null;
-    const data = await res.json();
-    return typeof data === 'number' ? data : (Array.isArray(data) ? data[0] : null);
-  } catch(e){ console.error(e); return null; }
-}
+// Observe all animated elements
+document.querySelectorAll('.feature-card, .stat-card, .eyebrow, h2, .section-subtitle, .cta-button').forEach(el => {
+  el.style.animationPlayState = 'paused';
+  observer.observe(el);
+});
 
-async function insertSignup(email, referredBy){
-  const body = { email, source: 'coming_soon' };
-  if (referredBy) body.referred_by = referredBy;
-  try {
-    const res = await sb('/rest/v1/waitlist_signups', body);
-    if (res.status === 201 || res.status === 204) return { ok:true };
-    if (res.status === 409) return { ok:true, existed:true }; // already on the list
-    const text = await res.text();
-    return { ok:false, error:text };
-  } catch(e){ return { ok:false, error:String(e) }; }
-}
-
-async function getStatus(email){
-  try {
-    const res = await sb('/rest/v1/rpc/get_waitlist_status', { p_email: email });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return Array.isArray(data) ? data[0] : data;
-  } catch(e){ console.error(e); return null; }
-}
-
-/* identity persistence — real localStorage on a deployed domain;
-   degrades to an in-memory fallback if storage is blocked (e.g. sandboxed preview) */
-const memoryFallback = {};
-function saveMyEmail(email){
-  try { localStorage.setItem('wynko_waitlist_email', email); }
-  catch(e){ memoryFallback.email = email; }
-}
-function loadMyEmail(){
-  try { return localStorage.getItem('wynko_waitlist_email') || memoryFallback.email || null; }
-  catch(e){ return memoryFallback.email || null; }
-}
-
-function fmtNum(n){ return Number(n||0).toLocaleString('en-IN'); }
-
-/* ============ countdown ============
-   Set this to your real target launch date/time (ISO 8601, with timezone) to
-   switch on the "18 DAYS 06 HRS 42 MIN 09 SEC" readout from the design kit.
-   Leave it null to show the honest "date isn't locked yet" state instead. */
-const LAUNCH_DATE = null; // e.g. '2026-10-01T00:00:00+05:30'
-
-function initCountdown(){
-  if (!LAUNCH_DATE) return; // countdownNote's default text already covers this state
-  const target = new Date(LAUNCH_DATE).getTime();
-  if (isNaN(target)) return;
-
-  document.getElementById('countdownNote').textContent =
-    "We're not opening on a marketing date — we're opening the moment Focus Lock and the Recall Engine are ready.";
-
-  function tick(){
-    const diff = target - Date.now();
-    if (diff <= 0) {
-      document.getElementById('countdownNote').textContent = "We're opening the doors right now.";
-      document.getElementById('cdDays').textContent = '00';
-      document.getElementById('cdHours').textContent = '00';
-      document.getElementById('cdMins').textContent = '00';
-      document.getElementById('cdSecs').textContent = '00';
+// Counter animation for stats
+function animateCounter(element, target, duration = 2000) {
+  const start = 0;
+  const increment = target / (duration / 16);
+  let current = start;
+  
+  const timer = setInterval(() => {
+    current += increment;
+    if (current >= target) {
+      current = target;
       clearInterval(timer);
-      return;
     }
-    const d = Math.floor(diff / 86400000);
-    const h = Math.floor((diff % 86400000) / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    const s = Math.floor((diff % 60000) / 1000);
-    document.getElementById('cdDays').textContent = String(d).padStart(2, '0');
-    document.getElementById('cdHours').textContent = String(h).padStart(2, '0');
-    document.getElementById('cdMins').textContent = String(m).padStart(2, '0');
-    document.getElementById('cdSecs').textContent = String(s).padStart(2, '0');
-  }
-  tick();
-  const timer = setInterval(tick, 1000);
-}
-
-/* ============ page refs ============ */
-const joinPanel = document.getElementById('joinPanel');
-const confirmPanel = document.getElementById('confirmPanel');
-const joinForm = document.getElementById('joinForm');
-const joinBtn = document.getElementById('joinBtn');
-const joinError = document.getElementById('joinError');
-const invitedNote = document.getElementById('invitedNote');
-const totalCountEl = document.getElementById('totalCount');
-
-const urlParams = new URLSearchParams(window.location.search);
-const referredByCode = urlParams.get('ref');
-
-async function refreshTotalCount(){
-  const total = await getTotalCount();
-  if (total !== null) {
-    totalCountEl.textContent = fmtNum(total);
-    updateFounding200(total);
-  }
-}
-
-/* live, honest scarcity — no fabricated numbers, just the real queue count
-   plotted against the real 200-seat cap */
-function updateFounding200(total){
-  const claimedEl = document.getElementById('f200Claimed');
-  const fill = document.getElementById('f200BarFill');
-  const note = document.getElementById('f200Note');
-  const headerNote = document.getElementById('headerSeatNote');
-  if (!claimedEl || !fill) return;
-
-  const pct = Math.min(100, (total / 200) * 100);
-  fill.style.width = pct + '%';
-
-  if (total >= 200) {
-    claimedEl.textContent = fmtNum(total) + ' on the list — Top 200 line is full';
-    note.textContent = 'The Top 200 rank is already spoken for. From here, referring friends is the only way to move inside it.';
-    if (headerNote) headerNote.textContent = 'Top 200 is full — refer to get in';
-  } else {
-    const left = 200 - total;
-    claimedEl.textContent = fmtNum(total) + ' / 200';
-    note.textContent = fmtNum(left) + ' seat' + (left === 1 ? '' : 's') + ' left before the Top 200 line fills, based on the live count above.';
-    if (headerNote) headerNote.textContent = fmtNum(left) + ' of 200 founder seats left';
-  }
-}
-
-/* hero CTA scrolls to whichever panel is live */
-document.getElementById('heroJoinBtn').addEventListener('click', () => {
-  const live = confirmPanel.style.display !== 'none' ? confirmPanel : joinPanel;
-  live.scrollIntoView({ behavior:'smooth', block:'center' });
-  if (live === joinPanel) setTimeout(() => document.getElementById('emailInput').focus({ preventScroll:true }), 450);
-});
-
-const GAUGE_LEN = 251.4; // πr of the referral gauge arc
-
-/* tracks the last rank we showed, so a poll can tell "improved" from
-   "unchanged" and only animate on a real, referral-driven jump */
-let lastKnownRank = null;
-let lastKnownInZone = null;
-
-function showRankPushToast(message){
-  const toast = document.getElementById('rankPushToast');
-  const msg = document.getElementById('rankPushMsg');
-  if (!toast || !msg) return;
-  msg.textContent = message;
-  toast.style.display = 'none';
-  void toast.offsetWidth; // restart the CSS animation
-  toast.style.display = 'inline-flex';
-  clearTimeout(showRankPushToast._t);
-  showRankPushToast._t = setTimeout(() => { toast.style.display = 'none'; }, 6000);
-}
-
-function renderConfirmation(status, email, opts){
-  opts = opts || {};
-  joinPanel.style.display = 'none';
-  confirmPanel.style.display = 'block';
-
-  const rank = status.queue_position;
-  const rankEl = document.getElementById('rankNum');
-  const prevRank = lastKnownRank;
-  const prevInZone = lastKnownInZone;
-  rankEl.textContent = '#' + fmtNum(rank);
-
-  const inZone = !!status.in_premium_zone;
-  const refCount = status.referral_count || 0;
-  const toGo = status.referrals_to_go || 0;
-
-  /* live push — fires only when a poll finds the rank genuinely improved
-     since we last checked, i.e. a real referral converted just now */
-  if (opts.animate && prevRank !== null && rank < prevRank) {
-    rankEl.classList.remove('pushed'); void rankEl.offsetWidth; rankEl.classList.add('pushed');
-    const jump = prevRank - rank;
-    if (!prevInZone && inZone) {
-      showRankPushToast("Someone joined with your link — you're in the Top 200 now.");
+    
+    if (target >= 1000) {
+      element.textContent = Math.floor(current / 1000) + 'K+';
+    } else if (target >= 1000000) {
+      element.textContent = (current / 1000000).toFixed(1) + 'M';
     } else {
-      showRankPushToast('Someone joined with your link — you moved up ' + jump + (jump === 1 ? ' spot' : ' spots') + ' to #' + fmtNum(rank) + '.');
+      element.textContent = Math.floor(current) + '%';
     }
-  }
-  lastKnownRank = rank;
-  lastKnownInZone = inZone;
-
-  document.getElementById('rankSub').textContent = inZone
-    ? "You're inside the Top 200 right now — Premium, founder access, and your Founding badge are locked in."
-    : "Refer friends to move up — every referral flattens your wait curve.";
-
-  document.getElementById('referralMilestoneNote').textContent = inZone
-    ? '✓ Top 200 zone'
-    : toGo + ' referral' + (toGo === 1 ? '' : 's') + ' from Top 200';
-
-  document.getElementById('referralCountLabel').textContent = refCount + (refCount === 1 ? ' referral' : ' referrals');
-
-  const gauge = document.getElementById('referralMeterFill');
-  const target = inZone ? Math.max(refCount, 1) : (refCount + toGo);
-  const pct = target > 0 ? Math.min(100, (refCount / target) * 100) : 0;
-  gauge.style.strokeDashoffset = String(GAUGE_LEN * (1 - pct / 100));
-
-  document.getElementById('meterCaption').textContent = inZone
-    ? 'Premium, founder access & your badge — unlocked. Thank you for bringing your squad.'
-    : toGo + ' more referral' + (toGo === 1 ? '' : 's') + ' moves you into the Top 200 zone, based on where the cutoff sits right now.';
-  document.getElementById('guaranteeBadge').style.display = inZone ? 'flex' : 'none';
-
-  const link = window.location.origin + window.location.pathname + '?ref=' + status.referral_code;
-  document.getElementById('refLinkInput').value = link;
-
-  document.getElementById('copyBtn').onclick = async () => {
-    const btn = document.getElementById('copyBtn');
-    try { await navigator.clipboard.writeText(link); }
-    catch(e) { const input = document.getElementById('refLinkInput'); input.select(); document.execCommand('copy'); }
-    btn.textContent = 'Copied ✓';
-    setTimeout(() => btn.textContent = 'Copy invite link', 1600);
-  };
-
-  const shareMsg = "I just joined the Wynko founding cohort — a study app that actually locks out distraction. Join with my link and we both move up the list: " + link;
-
-  document.getElementById('waBtn').onclick = () => {
-    window.open('https://wa.me/?text=' + encodeURIComponent(shareMsg), '_blank');
-  };
-
-  document.getElementById('xBtn').onclick = () => {
-    window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareMsg), '_blank');
-  };
-
-  document.getElementById('mailBtn').onclick = () => {
-    const subject = encodeURIComponent("Join me on the Wynko waitlist");
-    const body = encodeURIComponent(shareMsg);
-    window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
-  };
+  }, 16);
 }
 
-/* ============ live rank polling ============
-   While someone sits on the confirmation panel, quietly re-check their real
-   queue status every 25s (well under the RPC's own 5-per-60s rate limit) so
-   a referral that converts while they're watching shows up as a live push
-   instead of only updating on next page load. Pauses while the tab is
-   backgrounded, and re-checks immediately the moment it's foregrounded. */
-let statusPollTimer = null;
-
-function startStatusPolling(email){
-  stopStatusPolling();
-  statusPollTimer = setInterval(async () => {
-    if (document.hidden) return;
-    try {
-      const status = await getStatus(email);
-      if (status) renderConfirmation(status, email, { animate: true });
-    } catch(e) { /* transient network/rate-limit blip — just try again next tick */ }
-  }, 25000);
-}
-function stopStatusPolling(){
-  if (statusPollTimer) { clearInterval(statusPollTimer); statusPollTimer = null; }
-}
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden || confirmPanel.style.display === 'none') return;
-  const email = loadMyEmail();
-  if (!email) return;
-  getStatus(email).then(status => { if (status) renderConfirmation(status, email, { animate: true }); });
-});
-
-joinForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  joinError.textContent = '';
-  const email = document.getElementById('emailInput').value.trim();
-  if (!email) { joinError.textContent = 'Please enter your email.'; return; }
-
-  joinBtn.disabled = true;
-  joinBtn.textContent = 'Joining…';
-  try {
-    const result = await insertSignup(email, referredByCode);
-    if (!result.ok) {
-      joinError.textContent = "Something went wrong — please try again.";
-      return;
+// Trigger counter animations when stats section is visible
+const statsObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const statNumbers = entry.target.querySelectorAll('.stat-number');
+      statNumbers.forEach(stat => {
+        const text = stat.textContent;
+        if (text.includes('K')) {
+          animateCounter(stat, 10000);
+        } else if (text.includes('M')) {
+          animateCounter(stat, 2500000);
+        } else if (text.includes('%')) {
+          animateCounter(stat, 94);
+        } else if (text.includes('+')) {
+          animateCounter(stat, 500);
+        }
+      });
+      statsObserver.unobserve(entry.target);
     }
-    saveMyEmail(email);
-    const status = await getStatus(email);
-    await refreshTotalCount();
-    if (status) { renderConfirmation(status, email); startStatusPolling(email); }
-    else joinError.textContent = "You're signed up, but we couldn't load your queue position — refresh to see it.";
-  } catch(err) {
-    console.error(err);
-    joinError.textContent = "Something went wrong — please try again.";
-  } finally {
-    joinBtn.disabled = false;
-    joinBtn.textContent = 'Notify me →';
-  }
-});
+  });
+}, { threshold: 0.3 });
 
-/* ============ live decay counter ============
-   Honest framing: this models the stated 184/hr Ebbinghaus decay rate against
-   real elapsed time on the page — it's a live illustration of the math, not a
-   tracked or fabricated statistic. Explicitly labeled as such in the caption. */
-function initDecayTicker(){
-  const el = document.getElementById('decayLiveNum');
-  if (!el) return;
-  const RATE_PER_MS = 184 / 3600000; // 184 topics/hour
-  const start = performance.now();
-  function tick(now){
-    const elapsedMs = now - start;
-    const value = elapsedMs * RATE_PER_MS;
-    el.textContent = value.toFixed(1);
-    requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
+const statsSection = document.querySelector('.stats-grid');
+if (statsSection) {
+  statsObserver.observe(statsSection);
 }
-
-async function init(){
-  initCountdown();
-  initDecayTicker();
-  await refreshTotalCount();
-
-  if (referredByCode) {
-    invitedNote.style.display = 'block';
-    invitedNote.textContent = "You were invited by a friend — join and you'll both move up the queue.";
-  }
-
-  const savedEmail = loadMyEmail();
-  if (savedEmail) {
-    const status = await getStatus(savedEmail);
-    if (status) { renderConfirmation(status, savedEmail); startStatusPolling(savedEmail); }
-  }
-}
-init();
 </script>
+
 </body>
 </html>
