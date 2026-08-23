@@ -31,7 +31,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # @capacitor/cli@8.5.0 requires Node >=22; `npx cap sync android`
+          # fails outright ("The Capacitor CLI requires NodeJS >=22.0.0")
+          # on Node 20.
+          node-version: 22
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
