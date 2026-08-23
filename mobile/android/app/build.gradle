@@ -55,3 +55,12 @@ try {
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }
+
+// Always sync the web frontend (../../../*.html, shared.js, style.css, src/**)
+// into www/ before compiling, so a forgotten `npm run sync-web` can never
+// produce a build against a stale copy. See mobile/README.md.
+task syncWeb(type: Exec) {
+    workingDir "${project.rootDir}/.."
+    commandLine 'npm', 'run', 'sync-web'
+}
+preBuild.dependsOn syncWeb
