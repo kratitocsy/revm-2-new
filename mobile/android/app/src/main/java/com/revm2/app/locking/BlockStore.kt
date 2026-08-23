@@ -82,20 +82,29 @@ object BlockStore {
             .apply()
     }
 
-    fun isAppBlocked(ctx: Context, packageName: String): Boolean {
-        val s = current(ctx)
+    fun isAppBlocked(ctx: Context, packageName: String): Boolean =
+        isAppBlockedForSession(current(ctx), packageName, ctx.packageName)
+
+    fun isDomainBlocked(ctx: Context, domain: String): Boolean =
+        isDomainBlockedForSession(current(ctx), domain)
+
+    /**
+     * Pure decision logic, no Context/SharedPreferences — takes an
+     * already-loaded Session so it can be unit tested directly (see
+     * app/src/test/.../BlockLogicTest.kt) without Robolectric or a device.
+     */
+    fun isAppBlockedForSession(s: Session, packageName: String, selfPackageName: String): Boolean {
         if (!s.active) return false
         // Never block our own app or the system launcher/settings —
         // otherwise a bad blocklist entry could brick navigation entirely.
-        if (packageName == ctx.packageName) return false
+        if (packageName == selfPackageName) return false
         return when (s.appsMode) {
             "whitelist" -> packageName !in s.appList
             else -> packageName in s.appList // blacklist (default)
         }
     }
 
-    fun isDomainBlocked(ctx: Context, domain: String): Boolean {
-        val s = current(ctx)
+    fun isDomainBlockedForSession(s: Session, domain: String): Boolean {
         if (!s.active) return false
         val d = domain.lowercase().removeSuffix(".")
         return s.domainList.any { d == it || d.endsWith(".$it") }
