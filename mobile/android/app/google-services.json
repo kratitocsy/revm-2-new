@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "267998717507",
+    "project_id": "wynko-3e8aa",
+    "storage_bucket": "wynko-3e8aa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:267998717507:android:d668fe20397ef5399256f6",
+        "android_client_info": {
+          "package_name": "com.revm2.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDV22GUZAnCOEuGfEYx9kuPaMB6uIhSAcQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
