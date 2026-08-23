@@ -104,3 +104,4 @@ jobs:
           groups: testers
           file: mobile/android/app/build/outputs/apk/debug/app-debug.apk
           releaseNotes: ${{ github.event.head_commit.message }}
+# CI trigger: verify Firebase App Distribution secrets are wired up
