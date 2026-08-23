@@ -9,6 +9,7 @@ on:
       - 'shared.js'
       - 'style.css'
       - 'src/**'
+      - '.github/workflows/android-build.yml'
   pull_request:
     paths:
       - 'mobile/**'
@@ -16,6 +17,8 @@ on:
       - 'shared.js'
       - 'style.css'
       - 'src/**'
+      - '.github/workflows/android-build.yml'
+  workflow_dispatch: {}
 
 jobs:
   build:
