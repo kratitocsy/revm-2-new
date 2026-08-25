@@ -123,13 +123,13 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "push" ] && \
              [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
-            git log --pretty=format:"- %s (%h)" "${{ github.event.before }}..${{ github.event.after }}" > /tmp/release_notes.txt
+            git log --pretty=format:"- %s (%h)" "${{ github.event.before }}..${{ github.event.after }}" > release_notes.txt
           fi
-          if [ ! -s /tmp/release_notes.txt ]; then
-            git log -1 --pretty=format:"- %s (%h)" > /tmp/release_notes.txt
+          if [ ! -s release_notes.txt ]; then
+            git log -1 --pretty=format:"- %s (%h)" > release_notes.txt
           fi
           echo "Release notes for this build:"
-          cat /tmp/release_notes.txt
+          cat release_notes.txt
 
       - name: Distribute via Firebase App Distribution
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && steps.firebase_check.outputs.ready == 'true'
@@ -139,6 +139,6 @@ jobs:
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           groups: testers
           file: mobile/android/app/build/outputs/apk/debug/app-debug.apk
-          releaseNotesFile: /tmp/release_notes.txt
+          releaseNotesFile: release_notes.txt
 # CI trigger: verify Firebase App Distribution secrets are wired up
 # retrigger 1787478452
