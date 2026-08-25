@@ -129,6 +129,7 @@ export function syncNativeAuthToken(session){
   window.__TAURI__.core.invoke('sync_native_auth', {
     userId: session.user.id,
     accessToken: session.access_token,
+    refreshToken: session.refresh_token,
     supabaseUrl: REVM2_CONFIG.SUPABASE_URL,
     supabaseAnonKey: REVM2_CONFIG.SUPABASE_ANON,
   }).catch(e=>console.error('RM2 desktop invoke error (sync_native_auth):', e));

@@ -472,6 +472,7 @@ fn sync_native_auth(
     auth_state: tauri::State<Arc<native_poll::AuthState>>,
     user_id: String,
     access_token: String,
+    refresh_token: String,
     supabase_url: String,
     supabase_anon_key: String,
 ) -> Result<(), String> {
@@ -479,6 +480,7 @@ fn sync_native_auth(
         *guard = Some(native_poll::AuthInfo {
             user_id,
             access_token,
+            refresh_token,
             supabase_url,
             supabase_anon_key,
         });

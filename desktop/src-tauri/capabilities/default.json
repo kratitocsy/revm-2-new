@@ -19,6 +19,7 @@
     "allow-set-tray-status",
     "allow-set-session-active",
     "allow-set-schedule-active",
+    "allow-sync-native-auth",
     "allow-debug-browser-status",
     "allow-push-session-event",
     "allow-list-running-apps",

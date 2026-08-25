@@ -63,6 +63,7 @@ const NATIVE_POLL_INTERVAL_SECS: u64 = 20;
 pub struct AuthInfo {
     pub user_id: String,
     pub access_token: String,
+    pub refresh_token: String,
     pub supabase_url: String,
     pub supabase_anon_key: String,
 }
@@ -83,6 +84,22 @@ impl AuthState {
     fn get(&self) -> Option<AuthInfo> {
         self.0.lock().ok().and_then(|g| g.clone())
     }
+
+    // Writes back a freshly-refreshed access/refresh token pair after
+    // get_with_auto_refresh() below successfully renews an expired
+    // access token - so the NEXT tick starts with a good token too,
+    // instead of hitting the same 401 and refreshing again every single
+    // interval. Silently no-ops if auth was cleared out from under us
+    // (e.g. sign-out) between the request that triggered the refresh and
+    // this call landing - nothing sensible to write back to in that case.
+    fn update_tokens(&self, access_token: String, refresh_token: String) {
+        if let Ok(mut guard) = self.0.lock() {
+            if let Some(info) = guard.as_mut() {
+                info.access_token = access_token;
+                info.refresh_token = refresh_token;
+            }
+        }
+    }
 }
 
 #[derive(Deserialize, Default)]
@@ -91,6 +108,107 @@ struct SessionRow {
     #[serde(default)]
     apps: Vec<String>,
     apps_mode: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct RefreshTokenResp {
+    access_token: String,
+    refresh_token: String,
+}
+
+// THE ACTUAL FIX for schedule_active going stale: previously, a 401/403
+// here (cached access token expired) just gave up for the tick and
+// silently waited for the webview's own JS to push a fresh one via
+// sync_native_auth - but the webview poll is exactly the fragile,
+// throttle-prone thing this whole module exists as a fallback for (see
+// the module doc at the top of this file). A long screen-off period
+// spanning a token expiry could leave schedule_active stuck on a stale
+// value indefinitely, with nothing to un-stick it.
+//
+// This calls Supabase's own refresh_token grant directly - completely
+// independent of the webview - so this poll can renew its own access
+// whenever it goes stale, the same way supabase-js does internally, just
+// from Rust instead of JS.
+async fn refresh_access_token(
+    client: &reqwest::Client,
+    auth: &AuthInfo,
+) -> Option<(String, String)> {
+    let url = format!(
+        "{}/auth/v1/token?grant_type=refresh_token",
+        auth.supabase_url.trim_end_matches('/'),
+    );
+    let resp = match client
+        .post(&url)
+        .header("apikey", &auth.supabase_anon_key)
+        .header("Content-Type", "application/json")
+        .json(&serde_json::json!({ "refresh_token": auth.refresh_token }))
+        .send()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("native_poll: token refresh request failed: {e}");
+            return None;
+        }
+    };
+    if !resp.status().is_success() {
+        // Most likely the refresh token itself is also expired/revoked
+        // (e.g. the person signed out elsewhere, or it's been too long
+        // since any device last used this session). Nothing more to do
+        // from here - the next successful webview requireAuth() will
+        // push a completely fresh pair via sync_native_auth as normal.
+        eprintln!("native_poll: token refresh returned {}", resp.status());
+        return None;
+    }
+    match resp.json::<RefreshTokenResp>().await {
+        Ok(parsed) => Some((parsed.access_token, parsed.refresh_token)),
+        Err(e) => {
+            eprintln!("native_poll: couldn't parse token refresh response: {e}");
+            None
+        }
+    }
+}
+
+// Wraps a single authenticated GET with one automatic refresh-and-retry
+// on 401/403, instead of every call site duplicating that logic. On a
+// successful refresh, also writes the new tokens back to `auth_state` so
+// the *next* tick starts with a good token too, rather than refreshing
+// again on every single interval.
+async fn get_with_auto_refresh(
+    client: &reqwest::Client,
+    auth_state: &Arc<AuthState>,
+    auth: &AuthInfo,
+    url: &str,
+) -> Result<reqwest::Response, String> {
+    let first = client
+        .get(url)
+        .header("apikey", &auth.supabase_anon_key)
+        .header("Authorization", format!("Bearer {}", auth.access_token))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if first.status() != reqwest::StatusCode::UNAUTHORIZED
+        && first.status() != reqwest::StatusCode::FORBIDDEN
+    {
+        return Ok(first);
+    }
+
+    let Some((new_access, new_refresh)) = refresh_access_token(client, auth).await else {
+        // Refresh itself failed - return the original 401/403 so the
+        // caller's existing "Supabase returned {status}" logging still
+        // fires as before. Nothing more this function can do.
+        return Ok(first);
+    };
+    auth_state.update_tokens(new_access.clone(), new_refresh);
+
+    client
+        .get(url)
+        .header("apikey", &auth.supabase_anon_key)
+        .header("Authorization", format!("Bearer {new_access}"))
+        .send()
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -138,12 +256,7 @@ pub fn spawn_native_session_poll(
                 auth.user_id,
             );
 
-            let resp = client
-                .get(&url)
-                .header("apikey", &auth.supabase_anon_key)
-                .header("Authorization", format!("Bearer {}", auth.access_token))
-                .send()
-                .await;
+            let resp = get_with_auto_refresh(&client, &auth_state, &auth, &url).await;
 
             let rows: Vec<SessionRow> = match resp {
                 Ok(r) if r.status().is_success() => match r.json().await {
@@ -153,15 +266,14 @@ pub fn spawn_native_session_poll(
                         continue;
                     }
                 },
-                // 401/403 most likely means the cached access token expired
-                // without a fresher one ever reaching us (e.g. the webview
-                // poll has been throttled long enough that even
-                // supabase-js's own refresh timer got starved). Nothing
-                // useful to do but wait - the next successful webview tick
-                // (as soon as the screen wakes, or via an OS-level
-                // background wake) re-syncs a good token via
+                // Still a 401/403 (or something else non-2xx) after
+                // get_with_auto_refresh() already tried one refresh -
+                // either the refresh token itself is also expired/revoked,
+                // or this is an unrelated error status. Nothing more to
+                // do this tick; the next successful webview requireAuth()
+                // will push a completely fresh token pair via
                 // sync_native_auth, and this loop picks it back up
-                // automatically on its next interval.
+                // automatically on its next interval either way.
                 Ok(r) => {
                     eprintln!("native_poll: Supabase returned {}", r.status());
                     continue;
@@ -212,12 +324,7 @@ pub fn spawn_native_session_poll(
                 auth.supabase_url.trim_end_matches('/'),
                 auth.user_id,
             );
-            let schedule_resp = client
-                .get(&schedule_url)
-                .header("apikey", &auth.supabase_anon_key)
-                .header("Authorization", format!("Bearer {}", auth.access_token))
-                .send()
-                .await;
+            let schedule_resp = get_with_auto_refresh(&client, &auth_state, &auth, &schedule_url).await;
             match schedule_resp {
                 Ok(r) if r.status().is_success() => match r.json::<Vec<serde_json::Value>>().await {
                     Ok(schedule_rows) => {

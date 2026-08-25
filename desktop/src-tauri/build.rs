@@ -5,6 +5,8 @@ fn main() {
                 "greet",
                 "set_tray_status",
                 "set_session_active",
+                "set_schedule_active",
+                "sync_native_auth",
                 "debug_browser_status",
                 "list_running_apps",
                 "get_blocked_apps",
