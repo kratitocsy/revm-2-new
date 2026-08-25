@@ -28,6 +28,11 @@ jobs:
         working-directory: mobile
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history (not the default shallow depth-1 clone) so the
+          # release-notes step below can diff github.event.before..after
+          # across every commit in the push, not just the last one.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -72,7 +77,16 @@ jobs:
 
       - name: Build debug APK
         working-directory: mobile/android
-        run: ./gradlew assembleDebug
+        # versionCode must strictly increase for Android to treat a build as an
+        # update rather than a conflicting duplicate; github.run_number does
+        # that automatically across every workflow run. versionName is kept
+        # human-readable (1.0.<run_number>) so testers can see it in
+        # Settings > App info / Firebase App Distribution without decoding
+        # a raw versionCode.
+        run: |
+          ./gradlew assembleDebug \
+            -PappVersionCode=${{ github.run_number }} \
+            -PappVersionName=1.0.${{ github.run_number }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -98,6 +112,25 @@ jobs:
             echo "::notice::Skipping Firebase App Distribution -- FIREBASE_APP_ID / FIREBASE_SERVICE_ACCOUNT secrets not set yet."
           fi
 
+      # github.event.head_commit.message only captures the single latest
+      # commit -- if several commits land in one push, testers only saw the
+      # last one. This builds a full changelog of every commit in the push
+      # (or falls back to the latest commit for workflow_dispatch/first-ever
+      # push, where github.event.before doesn't point at a real commit).
+      - name: Build release notes
+        if: steps.firebase_check.outputs.ready == 'true'
+        working-directory: .
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && \
+             [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            git log --pretty=format:"- %s (%h)" "${{ github.event.before }}..${{ github.event.after }}" > /tmp/release_notes.txt
+          fi
+          if [ ! -s /tmp/release_notes.txt ]; then
+            git log -1 --pretty=format:"- %s (%h)" > /tmp/release_notes.txt
+          fi
+          echo "Release notes for this build:"
+          cat /tmp/release_notes.txt
+
       - name: Distribute via Firebase App Distribution
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && steps.firebase_check.outputs.ready == 'true'
         uses: wzieba/Firebase-Distribution-Github-Action@v1
@@ -106,6 +139,6 @@ jobs:
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           groups: testers
           file: mobile/android/app/build/outputs/apk/debug/app-debug.apk
-          releaseNotes: ${{ github.event.head_commit.message }}
+          releaseNotesFile: /tmp/release_notes.txt
 # CI trigger: verify Firebase App Distribution secrets are wired up
 # retrigger 1787478452

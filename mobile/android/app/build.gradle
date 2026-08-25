@@ -8,8 +8,12 @@ android {
         applicationId "com.revm2.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // CI passes -PappVersionCode=<github.run_number> -PappVersionName=1.0.<run_number>
+        // so every distributed build is uniquely identifiable in Firebase App
+        // Distribution / device Settings > App info. Local Android Studio builds
+        // (no -P flags) fall back to versionCode 1 / "1.0-local" unchanged.
+        versionCode project.hasProperty('appVersionCode') ? (project.appVersionCode as Integer) : 1
+        versionName project.hasProperty('appVersionName') ? project.appVersionName : "1.0-local"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
