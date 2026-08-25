@@ -87,8 +87,11 @@ jobs:
       # FIREBASE_SERVICE_ACCOUNT repo secrets.
       - name: Check Firebase secrets present
         id: firebase_check
+        env:
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          if [ -n "${{ secrets.FIREBASE_APP_ID }}" ] && [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" ]; then
+          if [ -n "$FIREBASE_APP_ID" ] && [ -n "$FIREBASE_SERVICE_ACCOUNT" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
