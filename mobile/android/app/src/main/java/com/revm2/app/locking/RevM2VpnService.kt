@@ -40,6 +40,10 @@ class RevM2VpnService : VpnService() {
     private val job = Job()
     private val scope = CoroutineScope(Dispatchers.IO + job)
     private var running = false
+    // Guards writes to the TUN fd: NXDOMAIN replies are written inline on
+    // the read loop, while upstream-forwarded replies now arrive from
+    // their own coroutines (see handleIpPacket) — both can land at once.
+    private val writeLock = Any()
 
     companion object {
         private const val TAG = "RevM2VpnService"
@@ -154,13 +158,25 @@ class RevM2VpnService : VpnService() {
         val dstIp = InetAddress.getByAddress(packet.copyOfRange(16, 20))
 
         if (BlockStore.isDomainBlocked(this, domain)) {
+            // Fast path: local NXDOMAIN reply, no network I/O — fine to
+            // stay inline on the read loop.
             val nxdomain = buildNxDomainResponse(packet, dnsStart, dnsLength)
             val replyPacket = buildIpUdpReply(
                 srcIp = dstIp, dstIp = srcIp, srcPort = 53, dstPort = srcPort, payload = nxdomain
             )
-            output.write(replyPacket)
+            synchronized(writeLock) { output.write(replyPacket) }
         } else {
-            forwardToUpstream(packet, dnsStart, dnsLength, srcIp, srcPort, output)
+            // Slow path: real upstream lookup (socket.send/receive, up to
+            // a 3s timeout). Launched on its own coroutine instead of
+            // running inline here — otherwise every other DNS query on
+            // the device queues up behind this one single-threaded read
+            // loop until it resolves or times out, which would make the
+            // whole device feel slow while the VPN is active, not just
+            // requests to blocked domains.
+            val query = packet.copyOfRange(dnsStart, dnsStart + dnsLength)
+            scope.launch {
+                forwardToUpstream(query, srcIp, srcPort, output)
+            }
         }
     }
 
@@ -185,16 +201,18 @@ class RevM2VpnService : VpnService() {
     /** Forwards the raw DNS query to a real upstream resolver via a
      * *protected* socket (protect() excludes it from this VPN's own
      * routing, avoiding an infinite loop), then relays the reply back
-     * through the tunnel to the original requester. */
-    private fun forwardToUpstream(
-        packet: ByteArray, dnsStart: Int, dnsLength: Int,
-        srcIp: InetAddress, srcPort: Int, output: FileOutputStream
+     * through the tunnel to the original requester.
+     *
+     * Runs on its own coroutine (see handleIpPacket) — `query` is a copy,
+     * not a view into the shared read-loop buffer, so it's safe to use
+     * here regardless of what the read loop has since overwritten. */
+    private suspend fun forwardToUpstream(
+        query: ByteArray, srcIp: InetAddress, srcPort: Int, output: FileOutputStream
     ) {
         val socket = DatagramSocket()
         protect(socket) // critical: excludes this socket from our own TUN routing
         socket.soTimeout = 3000
         try {
-            val query = packet.copyOfRange(dnsStart, dnsStart + dnsLength)
             val upstreamPacket = java.net.DatagramPacket(
                 query, query.size, InetSocketAddress(UPSTREAM_DNS, 53)
             )
@@ -209,7 +227,7 @@ class RevM2VpnService : VpnService() {
                 srcIp = InetAddress.getByName(VPN_DNS), dstIp = srcIp,
                 srcPort = 53, dstPort = srcPort, payload = dnsResponse
             )
-            output.write(ipUdpReply)
+            synchronized(writeLock) { output.write(ipUdpReply) }
         } catch (e: Exception) {
             Log.w(TAG, "Upstream DNS forward failed for a query", e)
         } finally {

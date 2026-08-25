@@ -88,6 +88,36 @@ class BlockLogicTest {
         assertFalse(BlockStore.isAppBlockedForSession(s, selfPackage, selfPackage))
     }
 
+    // ---------- app blocking: system-exempt packages (launcher/Settings) ----------
+
+    @Test
+    fun `launcher is never blocked in whitelist mode even with an empty list`() {
+        // Same "don't brick navigation" reasoning as the self-exemption
+        // tests above, but for the device's launcher/Settings — without
+        // this, a whitelist that forgets to include them locks the user
+        // out of the home screen itself, not just RevM2.
+        val s = session(appsMode = "whitelist", appList = emptySet())
+        val launcherPkg = "com.android.launcher3"
+        assertFalse(BlockStore.isAppBlockedForSession(s, launcherPkg, selfPackage, setOf(launcherPkg)))
+    }
+
+    @Test
+    fun `settings is never blocked even if explicitly blacklisted`() {
+        val settingsPkg = "com.android.settings"
+        val s = session(appsMode = "blacklist", appList = setOf(settingsPkg))
+        assertFalse(BlockStore.isAppBlockedForSession(s, settingsPkg, selfPackage, setOf(settingsPkg)))
+    }
+
+    @Test
+    fun `additionalExcluded has no effect on packages outside it`() {
+        val s = session(appsMode = "blacklist", appList = setOf("com.instagram.android"))
+        assertTrue(
+            BlockStore.isAppBlockedForSession(
+                s, "com.instagram.android", selfPackage, setOf("com.android.launcher3")
+            )
+        )
+    }
+
     // ---------- domain blocking: matching rules ----------
 
     @Test

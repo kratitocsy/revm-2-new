@@ -83,7 +83,7 @@ object BlockStore {
     }
 
     fun isAppBlocked(ctx: Context, packageName: String): Boolean =
-        isAppBlockedForSession(current(ctx), packageName, ctx.packageName)
+        isAppBlockedForSession(current(ctx), packageName, ctx.packageName, systemExemptPackages(ctx))
 
     fun isDomainBlocked(ctx: Context, domain: String): Boolean =
         isDomainBlockedForSession(current(ctx), domain)
@@ -93,15 +93,40 @@ object BlockStore {
      * already-loaded Session so it can be unit tested directly (see
      * app/src/test/.../BlockLogicTest.kt) without Robolectric or a device.
      */
-    fun isAppBlockedForSession(s: Session, packageName: String, selfPackageName: String): Boolean {
+    fun isAppBlockedForSession(
+        s: Session,
+        packageName: String,
+        selfPackageName: String,
+        additionalExcluded: Set<String> = emptySet()
+    ): Boolean {
         if (!s.active) return false
-        // Never block our own app or the system launcher/settings —
-        // otherwise a bad blocklist entry could brick navigation entirely.
+        // Never block our own app, the device's default launcher, or the
+        // system Settings app — otherwise a bad blocklist entry (or any
+        // whitelist that forgets to include them) could brick navigation
+        // entirely, with no way back in short of a factory reset.
         if (packageName == selfPackageName) return false
+        if (packageName in additionalExcluded) return false
         return when (s.appsMode) {
             "whitelist" -> packageName !in s.appList
             else -> packageName in s.appList // blacklist (default)
         }
+    }
+
+    /** Resolves the device's current default launcher + the Settings app
+     * package at call time (not hardcoded — OEM launchers/Settings vary),
+     * so isAppBlocked() can exempt them regardless of appsMode. */
+    private fun systemExemptPackages(ctx: Context): Set<String> {
+        val pm = ctx.packageManager
+        val exempt = mutableSetOf<String>()
+
+        val launcherIntent = android.content.Intent(android.content.Intent.ACTION_MAIN)
+            .addCategory(android.content.Intent.CATEGORY_HOME)
+        pm.resolveActivity(launcherIntent, 0)?.activityInfo?.packageName?.let { exempt.add(it) }
+
+        val settingsIntent = android.content.Intent(android.provider.Settings.ACTION_SETTINGS)
+        pm.resolveActivity(settingsIntent, 0)?.activityInfo?.packageName?.let { exempt.add(it) }
+
+        return exempt
     }
 
     fun isDomainBlockedForSession(s: Session, domain: String): Boolean {
