@@ -57,10 +57,15 @@ try {
 }
 
 // Always sync the web frontend (../../../*.html, shared.js, style.css, src/**)
-// into www/ before compiling, so a forgotten `npm run sync-web` can never
-// produce a build against a stale copy. See mobile/README.md.
+// into www/ before compiling, so a forgotten `npm run build` can never
+// produce a build against a stale copy. Runs the full build (sync-web +
+// `npx cap sync android`), not just sync-web alone - Gradle needs the
+// capacitor-cordova-android-plugins/ directory that only `cap sync`
+// generates; sync-web alone leaves it missing and the build fails with
+// "Could not read script '.../cordova.variables.gradle' as it does not
+// exist". See mobile/README.md.
 task syncWeb(type: Exec) {
     workingDir "${project.rootDir}/.."
-    commandLine 'npm', 'run', 'sync-web'
+    commandLine 'npm', 'run', 'build'
 }
 preBuild.dependsOn syncWeb
