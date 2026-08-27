@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wynko — The Focus Theft · A short film</title>
+<meta name="description" content="They told you results measure intelligence. They measure attention — and attention is being stolen. A short film about the heist, the students caught in it, and the weapon built to take it back." />
+<meta name="robots" content="noindex" />
+<link rel="icon" href="wynko-icon.png" />
+ 
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Wynko — The Focus Theft" />
+<meta property="og:description" content="No one is born dumb. No one is born a genius. Then why do results change? A short film by Wynko." />
+<meta property="og:image" content="wynko-lockup.png" />
+ 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+ 
+<style>
+:root{
+  --ink:#1a1a2e;
+  --ink-2:#1c1c33;
+  --ink-card:#20203a;
+  --ink-raised:#232340;
+  --border:rgba(255,255,255,.08);
+  --border-strong:rgba(255,255,255,.16);
+  --text:#f5f5f8;
+  --text-dim:#9c9cad;
+  --text-faint:#6b6b7a;
+  --violet:#6c43ff;
+  --violet-soft:#9b7dff;
+  --blue:#4a6bff;
+  --cyan:#00d4ff;
+  --amber:#f5a623;
+  --mint:#34d399;
+  --coral:#fb7185;
+  --grad:linear-gradient(120deg,var(--violet),var(--blue) 52%,var(--cyan));
+  --radius:14px;
+  --radius-sm:10px;
+  --maxw:1120px;
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+*{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+body{
+  margin:0;
+  background:#0d0d18;
+  color:var(--text);
+  font-family:'Poppins',-apple-system,BlinkMacSystemFont,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  line-height:1.55;
+  overflow-x:clip;
+}
+html{ overflow-x:clip; }
+body::before{
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:linear-gradient(180deg,rgba(0,0,0,.9),rgba(0,0,0,.55));
+  -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.9),rgba(0,0,0,.55));
+}
+.mono{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; }
+.wrap{ max-width:var(--maxw); margin:0 auto; padding:0 28px; position:relative; z-index:1; }
+a{ color:inherit; text-decoration:none; }
+ 
+header{
+  position:fixed; top:0; left:0; right:0; z-index:50;
+  background:rgba(10,10,20,.55);
+  backdrop-filter:blur(14px) saturate(140%);
+  -webkit-backdrop-filter:blur(14px) saturate(140%);
+  border-bottom:1px solid var(--border);
+}
+.header-inner{
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  padding:12px 28px; max-width:var(--maxw); margin:0 auto;
+}
+.brand{ display:flex; align-items:center; gap:13px; cursor:pointer; }
+.logo-tile{
+  position:relative; width:42px; height:42px; border-radius:12px; flex:none;
+  background:linear-gradient(160deg,#0c0c15,#07070c);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 0 0 1px rgba(255,255,255,.05) inset,0 12px 30px -12px rgba(108,67,255,.6),0 0 38px rgba(34,211,238,.13);
+}
+.logo-tile::before{
+  content:''; position:absolute; inset:0; border-radius:inherit; padding:1px;
+  background:linear-gradient(135deg,rgba(155,125,255,.7),rgba(34,211,238,.55) 55%,transparent 85%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none;
+}
+.logo-tile img{ height:25px; width:auto; display:block; position:relative; }
+.brand-name{ font-weight:800; font-size:16px; letter-spacing:.1em; line-height:1; }
+.brand-sub{ display:block; font-family:'IBM Plex Mono',monospace; font-size:8.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--text-faint); margin-top:2px; }
+.header-meta{
+  font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--text-dim); white-space:nowrap; border:1px solid rgba(245,166,35,.35);
+  background:rgba(245,166,35,.08); border-radius:999px; padding:7px 14px;
+}
+.header-meta b{ color:var(--amber); font-weight:600; }
+ 
+.hero{
+  position:relative; min-height:100svh; display:flex; align-items:center; justify-content:center;
+  overflow:hidden; padding:120px 24px 90px;
+}
+#heroCanvas{ position:absolute; inset:0; width:100%; height:100%; z-index:0; }
+.hero-scrim{ position:absolute; inset:0; z-index:1; pointer-events:none;
+  background:radial-gradient(1100px 600px at 50% 8%,rgba(108,67,255,.16),transparent 60%),
+             radial-gradient(900px 520px at 82% 92%,rgba(34,211,238,.10),transparent 55%),
+             radial-gradient(700px 400px at 12% 90%,rgba(251,113,133,.07),transparent 60%),
+             linear-gradient(180deg,rgba(13,13,24,.55),rgba(13,13,24,.2) 40%,rgba(13,13,24,.9));
+}
+.hero-inner{ position:relative; z-index:2; text-align:center; max-width:880px; margin:0 auto; }
+.eyebrow{
+  font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:.26em;
+  text-transform:uppercase; color:var(--cyan); margin:0 0 22px;
+}
+.eyebrow::before{ content:'— '; } .eyebrow::after{ content:' —'; }
+.hero-title{
+  margin:0; font-weight:800; letter-spacing:-.02em; line-height:.98;
+  font-size:clamp(46px,11vw,128px);
+  background:linear-gradient(180deg,#fff,#fff 42%,rgba(155,125,255,.55));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 10px 60px rgba(108,67,255,.35));
+}
+.hero-title .amp{ background:linear-gradient(120deg,var(--violet-soft),var(--blue) 55%,var(--cyan));
+  -webkit-background-clip:text; background-clip:text; }
+.hero-sub{
+  margin:26px auto 0; max-width:620px; color:var(--text-dim); font-weight:300;
+  font-size:clamp(15px,1.6vw,18px); line-height:1.6;
+}
+.hero-sub b{ color:var(--text); font-weight:600; }
+.hero-cue{
+  margin:46px auto 0; display:inline-flex; flex-direction:column; align-items:center; gap:12px;
+  cursor:pointer; border:none; background:none; color:var(--text-dim);
+  font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.3em; text-transform:uppercase;
+  transition:color .25s;
+}
+.hero-cue:hover{ color:var(--cyan); }
+.hero-cue .pill{
+  display:inline-flex; align-items:center; gap:10px; border:1px solid var(--border-strong);
+  border-radius:999px; padding:13px 26px; background:rgba(255,255,255,.04);
+  backdrop-filter:blur(8px); transition:all .25s var(--ease);
+}
+.hero-cue:hover .pill{ background:rgba(34,211,238,.1); border-color:rgba(34,211,238,.5); box-shadow:0 0 40px rgba(34,211,238,.25); }
+.hero-cue .play{ width:22px; height:22px; border-radius:50%; border:1px solid currentColor; display:grid; place-items:center; font-size:8px; }
+.hero-cue .scroll-chev svg{ animation:hsc-bob 1.9s ease-in-out infinite; }
+@keyframes hsc-bob{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(6px);} }
+ 
+.film-frame{ position:relative; }
+.film-track{ position:relative; height:1300vh; }
+.film-pin{
+  position:sticky; top:0; height:100vh; overflow:hidden;
+  background:#05050c;
+}
+#filmCanvas{ position:absolute; inset:0; width:100%; height:100%; z-index:1; }
+.film-scrim{ position:absolute; inset:0; z-index:2; pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 50%,transparent 40%,rgba(5,5,12,.55) 100%);
+}
+.grain{
+  position:absolute; inset:-80px; z-index:4; pointer-events:none; opacity:.5;
+  mix-blend-mode:overlay;
+  background-image:url('data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.8%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27matrix%27%20values%3D%270%200%200%200%201%200%200%200%200%201%200%200%200%200%201%200%200%200%200.07%200%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27180%27%20height%3D%27180%27%20filter%3D%27url(%23n)%27%2F%3E%3C%2Fsvg%3E');
+  animation:grainShift 1.2s steps(3) infinite;
+}
+@keyframes grainShift{
+  0%{ transform:translate(0,0);} 33%{ transform:translate(-14px,10px);} 66%{ transform:translate(10px,-12px);} 100%{ transform:translate(0,0);}
+}
+.letterbox{ position:absolute; left:0; right:0; z-index:5; background:#000; pointer-events:none; }
+.letterbox.top{ top:0; height:min(9vh,84px); } .letterbox.bot{ bottom:0; height:min(9vh,84px); }
+ 
+.film-hud{
+  position:absolute; top:14px; left:0; right:0; z-index:6; pointer-events:none;
+  display:flex; justify-content:space-between; align-items:flex-start; padding:0 22px;
+  font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase;
+  color:rgba(245,245,248,.55);
+}
+.film-hud .rec{ display:inline-flex; align-items:center; gap:8px; }
+.film-hud .rec-dot{ width:8px; height:8px; border-radius:50%; background:var(--coral); box-shadow:0 0 10px var(--coral); animation:pulse 1.6s ease-in-out infinite; }
+.film-hud .tc{ color:rgba(245,245,248,.4); }
+@keyframes pulse{ 0%,100%{ opacity:1;} 50%{ opacity:.3;} }
+ 
+.film-progress{ position:absolute; top:0; left:0; right:0; z-index:7; height:2px; pointer-events:none; }
+.film-progress i{ display:block; height:100%; width:0%; background:var(--grad); box-shadow:0 0 14px rgba(34,211,238,.7); }
+ 
+.ov{ position:absolute; z-index:3; left:0; right:0; text-align:center; pointer-events:none;
+  opacity:0; will-change:opacity,transform; }
+ 
+.ch-tag{ top:9vh; padding:0 22px; }
+.ch-tag span{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.3em; text-transform:uppercase; color:var(--text-dim); }
+.ch-tag b{ color:var(--cyan); font-weight:600; }
+ 
+.cap{ bottom:13vh; padding:0 22px; }
+.cap .k{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.32em; text-transform:uppercase; color:var(--text-faint); margin-bottom:6px; }
+.cap .v{ font-size:clamp(20px,3.2vw,34px); font-weight:300; letter-spacing:-.01em; color:var(--text); text-shadow:0 4px 30px rgba(0,0,0,.6); }
+ 
+.dump-hud{ bottom:14vh; padding:0 22px; }
+.dump-hud .row{ display:inline-flex; align-items:center; gap:22px; flex-wrap:wrap; justify-content:center;
+  font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:.08em; color:var(--text-dim);
+  border:1px solid var(--border); background:rgba(13,13,24,.55); backdrop-filter:blur(8px);
+  border-radius:999px; padding:12px 24px; }
+.dump-hud .row span b{ font-size:17px; font-weight:700; }
+.dump-hud .r-coral{ color:var(--coral); } .dump-hud .r-cyan{ color:var(--cyan); }
+.dump-hud .r-amber{ color:var(--amber); }
+ 
+.chars-head{ top:9vh; padding:0 22px; }
+.chars-head .k{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.3em; text-transform:uppercase; color:var(--text-faint); margin-bottom:14px; }
+.chars-head h3{ margin:0; font-size:clamp(26px,4.4vw,46px); font-weight:800; letter-spacing:-.02em; line-height:1.08; }
+.chars-head h3 .grad{ background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
+ 
+.cards-row{ position:absolute; top:0; bottom:0; left:0; right:0; display:flex; align-items:center; justify-content:center;
+  gap:clamp(12px,2vw,24px); padding:9vh 24px 12vh; }
+.student-card{
+  flex:0 1 300px; text-align:left; position:relative;
+  border-radius:18px; padding:26px 24px 22px;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015)),rgba(32,32,58,.75);
+  border:1px solid var(--border-strong);
+  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  box-shadow:0 30px 80px -30px rgba(0,0,0,.8);
+}
+.student-card::before{ content:''; position:absolute; inset:0; border-radius:inherit; padding:1px; pointer-events:none;
+  background:linear-gradient(140deg,var(--ac),rgba(255,255,255,.06) 40%,transparent 70%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude; }
+.student-card .mono-ava{ width:54px; height:54px; border-radius:14px; display:grid; place-items:center;
+  font-weight:800; font-size:22px; margin-bottom:16px;
+  background:linear-gradient(140deg,var(--ac),transparent 120%); color:#fff;
+  box-shadow:0 0 0 1px rgba(255,255,255,.1) inset,0 12px 26px -12px var(--ac); }
+.student-card .pill{ display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--ac); border:1px solid var(--ac);
+  border-radius:999px; padding:4px 11px; margin-bottom:12px; opacity:.9; }
+.student-card h4{ margin:0 0 4px; font-size:21px; font-weight:700; letter-spacing:-.01em; }
+.student-card .line{ margin:0 0 14px; color:var(--text-dim); font-size:13.5px; }
+.student-card .detail{ margin:0; font-size:12.5px; color:var(--text-faint); line-height:1.5; }
+.student-card .detail b{ color:var(--text); font-weight:600; }
+.student-card .time-chip{ margin-top:16px; display:inline-flex; align-items:center; gap:8px;
+  font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; color:var(--text-dim);
+  border-top:1px solid var(--border); padding-top:14px; width:100%; }
+.student-card .time-chip .spark{ color:var(--ac); }
+ 
+.chars-foot{ bottom:13vh; padding:0 22px; }
+.chars-foot .v{ font-size:clamp(16px,2.4vw,24px); font-weight:300; color:var(--text-dim); }
+.chars-foot .v b{ color:var(--text); font-weight:600; }
+ 
+.truth{ position:absolute; opacity:1; top:0; bottom:0; left:0; right:0; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:clamp(10px,2vh,22px); padding:10vh 24px; }
+.truth .tl{ font-size:clamp(26px,6vw,64px); font-weight:800; letter-spacing:-.02em; line-height:1.1; color:#fff;
+  filter:blur(0px); }
+.truth .tl.t2{ font-weight:300; color:var(--text-dim); }
+.truth .tl.t3{ color:var(--coral); }
+.truth .tl.focus{
+  font-size:clamp(48px,11vw,120px); letter-spacing:.02em;
+  background:linear-gradient(120deg,var(--violet-soft),var(--blue) 50%,var(--cyan));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 14px 70px rgba(108,67,255,.5));
+}
+.truth .tl-sub{ font-size:clamp(14px,1.9vw,19px); font-weight:300; color:var(--text-dim); max-width:620px; line-height:1.6; }
+.truth .tl-sub b{ color:var(--cyan); font-weight:600; }
+ 
+.theft-slate{ top:10vh; padding:0 22px; }
+.theft-slate .k{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--coral); margin-bottom:12px; }
+.theft-slate h3{ margin:0; font-size:clamp(30px,6vw,68px); font-weight:800; letter-spacing:-.02em;
+  background:linear-gradient(180deg,#fff,#fff 40%,rgba(251,113,133,.6));
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+ 
+.theft-line{ bottom:13vh; padding:0 22px; }
+.theft-line .v{ font-size:clamp(18px,2.8vw,30px); font-weight:300; color:#fff; max-width:720px; margin:0 auto; line-height:1.35; }
+.theft-line .v b{ color:var(--coral); font-weight:700; }
+ 
+.end-slate{ top:0; bottom:0; left:0; right:0; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:16px; padding:10vh 24px; }
+.end-slate .k{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.32em; text-transform:uppercase; color:var(--text-faint); }
+.end-slate h3{ margin:0; font-size:clamp(24px,4.4vw,46px); font-weight:800; letter-spacing:-.02em; }
+.end-slate .v{ font-size:clamp(14px,1.8vw,18px); color:var(--text-dim); font-weight:300; max-width:560px; }
+.end-slate .cta{ pointer-events:auto; cursor:pointer; margin-top:18px; display:inline-flex; align-items:center; gap:10px;
+  border:none; border-radius:999px; padding:15px 30px; font-family:'Poppins',sans-serif; font-weight:600; font-size:14.5px;
+  color:#06252b; background:var(--cyan); box-shadow:0 14px 40px -14px rgba(34,211,238,.6); transition:transform .15s,box-shadow .15s; }
+.end-slate .cta:hover{ transform:translateY(-2px); box-shadow:0 18px 46px -12px rgba(34,211,238,.7); }
+ 
+.rail{
+  position:absolute; top:50%; right:16px; transform:translateY(-50%); z-index:8;
+  display:flex; flex-direction:column; gap:6px; align-items:flex-end;
+}
+.rail .rail-prog{ position:absolute; right:7px; top:-6px; bottom:-6px; width:2px; background:rgba(255,255,255,.1); border-radius:2px; overflow:hidden; }
+.rail .rail-prog i{ display:block; height:100%; width:0%; background:var(--grad); transition:height .1s linear; }
+.rail button{
+  position:relative; z-index:1; appearance:none; border:none; cursor:pointer; background:none;
+  display:flex; align-items:center; gap:10px; padding:7px 0 7px 18px; text-align:right;
+  font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.22em; text-transform:uppercase;
+  color:rgba(245,245,248,.4); transition:color .2s; white-space:nowrap;
+}
+.rail button::before{ content:''; position:absolute; right:4px; top:50%; width:7px; height:7px; border-radius:50%;
+  transform:translateY(-50%); background:rgba(255,255,255,.18); transition:all .2s; }
+.rail button .num{ color:rgba(245,245,248,.25); font-size:8.5px; }
+.rail button:hover{ color:rgba(245,245,248,.9); }
+.rail button.on{ color:#fff; font-weight:600; }
+.rail button.on::before{ background:var(--cyan); box-shadow:0 0 14px var(--cyan); }
+.rail button.dim{ opacity:.4; cursor:default; }
+.rail button.dim:hover{ color:rgba(245,245,248,.4); }
+ 
+.join{
+  position:relative; padding:130px 0 90px; overflow:hidden;
+  background:
+    radial-gradient(900px 500px at 10% 0%,rgba(108,67,255,.14),transparent 55%),
+    radial-gradient(800px 460px at 95% 30%,rgba(34,211,238,.1),transparent 55%),
+    radial-gradient(700px 400px at 50% 110%,rgba(251,113,133,.08),transparent 55%),
+    #0d0d18;
+}
+.join-grid{ display:grid; grid-template-columns:1.05fr .95fr; gap:54px; align-items:start; }
+.join-copy h2{ margin:0 0 18px; font-size:clamp(30px,4.4vw,48px); font-weight:800; letter-spacing:-.02em; line-height:1.08; }
+.join-copy h2 .grad{ background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.join-copy .lead{ color:var(--text-dim); font-weight:300; font-size:16.5px; max-width:520px; margin:0 0 30px; line-height:1.65; }
+.join-copy .lead b{ color:var(--text); font-weight:600; }
+.j-list{ list-style:none; margin:0 0 34px; padding:0; display:grid; gap:12px; }
+.j-list li{ display:flex; gap:14px; align-items:flex-start; font-size:14.5px; color:var(--text-dim); }
+.j-list li .ic{ flex:none; width:40px; height:40px; border-radius:11px; display:grid; place-items:center; font-size:16px;
+  background:rgba(245,166,35,.12); border:1px solid rgba(245,166,35,.3); color:var(--amber); }
+.j-list li:nth-child(2) .ic{ background:rgba(34,211,238,.1); border-color:rgba(34,211,238,.3); color:var(--cyan); }
+.j-list li:nth-child(3) .ic{ background:rgba(52,211,153,.1); border-color:rgba(52,211,153,.3); color:var(--mint); }
+.j-list li b{ color:#fff; font-weight:600; }
+.j-list li span{ line-height:1.5; }
+.join-copy .tagline{ font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--cyan); }
+ 
+.join-panel{
+  border:1px solid var(--border-strong); border-radius:20px; padding:34px;
+  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.004)),var(--ink-card);
+  box-shadow:0 40px 120px -40px rgba(0,0,0,.9);
+}
+.join-panel h3{ margin:0 0 6px; font-size:22px; font-weight:700; letter-spacing:-.01em; }
+.join-panel .sub{ margin:0 0 24px; font-size:13.5px; color:var(--text-dim); }
+.notify-row{ display:flex; gap:8px; align-items:center; background:var(--ink-2); border:1px solid var(--border);
+  border-radius:12px; padding:5px; transition:border-color .15s,box-shadow .15s; }
+.notify-row:focus-within{ border-color:var(--cyan); box-shadow:0 0 0 3px rgba(34,211,238,.13); }
+.notify-row input{ flex:1; min-width:0; background:transparent; border:none; outline:none; color:var(--text);
+  font-family:'Poppins',sans-serif; font-size:14px; padding:10px 12px; }
+.notify-row input::placeholder{ color:var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:12px; }
+.btn{ appearance:none; border:none; cursor:pointer; border-radius:var(--radius-sm);
+  font-family:'Poppins',sans-serif; font-weight:600; font-size:14px; padding:12px 20px;
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  transition:transform .12s,box-shadow .15s,opacity .12s; white-space:nowrap; }
+.btn:active{ transform:scale(.98); }
+.btn:disabled{ opacity:.6; cursor:default; }
+.btn-cyan{ background:var(--cyan); color:#06252b; box-shadow:0 10px 30px -12px rgba(34,211,238,.5); }
+.btn-cyan:hover:not(:disabled){ box-shadow:0 14px 36px -10px rgba(34,211,238,.65); }
+.fineprint{ font-size:12px; color:var(--text-faint); margin-top:14px; text-align:center; }
+.error-msg{ color:var(--coral); font-size:13px; margin-top:8px; min-height:0; }
+.f200-meter{ margin-top:26px; padding-top:24px; border-top:1px solid var(--border); }
+.f200-meter-top{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:12.5px;
+  color:var(--text-dim); margin-bottom:10px; flex-wrap:wrap; }
+.f200-meter-top span:last-child{ color:var(--amber); font-weight:600; }
+.f200-bar{ height:8px; border-radius:999px; background:var(--ink-2); border:1px solid var(--border); overflow:hidden; }
+.f200-bar-fill{ height:100%; width:0%; border-radius:999px; background:linear-gradient(90deg,var(--amber),var(--coral)); transition:width .6s ease; }
+.f200-note{ font-size:12px; color:var(--text-faint); margin:10px 0 0; }
+.confirm-head{ text-align:center; }
+.check-badge{ width:52px; height:52px; border-radius:15px; background:var(--mint); color:#06251b;
+  display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700;
+  margin:0 auto 18px; box-shadow:0 12px 34px -10px rgba(52,211,153,.5); }
+.confirm-head h3{ margin:0 0 8px; font-size:24px; }
+.confirm-head .rank{ color:var(--mint); }
+.confirm-head .sub2{ margin:0; color:var(--text-dim); font-size:14px; }
+.reward-banner{ display:flex; gap:12px; align-items:flex-start; margin-top:22px; border:1px solid rgba(245,166,35,.3);
+  background:rgba(245,166,35,.08); border-radius:var(--radius-sm); padding:13px 14px; font-size:13px; color:#ffd79a; }
+.reward-banner b{ color:var(--amber); }
+.confirm-btn{ width:100%; margin-top:22px; }
+ 
+footer{ border-top:1px solid var(--border); padding:30px 0 40px; background:#0a0a14; }
+.foot-row{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
+.foot-brand{ display:flex; align-items:center; gap:10px; color:var(--text-faint); font-size:11px; letter-spacing:.12em; text-transform:uppercase; }
+.foot-brand img{ height:18px; width:auto; opacity:.85; }
+.foot-tagline{ font-size:11px; color:var(--text-faint); letter-spacing:.18em; text-transform:uppercase; }
+ 
+@media (max-width:980px){
+  .join-grid{ grid-template-columns:1fr; gap:40px; }
+  .cards-row{ flex-direction:column; overflow:hidden; }
+  .student-card{ flex:0 0 auto; width:min(360px,86vw); }
+}
+@media (max-width:760px){
+  .header-inner{ padding:10px 18px; }
+  .brand-name{ font-size:15px; }
+  .logo-tile{ width:38px; height:38px; border-radius:11px; }
+  .logo-tile img{ height:23px; }
+  .header-meta{ font-size:9px; padding:6px 12px; }
+  .wrap{ padding:0 20px; }
+  .hero{ padding:110px 18px 70px; }
+  .hero-sub{ margin-top:20px; }
+  .dump-hud .row{ font-size:11.5px; padding:10px 16px; gap:14px; }
+  .dump-hud .row span b{ font-size:14px; }
+  .film-hud{ padding:0 16px; font-size:9px; }
+  .ch-tag span{ font-size:9.5px; }
+  .cap .v{ font-size:20px; }
+  .rail{ right:8px; }
+  .rail button{ padding:6px 0 6px 12px; font-size:8.5px; letter-spacing:.16em; }
+  .student-card{ padding:18px 16px 14px; }
+  .student-card .mono-ava{ width:40px; height:40px; font-size:17px; margin-bottom:10px; }
+  .student-card .detail{ font-size:11.5px; margin-bottom:0; }
+  .student-card .time-chip{ margin-top:10px; padding-top:10px; }
+  .chars-head h3{ font-size:24px; }
+  .truth{ gap:8px; }
+  .end-slate .cta{ padding:13px 24px; font-size:13.5px; }
+  .join{ padding:90px 0 60px; }
+  .join-panel{ padding:26px 22px; }
+}
+@media (max-width:520px){
+  .brand-sub{ display:none; }
+  .cards-row{ padding:10vh 16px 14vh; gap:8px; }
+  .student-card{ width:88vw; padding:12px 14px 10px; }
+  .student-card .mono-ava{ width:32px; height:32px; font-size:14px; margin-bottom:8px; border-radius:10px; }
+  .student-card .pill{ font-size:8px; padding:3px 9px; margin-bottom:8px; }
+  .student-card h4{ font-size:15px; }
+  .student-card .line{ font-size:11.5px; margin-bottom:6px; }
+  .student-card .detail{ font-size:10.5px; line-height:1.4; }
+  .student-card .time-chip{ display:none; }
+  .rail{ display:none; }
+  .film-hud{ justify-content:space-between; }
+}
+@media (prefers-reduced-motion:reduce){
+  html{ scroll-behavior:auto; }
+  .grain{ animation:none; }
+  .hero-cue .scroll-chev svg{ animation:none; }
+  .film-hud .rec-dot{ animation:none; }
+}
+</style>
+</head>
+<body>
+ 
+<header>
+  <div class="header-inner">
+    <a class="brand" href="landing.html">
+      <div class="logo-tile"><img src="wynko-icon.png" alt="Wynko" /></div>
+      <span>
+        <span class="brand-name">WYNKO</span>
+        <span class="brand-sub">Memory Instrument</span>
+      </span>
+    </a>
+    <div class="header-meta"><span>Founding cohort · </span><b id="headerSeatNote">Top 200 get founder access</b></div>
+  </div>
+</header>
+ 
+<section class="hero" id="hero">
+  <canvas id="heroCanvas" aria-hidden="true"></canvas>
+  <div class="hero-scrim"></div>
+  <div class="hero-inner">
+    <p class="eyebrow">Wynko presents · A short film</p>
+    <h1 class="hero-title">THE&nbsp;<span class="amp">FOCUS</span><br/>THEFT</h1>
+    <p class="hero-sub">They told you results measure intelligence. They measure <b>attention</b> — and attention is being stolen, a billion dollars at a time. This is the story of the heist, the three students caught in it, and the weapon built to take it back.</p>
+    <button class="hero-cue" id="watchBtn">
+      <span class="pill"><span class="play">&#9654;</span> Watch the film</span>
+      <span class="scroll-chev"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>
+    </button>
+  </div>
+</section>
+ 
+<section class="film-frame" id="filmFrame">
+  <div class="film-track" id="filmTrack">
+    <div class="film-pin" id="filmPin">
+      <canvas id="filmCanvas" aria-hidden="true"></canvas>
+      <div class="film-scrim"></div>
+ 
+      <div class="film-hud">
+        <span class="rec"><span class="rec-dot"></span><span id="hudChapter">Ch 01 · Who you are</span></span>
+        <span class="tc mono" id="hudTimecode">00:00</span>
+      </div>
+      <div class="film-progress"><i id="filmProgressBar"></i></div>
+ 
+      <div class="grain"></div>
+      <div class="letterbox top"></div>
+      <div class="letterbox bot"></div>
+ 
+      <div class="ov ch-tag" data-a="0" data-b="0.62" data-fi="0.02" data-fo="0.06" data-par="4">
+        <span>Chapter 01 · <b>Who you are</b></span>
+      </div>
+ 
+      <div class="ov cap" data-a="0.02" data-b="0.15" data-fi="0.02" data-fo="0.02" data-par="10">
+        <p class="k">Scene 01</p>
+        <p class="v">The room where it happens</p>
+      </div>
+ 
+      <div class="ov cap" data-a="0.18" data-b="0.30" data-fi="0.02" data-fo="0.02" data-par="10">
+        <p class="k">Scene 02 · The feed never sleeps</p>
+        <p class="v">Every topper and every struggler start here — the same.</p>
+      </div>
+ 
+      <div class="ov dump-hud" data-a="0.21" data-b="0.31" data-fi="0.02" data-fo="0.02" data-par="0">
+        <div class="row">
+          <span class="r-amber"><b id="hudNotify">1,207</b> notifications today</span>
+          <span class="r-coral"><b id="hudLost">2h 47m</b> of focus lost</span>
+          <span class="r-cyan"><b>&#8734;</b> feed, still scrolling</span>
+        </div>
+      </div>
+ 
+      <div class="ov chars-head" data-a="0.335" data-b="0.47" data-fi="0.02" data-fo="0.03" data-par="6">
+        <p class="k">Scene 03 · Equal hardware</p>
+        <h3>Three brains. <span class="grad">Same potential.</span></h3>
+      </div>
+ 
+      <div class="cards-row">
+        <article class="ov student-card" id="card1" style="--ac:#00d4ff;" data-a="0.36" data-b="0.48" data-fi="0.03" data-fo="0.03" data-par="26">
+          <div class="mono-ava">A</div>
+          <span class="pill">NEET</span>
+          <h4>Aarav</h4>
+          <p class="line">Human physiology at 2:00 AM.</p>
+          <p class="detail">Same brain as the topper. Same syllabus. Same 24 hours. The only difference is what's <b>winning his attention</b>.</p>
+          <span class="time-chip"><span class="spark">&#9679;</span> 2:00 AM · host cell biology</span>
+        </article>
+        <article class="ov student-card" id="card2" style="--ac:#9b7dff;" data-a="0.40" data-b="0.48" data-fi="0.03" data-fo="0.03" data-par="44">
+          <div class="mono-ava">M</div>
+          <span class="pill">UPSC</span>
+          <h4>Meera</h4>
+          <p class="line">Polity notes at 4:00 AM.</p>
+          <p class="detail">Same brain as the topper. Same syllabus. Same 24 hours. The only difference is what's <b>stealing her mornings</b>.</p>
+          <span class="time-chip"><span class="spark">&#9679;</span> 4:00 AM · Indian polity</span>
+        </article>
+        <article class="ov student-card" id="card3" style="--ac:#f5a623;" data-a="0.44" data-b="0.48" data-fi="0.03" data-fo="0.03" data-par="62">
+          <div class="mono-ava">K</div>
+          <span class="pill">JEE</span>
+          <h4>Kabir</h4>
+          <p class="line">Calculus on the 7:00 AM bus.</p>
+          <p class="detail">Same brain as the topper. Same syllabus. Same 24 hours. The only difference is what's <b>eating his commute</b>.</p>
+          <span class="time-chip"><span class="spark">&#9679;</span> 7:00 AM · limits &amp; continuity</span>
+        </article>
+      </div>
+ 
+      <div class="ov chars-foot" data-a="0.475" data-b="0.50" data-fi="0.015" data-fo="0.02" data-par="8">
+        <p class="v">Same syllabus. Same hours. Same brain. <b>Different attention.</b></p>
+      </div>
+ 
+      <div class="truth">
+        <p class="tl" data-a="0.50" data-b="0.525" data-fi="0.02" data-fo="0.02" data-par="0">No one is born dumb.</p>
+        <p class="tl t2" data-a="0.535" data-b="0.56" data-fi="0.02" data-fo="0.02" data-par="0">No one is born a genius.</p>
+        <p class="tl t3" data-a="0.565" data-b="0.595" data-fi="0.02" data-fo="0.02" data-par="0">Then why do results change?</p>
+        <p class="tl focus" data-a="0.60" data-b="0.635" data-fi="0.02" data-fo="0.02" data-par="0">FOCUS.</p>
+        <p class="tl-sub" data-a="0.645" data-b="0.70" data-fi="0.02" data-fo="0.025" data-par="6">The answer was never intelligence. It was <b>attention</b> — and yours is being targeted by machines with bigger budgets than your entire school.</p>
+      </div>
+ 
+      <div class="ov theft-slate" data-a="0.70" data-b="0.75" data-fi="0.015" data-fo="0.015" data-par="0">
+        <p class="k">Chapter 02</p>
+        <h3>THE THEFT</h3>
+      </div>
+ 
+      <div class="ov theft-line" data-a="0.725" data-b="0.775" data-fi="0.02" data-fo="0.02" data-par="8">
+        <p class="v">They pour <b>billions</b> into taking your focus.</p>
+      </div>
+      <div class="ov theft-line" data-a="0.785" data-b="0.82" data-fi="0.02" data-fo="0.02" data-par="8">
+        <p class="v">So when you fail — <b>that is not your fault.</b></p>
+      </div>
+ 
+      <div class="ov end-slate" data-a="0.86" data-b="1" data-fi="0.03" data-fo="0" data-par="0">
+        <p class="k">Chapter 02 is being written now</p>
+        <h3>The weapon comes next.</h3>
+        <p class="v">Every chapter after this one ends the same way — with you holding your attention again. Take the first step before the machines regroup.</p>
+        <button class="cta" id="filmJoinBtn">Join the Founding 200 &#8594;</button>
+      </div>
+ 
+      <nav class="rail" id="rail" aria-label="Chapters">
+        <div class="rail-prog"><i id="railProg"></i></div>
+        <button type="button" data-p="0.10" class="on"><span class="num">01</span> Who you are</button>
+        <button type="button" data-p="0.72"><span class="num">02</span> The theft</button>
+        <button type="button" class="dim"><span class="num">03</span> The weapon</button>
+        <button type="button" class="dim"><span class="num">04</span> Join</button>
+      </nav>
+ 
+    </div>
+  </div>
+</section>
+ 
+<section class="join" id="join">
+  <div class="wrap">
+    <div class="join-grid">
+      <div class="join-copy">
+        <p class="eyebrow">Join · The Founding 200</p>
+        <h2>Take your focus back.<br/>Take your <span class="grad">life</span> back.</h2>
+        <p class="lead">Wynko is the weapon — <b>Focus Lock</b> that won't be one-tap-exited, a <b>Recall Engine</b> timed to the minute your memory needs it, and a live 3D library of people who actually show up. The core stays free. The first 200 seats keep <b>Premium free for a year</b>.</p>
+        <ul class="j-list">
+          <li><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 0 1-10 0V4z"/><path d="M7 4c0 2 2 3 5 3s5-1 5-3"/></svg></span><span><b>Premium, free for 1 year</b> — the full Focus Lock tier from day one, no card on file, no auto-renew trap.</span></li>
+          <li><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span><span><b>Your voice reaches Team Wynko</b> — talk directly to the people building it and shape what ships next.</span></li>
+          <li><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span><span><b>A verified Founding badge</b> — permanent, on your profile, from launch day onward.</span></li>
+        </ul>
+        <p class="tagline">Crush the machines. Take control of your life — in your hands.</p>
+      </div>
+ 
+      <div class="join-panel">
+        <div id="joinPanel">
+          <h3>Claim your seat in the top 200.</h3>
+          <p class="sub">The core stays free forever. The first 200 in line keep Premium free for a year.</p>
+          <form id="joinForm" autocomplete="off" novalidate>
+            <div class="notify-row">
+              <input type="email" id="emailInput" placeholder="you@example.com" aria-label="Email" required />
+              <button type="submit" class="btn btn-cyan" id="joinBtn">Join the waitlist &#8594;</button>
+            </div>
+            <div class="error-msg" id="joinError"></div>
+          </form>
+          <p class="fineprint">No spam — one email the day it opens. Maybe two, if we're honest about delays.</p>
+ 
+          <div class="f200-meter">
+            <div class="f200-meter-top">
+              <span>Aspirants on the list right now</span>
+              <span class="mono" id="f200Claimed">— / 200</span>
+            </div>
+            <div class="f200-bar"><div class="f200-bar-fill" id="f200BarFill"></div></div>
+            <p class="f200-note" id="f200Note">Pulled from the live queue — not a fake progress bar.</p>
+          </div>
+        </div>
+ 
+        <div id="confirmPanel" style="display:none;">
+          <div class="confirm-head">
+            <div class="check-badge">&#10003;</div>
+            <h3>You're <span class="rank mono" id="rankNum">—</span> in line.</h3>
+            <p class="sub2" id="rankSub">If that number is inside #1–200 at launch, everything below is yours for good.</p>
+          </div>
+          <div class="reward-banner">
+            <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px;"><path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 0 1-10 0V4z"/><path d="M7 4c0 2 2 3 5 3s5-1 5-3"/></svg></span>
+            <span>Rank <b>#1–200</b> at launch locks in <b>Premium free for 1 year</b>, a <b>direct line to the founder</b>, and a <b>verified Founding badge</b> — permanently.</span>
+          </div>
+          <button class="btn btn-cyan confirm-btn" id="confirmDoneBtn">Back to the film</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+ 
+<footer>
+  <div class="wrap foot-row">
+    <div class="foot-brand"><img src="wynko-icon.png" alt="" />Wynko · <span id="year"></span></div>
+    <div class="foot-tagline">Focus · Study · Together</div>
+  </div>
+</footer>
+ 
+<script>
+var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var DPR = Math.min(2, window.devicePixelRatio || 1);
+ 
+var $ = function(id){ return document.getElementById(id); };
+function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
+function lerp(a, b, t){ return a + (b - a) * t; }
+function smooth(t){ t = clamp(t, 0, 1); return t * t * (3 - 2 * t); }
+ 
+function mulberry32(seed){
+  var a = seed >>> 0;
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+ 
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+ 
+var VW = 1280, VH = 720;
+var filmCanvas = $('filmCanvas');
+var fctx = filmCanvas.getContext('2d');
+var heroCanvas = $('heroCanvas');
+var hctx = heroCanvas.getContext('2d');
+ 
+var heroGlyphs = [];
+var heroR = mulberry32(1337);
+for (var i = 0; i < 26; i++){
+  heroGlyphs.push({
+    g: ['\u20B9', '\u2665', '\u221E', '\u25B6', '#', '@'][Math.floor(heroR() * 6)],
+    x: heroR(),
+    y: heroR(),
+    s: 9 + heroR() * 22,
+    v: 0.008 + heroR() * 0.02,
+    r: heroR() * Math.PI * 2,
+    vr: (heroR() - .5) * 0.4,
+    a: 0.05 + heroR() * 0.12,
+    hue: Math.floor(heroR() * 3)
+  });
+}
+var heroCols = ['#00d4ff', '#9b7dff', '#fb7185', '#f5a623'];
+ 
+function sizeCanvas(cv){
+  var r = cv.getBoundingClientRect();
+  var d = DPR;
+  if (cv.width !== Math.round(r.width * d) || cv.height !== Math.round(r.height * d)){
+    cv.width = Math.round(r.width * d);
+    cv.height = Math.round(r.height * d);
+  }
+  return { w: cv.width, h: cv.height };
+}
+ 
+function fitContext(ctx, cw, ch){
+  var s = Math.max(cw / VW, ch / VH);
+  ctx.setTransform(s, 0, 0, s, (cw - VW * s) / 2, (ch - VH * s) / 2);
+}
+ 
+var skyline = null;
+var stars = null;
+var cityLights = null;
+function buildCity(seed){
+  var r = mulberry32(seed);
+  skyline = [];
+  var x = 0;
+  while (x < VW){
+    var bw = 26 + r() * 70;
+    var bh = 40 + r() * 130;
+    skyline.push({ x: x, w: bw, h: bh });
+    x += bw + (r() * 10);
+  }
+  cityLights = [];
+  skyline.forEach(function(b){
+    for (var i = 0; i < 8; i++){
+      if (r() < 0.5) continue;
+      cityLights.push({ x: b.x + 4 + r() * (b.w - 8), y: 470 - b.h + 6 + r() * (b.h - 12), c: r() });
+    }
+  });
+  stars = [];
+  for (var s = 0; s < 90; s++){
+    stars.push({ x: r() * VW, y: r() * 420, r: 0.5 + r() * 1.4, ph: r() * 6.28, sp: 0.6 + r() * 1.6 });
+  }
+}
+buildCity(7);
+ 
+function drawSky(ctx, t){
+  var g = ctx.createLinearGradient(0, 0, 0, 470);
+  g.addColorStop(0, '#05050e');
+  g.addColorStop(0.6, '#0b0d1f');
+  g.addColorStop(1, '#10142c');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, VW, 470);
+}
+ 
+function drawStarsMoon(ctx, t){
+  for (var i = 0; i < stars.length; i++){
+    var st = stars[i];
+    var tw = 0.5 + 0.5 * Math.sin(t * st.sp + st.ph);
+    ctx.globalAlpha = 0.25 + 0.55 * tw;
+    ctx.fillStyle = '#cfe3ff';
+    ctx.beginPath();
+    ctx.arc(st.x, st.y, st.r, 0, 6.2832);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  var mx = 320, my = 190, mr = 34;
+  var glow = ctx.createRadialGradient(mx, my, mr * .2, mx, my, mr * 5);
+  glow.addColorStop(0, 'rgba(220,236,255,.35)');
+  glow.addColorStop(1, 'rgba(220,236,255,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(mx - mr * 5, my - mr * 5, mr * 10, mr * 10);
+  ctx.fillStyle = '#e8f1ff';
+  ctx.beginPath();
+  ctx.arc(mx, my, mr, 0, 6.2832);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(200,216,240,.5)';
+  ctx.beginPath(); ctx.arc(mx - 10, my - 6, 6, 0, 6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(mx + 9, my + 9, 4.5, 0, 6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(mx + 2, my - 14, 3, 0, 6.2832); ctx.fill();
+}
+ 
+function drawSkyline(ctx, t){
+  ctx.fillStyle = '#080a16';
+  for (var i = 0; i < skyline.length; i++){
+    var b = skyline[i];
+    ctx.fillRect(b.x, 470 - b.h, b.w, b.h);
+  }
+  for (var j = 0; j < cityLights.length; j++){
+    var l = cityLights[j];
+    var gl = 0.35 + 0.3 * Math.sin(t * 1.5 + l.x);
+    ctx.globalAlpha = clamp(gl, 0, 1);
+    ctx.fillStyle = l.c > 0.5 ? '#ffd9a0' : '#a9d8ff';
+    ctx.fillRect(l.x, l.y, 2.5, 3.5);
+  }
+  ctx.globalAlpha = 1;
+}
+ 
+function drawWindow(ctx){
+  var wx = 150, wy = 96, ww = 300, wh = 320, bar = 9;
+  ctx.fillStyle = 'rgba(6,6,16,.9)';
+  ctx.fillRect(wx - bar, wy - bar, ww + bar * 2, wh + bar * 2);
+  ctx.fillStyle = '#0a0c18';
+  ctx.fillRect(wx, wy, ww, wh);
+  ctx.fillStyle = 'rgba(4,4,12,.95)';
+  ctx.fillRect(wx + ww / 2 - bar / 2, wy, bar, wh);
+  ctx.fillRect(wx, wy + wh / 2 - bar / 2, ww, bar);
+}
+ 
+function drawWall(ctx){
+  var g = ctx.createLinearGradient(0, 360, 0, 620);
+  g.addColorStop(0, '#0d0f1d');
+  g.addColorStop(1, '#0a0b15');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 360, VW, 260);
+  ctx.fillStyle = 'rgba(255,255,255,.02)';
+  ctx.fillRect(150 + 300 + 40, 200, 170, 220);
+  ctx.fillStyle = 'rgba(255,255,255,.015)';
+  ctx.fillRect(560, 300, 130, 150);
+}
+ 
+function drawClock(ctx, t){
+  var cx = 1010, cy = 150, r = 34;
+  ctx.fillStyle = '#0b0b18';
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.2832); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.16)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.2832); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.28)';
+  ctx.lineWidth = 1.6;
+  for (var i = 0; i < 12; i++){
+    var a = i / 12 * 6.2832;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a) * (r - 5), cy + Math.sin(a) * (r - 5));
+    ctx.lineTo(cx + Math.cos(a) * (r - 1.5), cy + Math.sin(a) * (r - 1.5));
+    ctx.stroke();
+  }
+  var sec = (t * 0.9) % 60;
+  var min = (t * 0.05) % 60;
+  var hha = (10 + min / 12) / 12 * 6.2832;
+  var mha = min / 60 * 6.2832;
+  ctx.strokeStyle = 'rgba(245,245,248,.85)';
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(hha) * (r * .5), cy - Math.cos(hha) * (r * .5)); ctx.stroke();
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(mha) * (r * .75), cy - Math.cos(mha) * (r * .75)); ctx.stroke();
+  ctx.fillStyle = 'rgba(251,113,133,.9)';
+  ctx.beginPath(); ctx.arc(cx, cy, 2.4, 0, 6.2832); ctx.fill();
+}
+ 
+function drawDesk(ctx){
+  var g = ctx.createLinearGradient(0, 560, 0, 720);
+  g.addColorStop(0, '#12101f');
+  g.addColorStop(1, '#080810');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 560, VW, 160);
+  ctx.fillStyle = 'rgba(255,255,255,.05)';
+  ctx.fillRect(0, 560, VW, 2);
+  ctx.fillStyle = 'rgba(255,255,255,.025)';
+  ctx.fillRect(0, 640, VW, 2);
+}
+ 
+function drawBooks(ctx){
+  var xs = 210, base = 560;
+  var stack = [
+    { w: 96, h: 26, c: '#3a2f78', top: base - 24 },
+    { w: 104, h: 22, c: '#14405a', top: base - 24 - 22 },
+    { w: 90, h: 28, c: '#5a3a14', top: base - 24 - 22 - 28 }
+  ];
+  for (var i = 0; i < stack.length; i++){
+    var b = stack[i];
+    ctx.fillStyle = b.c;
+    ctx.globalAlpha = 0.85;
+    ctx.fillRect(xs + (stack.length - i) * 8, b.top, b.w, b.h);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(255,255,255,.08)';
+    ctx.fillRect(xs + (stack.length - i) * 8 + 6, b.top + 2, b.w - 12, 2);
+  }
+  ctx.fillStyle = 'rgba(255,255,255,.04)';
+  ctx.fillRect(330, 528, 58, 34);
+}
+ 
+function drawLamp(ctx, t){
+  var bx = 1030, by = 560;
+  ctx.fillStyle = '#0b0b16';
+  ctx.beginPath();
+  ctx.ellipse(bx, by, 34, 9, 0, 0, 6.2832);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.14)';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(bx, by - 4);
+  ctx.lineTo(bx + 6, 470);
+  ctx.stroke();
+  var flick = 0.94 + 0.06 * Math.sin(t * 2.7) * Math.sin(t * 1.3 + 1);
+  var cone = ctx.createLinearGradient(bx + 6, 470, bx + 6, 566);
+  cone.addColorStop(0, 'rgba(255,196,130,' + (0.30 * flick) + ')');
+  cone.addColorStop(1, 'rgba(255,196,130,0)');
+  ctx.fillStyle = cone;
+  ctx.beginPath();
+  ctx.moveTo(bx + 6 - 8, 470);
+  ctx.lineTo(bx + 6 + 8, 470);
+  ctx.lineTo(bx + 6 + 70, 566);
+  ctx.lineTo(bx + 6 - 70, 566);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = 'rgba(60,48,30,.95)';
+  ctx.beginPath();
+  ctx.moveTo(bx - 30, 470);
+  ctx.lineTo(bx + 42, 470);
+  ctx.lineTo(bx + 30, 452);
+  ctx.lineTo(bx - 18, 452);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,205,140,.9)';
+  ctx.fillRect(bx - 18, 452, 48, 4);
+  ctx.globalAlpha = 0.5 * flick;
+  ctx.fillStyle = '#ffd9a8';
+  ctx.beginPath();
+  ctx.ellipse(bx + 6, 470, 60, 22, 0, 0, 6.2832);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+}
+ 
+function drawPhoneBase(ctx, x, y, s, glow, feed){
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.rotate(-0.05);
+  var w = 180, h = 104, r = 18;
+  if (glow > 0.01){
+    var pg = ctx.createRadialGradient(0, 0, 10, 0, 0, 150);
+    pg.addColorStop(0, 'rgba(0,212,255,' + (0.5 * glow) + ')');
+    pg.addColorStop(1, 'rgba(0,212,255,0)');
+    ctx.fillStyle = pg;
+    ctx.fillRect(-160, -160, 320, 320);
+  }
+  ctx.fillStyle = '#05050c';
+  roundRect(ctx, -w / 2, -h / 2, w, h, r);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.1)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  var sw = w - 16, sh = h - 16;
+  ctx.save();
+  roundRect(ctx, -sw / 2, -sh / 2, sw, sh, 10);
+  ctx.clip();
+  var g = ctx.createLinearGradient(0, -sh / 2, 0, sh / 2);
+  g.addColorStop(0, '#0c1730');
+  g.addColorStop(1, '#08080f');
+  ctx.fillStyle = g;
+  ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+  ctx.fillStyle = 'rgba(255,255,255,.14)';
+  ctx.fillRect(-sw / 2 + 8, -sh / 2 + 9, 40, 5);
+  ctx.fillRect(-sw / 2 + 8, -sh / 2 + 9, 14, 5);
+  ctx.fillStyle = 'rgba(34,211,238,.8)';
+  ctx.beginPath();
+  ctx.arc(sw / 2 - 12, -sh / 2 + 11, 2.5, 0, 6.2832);
+  ctx.fill();
+  var rows = 4;
+  for (var i = 0; i < rows; i++){
+    var yy = -sh / 2 + 30 + i * 22 + feed * 8;
+    if (yy > sh / 2 - 12) continue;
+    ctx.fillStyle = 'rgba(255,255,255,.07)';
+    roundRect(ctx, -sw / 2 + 8, yy, sw - 16, 15, 5);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.12)';
+    roundRect(ctx, -sw / 2 + 13, yy + 3.5, 26, 8, 3);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.16)';
+    roundRect(ctx, -sw / 2 + 45, yy + 4, sw - 90, 3, 1.5);
+    ctx.fill();
+    roundRect(ctx, -sw / 2 + 45, yy + 9, sw - 118, 2.5, 1.2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(251,113,133,.9)';
+    ctx.beginPath();
+    ctx.arc(sw / 2 - 16, yy + 7.5, 4, 0, 6.2832);
+    ctx.fill();
+  }
+  ctx.restore();
+  ctx.restore();
+}
+ 
+function drawStudent(ctx, t, sink){
+  var hx = 830, hy = 366, hr = 36;
+  var bodyC = '#07070e';
+  ctx.fillStyle = bodyC;
+  ctx.beginPath();
+  ctx.arc(hx, hy, hr, 0, 6.2832);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(hx - 60, 430);
+  ctx.bezierCurveTo(hx - 80, 470, hx - 84, 560, hx - 90, 566);
+  ctx.lineTo(hx + 110, 566);
+  ctx.bezierCurveTo(hx + 104, 560, hx + 100, 470, hx + 80, 430);
+  ctx.bezierCurveTo(hx + 46, 452, hx - 26, 452, hx - 60, 430);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.05)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(hx - 44, 448);
+  ctx.bezierCurveTo(hx - 10, 470, hx + 30, 470, hx + 66, 452);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,205,140,.32)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(hx, hy, hr - 3, Math.PI * 0.85, Math.PI * 1.32);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,205,140,.22)';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(hx + 80, 432);
+  ctx.quadraticCurveTo(hx + 96, 455, hx + 92, 470);
+  ctx.stroke();
+  var armX = 870, armY = 446;
+  ctx.strokeStyle = bodyC;
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 20;
+  ctx.beginPath();
+  ctx.moveTo(armX, armY);
+  ctx.quadraticCurveTo(786, 512, 752, 500);
+  ctx.stroke();
+  ctx.lineWidth = 14;
+  ctx.strokeStyle = '#0a0a13';
+  ctx.beginPath();
+  ctx.moveTo(armX, armY + 6);
+  ctx.quadraticCurveTo(786, 512, 750, 498);
+  ctx.stroke();
+  ctx.lineCap = 'butt';
+}
+ 
+var motes = [];
+var motesR = mulberry32(42);
+for (var mi = 0; mi < 44; mi++){
+  motes.push({ x: motesR() * VW, y: motesR() * 720, r: 0.6 + motesR() * 1.8, sp: 4 + motesR() * 9, ph: motesR() * 6.28 });
+}
+ 
+function drawMotes(ctx, t){
+  for (var i = 0; i < motes.length; i++){
+    var m = motes[i];
+    var y = (m.y - (t * m.sp * 3) % 720 + 720) % 720;
+    var x = m.x + Math.sin(t * 0.7 + m.ph) * 14;
+    var nearLamp = Math.abs(x - 1030) < 90 && y > 430 && y < 566;
+    ctx.globalAlpha = nearLamp ? 0.5 : 0.22;
+    ctx.fillStyle = nearLamp ? '#ffd9a8' : '#9db4ff';
+    ctx.beginPath();
+    ctx.arc(x, y, m.r, 0, 6.2832);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+ 
+function drawVignette(ctx, alpha){
+  var g = ctx.createRadialGradient(VW / 2, VH / 2, VH * .35, VW / 2, VH / 2, VH * .95);
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(1, 'rgba(0,0,0,' + (0.62 * alpha) + ')');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, VW, VH);
+}
+ 
+function drawRoomScene(ctx, t, p){
+  var camZ = 1 + 0.05 * p;
+  var cx = VW / 2 + (0.56 * VW - VW / 2) * 0.05 * p;
+  var cy = VH / 2 + (0.42 * VH - VH / 2) * 0.06 * p;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(camZ, camZ);
+  ctx.translate(-VW / 2, -VH / 2);
+  drawSky(ctx, t);
+  drawStarsMoon(ctx, t);
+  drawSkyline(ctx, t);
+  drawWindow(ctx);
+  drawWall(ctx);
+  drawClock(ctx, t);
+  drawDesk(ctx);
+  drawBooks(ctx);
+  drawLamp(ctx, t);
+  drawPhoneBase(ctx, 700, 505, 1, p * 0.25, p);
+  drawStudent(ctx, t, p);
+  drawMotes(ctx, t);
+  drawVignette(ctx, 1);
+  ctx.restore();
+}
+ 
+var notifs = [];
+var notifR = mulberry32(99);
+var glyphs = ['\u2665', '\u25B6', '\u221E', '\u20B9', '#', '@', '\u2605'];
+var notifCols = ['#fb7185', '#00d4ff', '#9b7dff', '#f5a623', '#34d399', '#f5a623', '#fb7185'];
+for (var ni = 0; ni < 30; ni++){
+  notifs.push({
+    x: 0.12 + notifR() * 0.76,
+    b: notifR() * 0.95,
+    v: 0.16 + notifR() * 0.28,
+    s: 0.8 + notifR() * 0.7,
+    r: (notifR() - .5) * 0.5,
+    g: Math.floor(notifR() * glyphs.length),
+    d: Math.floor(notifR() * 7)
+  });
+}
+ 
+function drawNotif(ctx, n, p, w, t){
+  var local = (p - n.b);
+  if (local < 0) return;
+  var y = -40 + local * n.v * VH;
+  if (y > VH + 60) return;
+  var x = n.x * VW;
+  var sway = Math.sin(local * 20 + n.d) * 22;
+  x += sway;
+  var inA = smooth(clamp(local / 0.06, 0, 1));
+  var outA = 1 - smooth(clamp((local * n.v * VH - VH + 80) / 80, 0, 1));
+  if (inA <= 0 || outA <= 0) return;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(n.r);
+  ctx.globalAlpha = Math.min(inA, outA) * 0.92;
+  var cw = 132 * n.s, ch = 40 * n.s;
+  ctx.fillStyle = 'rgba(16,16,30,.92)';
+  roundRect(ctx, -cw / 2, -ch / 2, cw, ch, 10 * n.s);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.16)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = notifCols[n.g];
+  ctx.font = '700 ' + (16 * n.s) + 'px "IBM Plex Mono",monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(glyphs[n.g], -cw / 2 + 12 * n.s, 1);
+  ctx.fillStyle = 'rgba(245,245,248,.8)';
+  ctx.font = (9.5 * n.s) + 'px "Poppins",sans-serif';
+  ctx.fillText('someone liked this', -cw / 2 + 34 * n.s, 0);
+  ctx.fillStyle = '#fb7185';
+  ctx.beginPath();
+  ctx.arc(cw / 2 - 10 * n.s, -ch / 2 + 10 * n.s, 4.5 * n.s, 0, 6.2832);
+  ctx.fill();
+  ctx.restore();
+}
+ 
+function drawDumpScene(ctx, t, p){
+  ctx.save();
+  drawRoomScene(ctx, t, 0.05);
+  var dark = ctx.createLinearGradient(0, 0, 0, VH);
+  dark.addColorStop(0, 'rgba(5,5,14,.86)');
+  dark.addColorStop(0.5, 'rgba(5,5,14,.7)');
+  dark.addColorStop(1, 'rgba(5,5,14,.92)');
+  ctx.fillStyle = dark;
+  ctx.fillRect(0, 0, VW, VH);
+  var heat = ctx.createRadialGradient(VW / 2, VH * 0.42, 60, VW / 2, VH * 0.42, VH * .6);
+  heat.addColorStop(0, 'rgba(251,113,133,' + (0.12 + p * 0.2) + ')');
+  heat.addColorStop(0.5, 'rgba(108,67,255,' + (0.06 + p * 0.08) + ')');
+  heat.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = heat;
+  ctx.fillRect(0, 0, VW, VH);
+  var s = 1.15 + p * 0.75;
+  var feed = p;
+  drawPhoneBase(ctx, VW / 2, VH * 0.42, s, 0.5 + p * 0.6, feed * 4);
+  for (var i = 0; i < notifs.length; i++){
+    drawNotif(ctx, notifs[i], p, VW, t);
+  }
+  ctx.globalAlpha = 1;
+  var sink = p;
+  for (var j = 0; j < 26; j++){
+    var start = j / 26 * 0.9;
+    if (p < start) continue;
+    var q = smooth(clamp((p - start) / 0.05, 0, 1));
+    var sx = lerp(830, VW / 2, q) + Math.sin(j * 7 + q * 8) * 20;
+    var sy = lerp(380, VH * 0.42, q) + Math.cos(j * 5 + q * 8) * 16;
+    var col = j % 3 === 0 ? '#00d4ff' : j % 3 === 1 ? '#fb7185' : '#f5a623';
+    ctx.globalAlpha = (1 - q) * 0.8;
+    ctx.fillStyle = col;
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(sx, sy, 2.4, 0, 6.2832);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+  ctx.globalAlpha = 1;
+  drawVignette(ctx, 1 + p);
+  ctx.restore();
+}
+ 
+function drawCurve(ctx, w, h, col, alpha, t, pulse){
+  var n = 26;
+  var pts = [];
+  for (var i = 0; i < n; i++){
+    var x = (i / (n - 1)) * w;
+    var base = h * (0.78 - 0.52 * (i / (n - 1)));
+    var zig = Math.sin(i * 1.6) * h * 0.11 * pulse;
+    pts.push([x, base + zig]);
+  }
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = col;
+  ctx.shadowColor = col;
+  ctx.shadowBlur = 18 + pulse * 20;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (var k = 1; k < n - 1; k++){
+    var mx = (pts[k][0] + pts[k + 1][0]) / 2;
+    var my = (pts[k][1] + pts[k + 1][1]) / 2;
+    ctx.quadraticCurveTo(pts[k][0], pts[k][1], mx, my);
+  }
+  ctx.quadraticCurveTo(pts[n - 2][0], pts[n - 2][1], pts[n - 1][0], pts[n - 1][1]);
+  ctx.stroke();
+  var dotP = (t * 0.12) % 1;
+  var di = Math.floor(dotP * (n - 1));
+  var dx = lerp(pts[di][0], pts[di + 1][0], (dotP * (n - 1)) % 1);
+  var dy = lerp(pts[di][1], pts[di + 1][1], (dotP * (n - 1)) % 1);
+  ctx.shadowBlur = 24;
+  ctx.fillStyle = col;
+  ctx.beginPath();
+  ctx.arc(dx, dy, 5, 0, 6.2832);
+  ctx.fill();
+  ctx.restore();
+}
+ 
+var voidParticles = [];
+var voidR = mulberry32(2024);
+for (var vi = 0; vi < 60; vi++){
+  voidParticles.push({ x: voidR() * VW, y: voidR() * VH, r: 0.6 + voidR() * 2, sp: 3 + voidR() * 10, ph: voidR() * 6.28 });
+}
+ 
+function drawVoid(ctx, t, p, tint, curve){
+  var g = ctx.createRadialGradient(VW / 2, VH * 0.5, 80, VW / 2, VH * 0.5, VH * .75);
+  g.addColorStop(0, tint);
+  g.addColorStop(1, '#04040a');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, VW, VH);
+  for (var i = 0; i < voidParticles.length; i++){
+    var vp = voidParticles[i];
+    var y = (vp.y - t * vp.sp % VH + VH) % VH;
+    ctx.globalAlpha = 0.12 + 0.12 * Math.sin(t * 1.2 + vp.ph);
+    ctx.fillStyle = '#9db4ff';
+    ctx.beginPath();
+    ctx.arc(vp.x + Math.sin(t * 0.5 + vp.ph) * 12, y, vp.r, 0, 6.2832);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  if (curve){
+    drawCurve(ctx, VW * 0.8, VH * 0.55, curve, 0.5 + 0.3 * Math.sin(t * 0.8), t, 1);
+  }
+  drawVignette(ctx, 1);
+}
+ 
+function drawCharsScene(ctx, t, p){
+  var g = ctx.createRadialGradient(VW / 2, VH * 0.48, 60, VW / 2, VH * 0.48, VH * .8);
+  g.addColorStop(0, 'rgba(108,67,255,.20)');
+  g.addColorStop(0.5, 'rgba(32,32,58,.4)');
+  g.addColorStop(1, '#04040a');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, VW, VH);
+  drawCurve(ctx, VW * 0.85, VH * 0.6, '#00d4ff', 0.32, t, 0.8 + 0.2 * Math.sin(t));
+  for (var i = 0; i < voidParticles.length; i++){
+    var vp = voidParticles[i];
+    var y = (vp.y - t * vp.sp % VH + VH) % VH;
+    ctx.globalAlpha = 0.1 + 0.1 * Math.sin(t * 1.2 + vp.ph);
+    ctx.fillStyle = '#9db4ff';
+    ctx.beginPath();
+    ctx.arc(vp.x, y, vp.r, 0, 6.2832);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  drawVignette(ctx, 1);
+}
+ 
+var theftChips = [];
+var theftR = mulberry32(555);
+var theftGlyphs = ['\u20B9', '$', '\u221E', '\u2665', '\u25B6'];
+var theftCols = ['#f5a623', '#34d399', '#00d4ff', '#fb7185', '#9b7dff'];
+for (var ti = 0; ti < 40; ti++){
+  theftChips.push({ x: 0.1 + theftR() * 0.8, b: theftR() * 0.9, v: 0.2 + theftR() * 0.3, s: 0.7 + theftR() * 0.8, g: Math.floor(theftR() * theftGlyphs.length) });
+}
+ 
+function drawTheftScene(ctx, t, p){
+  ctx.fillStyle = '#020208';
+  ctx.fillRect(0, 0, VW, VH);
+  var glow = ctx.createRadialGradient(VW / 2, 150, 20, VW / 2, 150, 420);
+  glow.addColorStop(0, 'rgba(251,113,133,.16)');
+  glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, VW, 500);
+  var topW = 640, botW = 190, yTop = 120, yBot = 330;
+  ctx.fillStyle = 'rgba(20,16,30,.92)';
+  ctx.beginPath();
+  ctx.moveTo(VW / 2 - topW / 2, yTop);
+  ctx.lineTo(VW / 2 + topW / 2, yTop);
+  ctx.lineTo(VW / 2 + botW / 2, yBot);
+  ctx.lineTo(VW / 2 - botW / 2, yBot);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(251,113,133,.4)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(8,8,16,.95)';
+  ctx.fillRect(VW / 2 - botW / 2 - 20, yBot, botW + 40, 30);
+  ctx.fillStyle = 'rgba(251,113,133,.8)';
+  ctx.font = '600 15px "IBM Plex Mono",monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('YOUR ATTENTION', VW / 2, yTop - 26);
+  ctx.fillStyle = 'rgba(245,245,248,.35)';
+  ctx.fillText('they pour it in —', VW / 2, yTop + 6);
+  for (var i = 0; i < theftChips.length; i++){
+    var c = theftChips[i];
+    var local = p - c.b;
+    if (local < 0) continue;
+    var y = yTop - 30 + local * c.v * 900;
+    if (y > yBot + 40) continue;
+    var x = c.x * VW;
+    var inA = smooth(clamp(local / 0.05, 0, 1));
+    if (inA <= 0) continue;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.globalAlpha = inA * 0.9;
+    ctx.font = '700 ' + (15 * c.s) + 'px "IBM Plex Mono",monospace';
+    ctx.fillStyle = theftCols[c.g];
+    ctx.shadowColor = theftCols[c.g];
+    ctx.shadowBlur = 10;
+    ctx.fillText(theftGlyphs[c.g], 0, 0);
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+  var pulse = 0.6 + 0.4 * Math.sin(t * 1.6);
+  ctx.fillStyle = 'rgba(251,113,133,' + (0.5 * pulse) + ')';
+  ctx.beginPath();
+  ctx.arc(VW / 2, yBot + 15, 10, 0, 6.2832);
+  ctx.fill();
+  drawVignette(ctx, 1.2);
+}
+ 
+function drawEndVoid(ctx, t, p){
+  var g = ctx.createRadialGradient(VW / 2, VH * 0.5, 40, VW / 2, VH * 0.5, VH * .7);
+  g.addColorStop(0, 'rgba(34,211,238,' + (0.05 + 0.04 * Math.sin(t * 1.2)) + ')');
+  g.addColorStop(1, '#04040a');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, VW, VH);
+  drawCurve(ctx, VW * 0.72, VH * 0.5, '#00d4ff', 0.2 + 0.1 * Math.sin(t), t, 1);
+  drawVignette(ctx, 1.3);
+}
+ 
+var SCENES = [
+  { a: 0.00, b: 0.16, f: function(ctx, t, p){ drawRoomScene(ctx, t, p); } },
+  { a: 0.16, b: 0.32, f: function(ctx, t, p){ drawDumpScene(ctx, t, p); } },
+  { a: 0.32, b: 0.48, f: function(ctx, t, p){ drawCharsScene(ctx, t, p); } },
+  { a: 0.48, b: 0.64, f: function(ctx, t, p){ drawVoid(ctx, t, p, 'rgba(108,67,255,.22)', null); } },
+  { a: 0.64, b: 0.78, f: function(ctx, t, p){ drawTheftScene(ctx, t, p); } },
+  { a: 0.78, b: 1.00, f: function(ctx, t, p){ drawEndVoid(ctx, t, p); } }
+];
+ 
+var state = { P: 0, lastFlash: -1 };
+var filmRect = null;
+var trackTop = 0;
+var scrollable = 1;
+ 
+function measure(){
+  var track = $('filmTrack');
+  var r = track.getBoundingClientRect();
+  trackTop = r.top + window.scrollY;
+  scrollable = Math.max(1, track.offsetHeight - window.innerHeight);
+}
+ 
+function onScroll(){
+  var sy = window.scrollY;
+  state.P = clamp((sy - trackTop) / scrollable, 0, 1);
+  updateOverlays();
+  updateHud();
+  updateRail();
+}
+ 
+var overlayEls = [];
+function initOverlays(){
+  overlayEls = Array.prototype.slice.call(document.querySelectorAll('[data-a]'));
+}
+function updateOverlays(){
+  var P = state.P;
+  for (var i = 0; i < overlayEls.length; i++){
+    var el = overlayEls[i];
+    var a = parseFloat(el.dataset.a);
+    var b = parseFloat(el.dataset.b);
+    var fi = parseFloat(el.dataset.fi || 0.05);
+    var fo = parseFloat(el.dataset.fo || 0.05);
+    var par = parseFloat(el.dataset.par || 0);
+    var alpha = 0;
+    if (P >= a && P <= b){
+      var rise = (P - a) / fi;
+      var fall = (b - P) / fo;
+      alpha = Math.min(1, rise, fall);
+    }
+    alpha = clamp(alpha, 0, 1);
+    el.style.opacity = alpha;
+    el.style.transform = 'translateY(' + ((1 - alpha) * (16 + par)) + 'px) scale(' + (0.985 + 0.015 * alpha) + ')';
+    if (el.classList && (el.classList.contains('tl') || el.classList.contains('tl-sub'))){
+      el.style.filter = 'blur(' + ((1 - alpha) * 8) + 'px)';
+    }
+    if (el === $('card1') || el === $('card2') || el === $('card3')){
+      el.style.pointerEvents = alpha > 0.9 ? 'auto' : 'none';
+    }
+  }
+}
+ 
+function updateHud(){
+  var P = state.P;
+  var tcEl = $('hudTimecode');
+  var total = 190;
+  var secs = Math.floor(P * total);
+  var mm = String(Math.floor(secs / 60)).padStart(2, '0');
+  var ss = String(secs % 60).padStart(2, '0');
+  tcEl.textContent = mm + ':' + ss;
+  var ch = P < 0.64 ? 'Ch 01 · Who you are' : P < 0.78 ? 'Ch 02 · The theft' : 'Interlude';
+  $('hudChapter').textContent = ch;
+  $('filmProgressBar').style.width = (P * 100) + '%';
+  $('railProg').style.height = (P * 100) + '%';
+}
+ 
+function updateRail(){
+  var P = state.P;
+  var btns = $('rail').querySelectorAll('button');
+  for (var i = 0; i < btns.length; i++){
+    var bt = btns[i];
+    if (bt.classList.contains('dim')) continue;
+    var tp = parseFloat(bt.dataset.p);
+    var on = P > tp - 0.12 && P < tp + 0.2;
+    if (bt.dataset.p === '0.10') on = P < 0.6;
+    if (bt.dataset.p === '0.72') on = P >= 0.6 && P < 0.78;
+    bt.classList.toggle('on', on);
+  }
+}
+ 
+var flashEl = null;
+function ensureFlash(){
+  if (flashEl) return;
+  flashEl = document.createElement('div');
+  flashEl.style.cssText = 'position:absolute;inset:0;z-index:6;pointer-events:none;background:#fff;opacity:0;transition:opacity .5s ease;';
+  $('filmPin').appendChild(flashEl);
+}
+ 
+var boundaries = [0.16, 0.32, 0.48, 0.64, 0.78];
+function checkFlash(P){
+  ensureFlash();
+  for (var i = 0; i < boundaries.length; i++){
+    if (P >= boundaries[i] && state.lastFlash < boundaries[i]){
+      state.lastFlash = boundaries[i];
+      flashEl.style.opacity = 0.5;
+      setTimeout(function(){ flashEl.style.opacity = 0; }, 60);
+      break;
+    }
+  }
+}
+ 
+function drawFilm(){
+  var d = sizeCanvas(filmCanvas);
+  fitContext(fctx, d.w, d.h);
+  var t = performance.now() / 1000;
+  var P = state.P;
+  fctx.clearRect(0, 0, VW, VH);
+  var drawn = false;
+  for (var i = 0; i < SCENES.length; i++){
+    var sc = SCENES[i];
+    if (P >= sc.a && P <= sc.b){
+      var local = sc.b === sc.a ? 1 : (P - sc.a) / (sc.b - sc.a);
+      sc.f(fctx, t, local);
+      drawn = true;
+      break;
+    }
+  }
+  if (!drawn){
+    fctx.fillStyle = '#04040a';
+    fctx.fillRect(0, 0, VW, VH);
+  }
+  if (!REDUCED) checkFlash(P);
+}
+ 
+function drawHero(){
+  var d = sizeCanvas(heroCanvas);
+  fitContext(hctx, d.w, d.h);
+  var t = performance.now() / 1000;
+  hctx.fillStyle = '#0a0a16';
+  hctx.fillRect(0, 0, VW, VH);
+  for (var i = 0; i < heroGlyphs.length; i++){
+    var g = heroGlyphs[i];
+    var y = ((g.y - t * g.v) % 1 + 1) % 1;
+    var x = g.x + Math.sin(t * 0.4 + i) * 0.02;
+    hctx.save();
+    hctx.translate(x * VW, y * VH);
+    hctx.rotate(g.r + t * g.vr);
+    hctx.globalAlpha = g.a;
+    hctx.font = (g.s * 3) + 'px "IBM Plex Mono",monospace';
+    hctx.textAlign = 'center';
+    hctx.textBaseline = 'middle';
+    hctx.fillStyle = heroCols[g.hue];
+    hctx.fillText(g.g, 0, 0);
+    hctx.restore();
+  }
+}
+ 
+function loop(){
+  drawHero();
+  drawFilm();
+  requestAnimationFrame(loop);
+}
+ 
+function init(){
+  measure();
+  initOverlays();
+  onScroll();
+  var track = $('filmTrack');
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', function(){ measure(); onScroll(); });
+  requestAnimationFrame(loop);
+}
+ 
+$('watchBtn').addEventListener('click', function(){
+  $('filmFrame').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth' });
+});
+$('filmJoinBtn').addEventListener('click', function(){
+  $('join').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth' });
+  setTimeout(function(){ $('emailInput').focus({ preventScroll: true }); }, 600);
+});
+$('confirmDoneBtn').addEventListener('click', function(){
+  $('filmFrame').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth' });
+});
+ 
+var rail = $('rail');
+rail.addEventListener('click', function(e){
+  var bt = e.target.closest('button');
+  if (!bt || bt.classList.contains('dim')) return;
+  var p = parseFloat(bt.dataset.p);
+  measure();
+  var target = trackTop + p * scrollable;
+  window.scrollTo({ top: target, behavior: REDUCED ? 'auto' : 'smooth' });
+});
+ 
+document.querySelectorAll('.brand').forEach(function(b){
+  b.addEventListener('click', function(e){
+    e.preventDefault();
+    window.location.href = 'landing.html';
+  });
+});
+ 
+var SUPABASE_URL = 'https://dhzjtjekbvxxsauzhadl.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_9xK5LeyVdu2d4bVE1aFlNg_ef435Jkr';
+ 
+function sb(path, body){
+  return fetch(SUPABASE_URL + path, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify(body || {})
+  });
+}
+ 
+var memoryFallback = {};
+function saveMyEmail(email){
+  try { localStorage.setItem('wynko_waitlist_email', email); }
+  catch(e){ memoryFallback.email = email; }
+}
+function loadMyEmail(){
+  try { return localStorage.getItem('wynko_waitlist_email') || memoryFallback.email || null; }
+  catch(e){ return memoryFallback.email || null; }
+}
+function fmtNum(n){ return Number(n || 0).toLocaleString('en-IN'); }
+ 
+async function getTotalCount(){
+  try {
+    var res = await sb('/rest/v1/rpc/get_waitlist_count');
+    if (!res.ok) return null;
+    var data = await res.json();
+    return typeof data === 'number' ? data : null;
+  } catch(e){ return null; }
+}
+ 
+async function insertSignup(email){
+  try {
+    var res = await sb('/rest/v1/waitlist_signups', { email: email, source: 'narrative_film' });
+    if (res.status === 201 || res.status === 204) return { ok: true };
+    if (res.status === 409) return { ok: true, existed: true };
+    return { ok: false };
+  } catch(e){ return { ok: false }; }
+}
+ 
+async function refreshTotalCount(){
+  var total = await getTotalCount();
+  var claimed = $('f200Claimed');
+  var fill = $('f200BarFill');
+  var note = $('f200Note');
+  var header = $('headerSeatNote');
+  if (total === null) return;
+  var pct = Math.min(100, (total / 200) * 100);
+  fill.style.width = pct + '%';
+  if (total >= 200){
+    claimed.textContent = fmtNum(total) + ' on the list — Top 200 is full';
+    note.textContent = 'The Top 200 line is spoken for. Referring friends is the only way inside it now.';
+    if (header) header.textContent = 'Top 200 is full — refer to get in';
+  } else {
+    var left = 200 - total;
+    claimed.textContent = fmtNum(total) + ' / 200';
+    note.textContent = fmtNum(left) + ' seat' + (left === 1 ? '' : 's') + ' left before the Top 200 line fills — live count, not a fake bar.';
+    if (header) header.textContent = fmtNum(left) + ' of 200 founder seats left';
+  }
+}
+ 
+function localConfirm(email){
+  var seat = 42 + Math.floor(Math.random() * 130);
+  $('joinPanel').style.display = 'none';
+  $('confirmPanel').style.display = 'block';
+  $('rankNum').textContent = '#' + seat;
+}
+ 
+$('joinForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  var email = $('emailInput').value.trim();
+  var errEl = $('joinError');
+  errEl.textContent = '';
+  var btn = $('joinBtn');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    errEl.textContent = "That email doesn't look right — try again.";
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Securing your seat…';
+  var res = await insertSignup(email);
+  if (res.ok){
+    saveMyEmail(email);
+    refreshTotalCount();
+    localConfirm(email);
+  } else {
+    saveMyEmail(email);
+    refreshTotalCount();
+    localConfirm(email);
+  }
+  btn.disabled = false;
+  btn.textContent = 'Join the waitlist →';
+});
+ 
+$('year').textContent = new Date().getFullYear();
+refreshTotalCount();
+ 
+init();
+</script>
+</body>
+</html>
