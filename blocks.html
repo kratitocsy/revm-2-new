@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>WYNKO — Blocks</title>
+<title>WYNKO — 3D Library</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
@@ -57,436 +57,85 @@
       <button class="hamburger-btn" onclick="openMobileSidebar()" aria-label="Open menu">☰</button>
       <div class="topbar-heading">
         <span class="topbar-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
-        <div><div class="topbar-title">Blocks</div><div class="topbar-sub">Name a block, pick sites, start it — the extension picks it up within a minute</div></div>
+        <div><div class="topbar-title">3D Library</div><div class="topbar-sub">Immersive study spaces · walk in and sit down</div></div>
       </div>
       <div class="topbar-right"><span class="badge-track" id="topTrack">—</span></div>
     </div>
 
     <div class="blocks-wrap">
 
-      <!-- MOBILE-NATIVE PERMISSION ONBOARDING (Tier 2+3 — Capacitor app only)
-           Hidden entirely on web/desktop; on native it stays hidden once
-           every permission below reads back as granted. See
-           mobile/android/.../locking/RevM2LockingPlugin.kt for what each
-           button actually opens. -->
-      <div id="mobilePermCard" style="display:none;" class="bl-card">
-        <div class="bl-card-head">
-          <span class="bl-card-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-          <div class="bl-card-title">Enable full blocking on this device</div>
+      <!-- Hero banner -->
+      <div style="background:linear-gradient(135deg, var(--s2) 0%, rgba(6,182,212,0.08) 100%);border:1px solid var(--cyan-border);border-radius:16px;padding:2.5rem 2rem;margin-bottom:2rem;text-align:center;position:relative;overflow:hidden;">
+        <div style="display:flex;justify-content:center;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+          <span style="background:var(--cyan);color:#fff;font-size:0.7rem;font-weight:700;padding:0.3rem 0.7rem;border-radius:4px;text-transform:uppercase;letter-spacing:0.5px;">NEW · BETA</span>
+          <span style="font-size:1.1rem;font-weight:600;color:var(--text);">128 SEATED</span>
         </div>
-        <p class="empty-note" style="margin-bottom:0.9rem;">
-          Each of these opens a system settings screen — nothing here is silent or automatic.
-          You can revoke any of them later from Android Settings. Website blocking (VPN) needs Accessibility
-          and Overlay granted first, since it's requested last in this list.
-        </p>
-        <div id="mobilePermList" style="display:flex;flex-direction:column;gap:0.6rem;"></div>
+        <button class="btn" style="background:var(--cyan);color:#fff;border:1px solid var(--cyan-border);padding:0.9rem 2.5rem;font-size:1.1rem;font-weight:600;border-radius:12px;">Enter library →</button>
       </div>
 
-      <!-- ACTIVE BLOCK (shown only while one is running) -->
-      <div id="activeBlockCard" style="display:none;" class="bl-card active-block-card">
-        <div class="bl-card-head">
-          <span class="bl-card-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
-          <div class="bl-card-title">Currently active</div>
-        </div>
-        <div class="ab-live-pill"><span class="ab-live-dot"></span>Focus Lock active</div>
-        <div class="active-block-name" id="abName">—</div>
-        <div class="active-block-timer" id="abTimer">—</div>
-        <div class="active-block-sites" id="abSites">—</div>
-        <div id="abVerifiedPill"></div>
-        <div style="margin-top:0.9rem;display:flex;gap:0.6rem;">
-          <button class="btn btn-ghost btn-sm" id="abStopEarlyBtn" onclick="stopActiveBlock()">Stop early</button>
-        </div>
-        <p class="empty-note" id="abStopEarlyNote" style="margin-top:0.6rem;">Stop early opens the same code-typing gate the extension shows on a blocked site — type it exactly to end the session, and it's marked unverified either way.</p>
-        <p class="empty-note" id="abLockedNote" style="display:none;margin-top:0.6rem;">—</p>
-        <p class="empty-note" id="abPausedNote" style="display:none;margin-top:0.6rem;color:var(--gold);">—</p>
+      <!-- LIVE 3D SPACE section -->
+      <div style="margin-bottom:2rem;">
+        <h2 style="font-size:1.3rem;font-weight:700;color:var(--text);margin:0 0 0.5rem 0;">LIVE 3D SPACE</h2>
+        <p style="font-size:0.9rem;color:var(--muted);margin:0;line-height:1.6;">Walk into a room where everyone is actually studying.</p>
       </div>
 
-      <!-- START A NEW BLOCK -->
-      <div class="bl-card" id="startCard">
-        <div class="bl-card-head">
-          <span class="bl-card-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
-          <div class="bl-card-title" id="startCardTitle">Start a block</div>
-        </div>
-        <div class="empty-note" id="editModeBanner" style="display:none;margin-bottom:0.9rem;padding:0.6rem 0.75rem;background:var(--gold-dim);border:1px solid var(--gold-border);color:var(--text);"></div>
-
-        <div class="bl-field">
-          <label>Name</label>
-          <input type="text" id="blockName" placeholder="e.g. Deep work, No Instagram">
-        </div>
-
-        <div class="bl-field">
-          <label id="sitesFieldLabel">Sites to block</label>
-          <div class="mode-opts" style="margin-bottom:0.6rem;">
-            <button type="button" class="mode-opt active" data-mode="blacklist" onclick="pickMode('blacklist',this)">Block these sites</button>
-            <button type="button" class="mode-opt" data-mode="whitelist" onclick="pickMode('whitelist',this)">Allow only these sites</button>
+      <!-- Room list -->
+      <div style="display:flex;flex-direction:column;gap:1rem;" class="library-rooms-list">
+        <!-- Silent Reading Hall -->
+        <div class="library-room-card" style="background:var(--s2);border:1px solid var(--border2);border-radius:12px;padding:1.5rem;transition:all 0.2s;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+            <h3 style="font-size:1.1rem;font-weight:600;color:var(--text);margin:0;">Silent Reading Hall</h3>
+            <span style="font-size:0.85rem;color:var(--muted);font-weight:500;">54/80 seated</span>
           </div>
-          <div class="site-add-row">
-            <input type="text" id="siteInput" placeholder="youtube.com" onkeydown="if(event.key==='Enter'){event.preventDefault();addSite();}">
-            <button class="btn btn-ghost btn-sm" onclick="addSite()">Add</button>
-          </div>
-          <div class="site-chips" id="siteChips"></div>
-        </div>
-
-        <!-- Per-channel YouTube rules - only shown once youtube.com is one of the sites above -->
-        <div class="bl-field yt-panel" id="ytPanel" style="display:none;">
-          <div class="yt-panel-title">YouTube channels</div>
-          <div class="yt-panel-hint" id="ytPanelHint">Optional — restrict which channels are reachable on YouTube during this block, instead of blocking or allowing all of it.</div>
-          <div class="mode-opts" style="margin-bottom:0.6rem;">
-            <button type="button" class="mode-opt active" data-yt-mode="block" onclick="pickYtMode('block',this)">Block specific channels</button>
-            <button type="button" class="mode-opt" data-yt-mode="allow" onclick="pickYtMode('allow',this)">Allow only these channels</button>
-          </div>
-          <div class="site-add-row" style="position:relative;">
-            <input type="text" id="ytChannelInput" placeholder="Search a channel name, or paste @handle / youtube.com/@handle" autocomplete="off"
-              oninput="onYtChannelInput(this.value)"
-              onkeydown="onYtChannelKeydown(event)"
-              onblur="setTimeout(closeYtSuggest, 150)">
-            <button class="btn btn-ghost btn-sm" onclick="addYtChannel()">Add</button>
-            <div id="ytSuggestBox" class="yt-suggest-box" style="display:none;"></div>
-          </div>
-          <div class="site-chips" id="ytChannelChips"></div>
-        </div>
-
-        <!-- Native apps: desktop (running processes) or mobile (installed
-             apps via Tier 2 Accessibility blocking). Browser-tab-only
-             sessions have no way to see or close/block local apps at all. -->
-        <div class="bl-field yt-panel" id="appsPanel" style="display:none;">
-          <div class="yt-panel-title" id="appsPanelTitle">Apps to block</div>
-          <div class="yt-panel-hint" id="appsPanelHint">Optional — close these while this block is active. Only the desktop app can enforce this, not the browser extension.</div>
-          <div class="mode-opts" style="margin-bottom:0.6rem;">
-            <button type="button" class="mode-opt active" data-app-mode="blacklist" onclick="pickAppMode('blacklist',this)">Block these apps</button>
-            <button type="button" class="mode-opt" data-app-mode="whitelist" onclick="pickAppMode('whitelist',this)">Allow only these apps</button>
-          </div>
-          <div class="site-add-row">
-            <input type="text" id="appInput" placeholder="e.g. steam.exe" onkeydown="if(event.key==='Enter'){event.preventDefault();addApp();}">
-            <button class="btn btn-ghost btn-sm" onclick="addApp()">Add</button>
-            <button class="btn btn-ghost btn-sm" id="pickAppsBtn" onclick="refreshPickableApps()">Pick from running apps</button>
-          </div>
-          <div class="site-chips" id="appChips"></div>
-          <div id="runningAppsPicker" style="display:none;margin-top:0.6rem;max-height:180px;overflow-y:auto;border:1px solid var(--border2);padding:0.5rem;"></div>
-        </div>
-        <div class="bl-field yt-panel" id="appsPanelUnavailable" style="display:none;">
-          <div class="yt-panel-hint">Open this page inside the WYNKO desktop or mobile app to also block specific apps during this session.</div>
-        </div>
-
-        <div class="bl-field">
-          <label>Duration</label>
-          <div class="dur-opts" id="durOpts">
-            <button class="dur-opt" data-mins="25" onclick="pickDuration(25,this)">25m</button>
-            <button class="dur-opt" data-mins="60" onclick="pickDuration(60,this)">1h</button>
-            <button class="dur-opt" data-mins="120" onclick="pickDuration(120,this)">2h</button>
-            <button class="dur-opt" data-mins="240" onclick="pickDuration(240,this)">4h</button>
-            <button class="dur-opt active" data-mins="0" onclick="pickDuration(0,this)">Unlimited</button>
-          </div>
-          <div class="dur-custom" style="margin-top:0.6rem;">
-            <span style="font-size:0.75rem;color:var(--muted);">or custom:</span>
-            <input type="number" id="customMins" min="1" placeholder="90">
-            <span style="font-size:0.75rem;color:var(--muted);">minutes</span>
-            <button class="btn btn-ghost btn-sm" onclick="useCustomDuration()">Use</button>
-          </div>
-          <label style="display:flex;align-items:flex-start;gap:0.5rem;margin-top:0.8rem;cursor:pointer;" id="noEarlyUnlockRow">
-            <input type="checkbox" id="noEarlyUnlockChk" style="margin-top:0.2rem;" onchange="toggleNoEarlyUnlock(this.checked)">
-            <span style="font-size:0.8rem;color:var(--muted);line-height:1.5;">
-              Lock until time is up — no 150-char code, no emergency unlock, it just ends automatically. Needs a duration, not Unlimited.
-            </span>
-          </label>
-        </div>
-
-        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;" id="startCardActions">
-          <button class="btn btn-gold" onclick="startBlock()">Start block →</button>
-          <button class="btn btn-ghost" onclick="saveAsPreset()">Save as preset (don't start)</button>
-        </div>
-        <div style="display:none;gap:0.6rem;flex-wrap:wrap;" id="editCardActions">
-          <button class="btn btn-gold" onclick="saveEditedPreset()">Save changes</button>
-          <button class="btn btn-ghost" onclick="cancelEditPreset()">Cancel edit</button>
-        </div>
-      </div>
-
-      <!-- SAVED PRESETS -->
-      <div class="bl-card">
-        <div class="bl-card-head">
-          <span class="bl-card-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4V3Z"/></svg></span>
-          <div class="bl-card-title">Saved blocks</div>
-          <button class="btn btn-ai btn-sm" style="margin-left:auto;" onclick="openAiCmdModal()">✨ AI Command</button>
-        </div>
-        <div class="preset-list" id="presetList">
-          <div class="bl-empty">
-            <span class="bl-empty-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4V3Z"/></svg></span>
-            <div class="bl-empty-title">No saved blocks yet</div>
-            <div class="bl-empty-sub">Set up a block above and hit "Save as preset" to reuse it without retyping sites and durations every time.</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SCHEDULES: repeat a sequence of saved blocks automatically on
-           chosen days of the week, enforced server-side (schedule-tick
-           edge function via pg_cron) so it fires even with nothing open. -->
-      <div class="bl-card">
-        <div class="bl-card-head">
-          <span class="bl-card-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span>
-          <div class="bl-card-title">Schedules</div>
-        </div>
-        <p class="empty-note" style="margin-bottom:0.9rem;">Chain your saved blocks into a repeating day plan — e.g. Physics 7-9am, a break, then Chemistry 9:30-11am — and pick which days it repeats on.</p>
-        <div class="preset-list" id="scheduleList">
-          <div class="bl-empty">
-            <span class="bl-empty-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span>
-            <div class="bl-empty-title">No schedules yet</div>
-            <div class="bl-empty-sub">Build one manually, scan it from a screenshot, or let AI draft one from your goals or study history below.</div>
-          </div>
-        </div>
-        <div class="sch-actions-row">
-          <button class="btn btn-ghost btn-sm" onclick="openScheduleBuilder()">+ New schedule</button>
-          <button class="btn btn-ghost btn-sm" id="ocrScanBtn" onclick="document.getElementById('ocrFileInput').click()">📷 Scan from screenshot</button>
-          <input type="file" id="ocrFileInput" accept="image/*" style="display:none;" onchange="handleScheduleScreenshot(event)">
-        </div>
-        <div class="sch-ai-group">
-          <span class="sch-ai-label">✨ AI-assisted</span>
-          <div class="sch-actions-row">
-            <button class="btn btn-ai btn-sm" onclick="openAiGoalModal()">Describe goals</button>
-            <button class="btn btn-ai btn-sm" onclick="generateSmartSchedule()">⚡ Smart schedule from my stats</button>
-          </div>
-        </div>
-        <p class="empty-note" id="ocrStatus" style="margin-top:0.6rem;display:none;"></p>
-      </div>
-
-      <!-- Schedule builder / editor modal -->
-      <div class="modal-overlay" id="scheduleModal">
-        <div class="modal" style="max-width:720px;max-height:85vh;overflow-y:auto;">
-          <h3 id="scheduleModalTitle">New schedule</h3>
-          <div class="bl-field">
-            <label>Name</label>
-            <input type="text" id="schName" placeholder="Weekday mornings">
-          </div>
-          <div class="bl-field">
-            <label>Repeats on</label>
-            <div class="mode-opts" id="schDayOpts"></div>
-          </div>
-          <div class="bl-field" id="schOverrideField" style="display:none;">
-            <label>Override an existing schedule (optional)</label>
-            <select id="schOverrideTarget">
-              <option value="">Don't override anything — just add a new schedule</option>
-            </select>
-            <div style="font-size:0.7rem;color:var(--muted);margin-top:0.3rem;">
-              Overriding pauses the chosen schedule and uses up one of its 2 overrides. No edit-lock code needed — but this new schedule needs real study/work time (at least 2 blocks, 1.5+ hours total, breaks under 40%) to qualify.
+          <div style="margin-bottom:1rem;">
+            <div style="background:var(--s1);border-radius:8px;height:8px;overflow:hidden;">
+              <div style="background:var(--cyan);height:100%;width:67.5%;border-radius:8px;transition:width 0.3s;"></div>
             </div>
           </div>
-          <div class="bl-field">
-            <label>Slots (in order)</label>
-            <div id="schSlots" class="sch-slots"></div>
-            <button type="button" class="btn btn-ghost btn-sm" style="margin-top:0.6rem;" onclick="addScheduleSlotRow()">+ Add slot</button>
-            <datalist id="schSubjectOptions"></datalist>
+          <button class="btn" style="background:var(--cyan);color:#fff;border:1px solid var(--cyan-border);padding:0.6rem 1.5rem;font-size:0.9rem;">Enter</button>
+        </div>
+
+        <!-- NEET Discussion Pods -->
+        <div class="library-room-card" style="background:var(--s2);border:1px solid var(--border2);border-radius:12px;padding:1.5rem;transition:all 0.2s;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+            <h3 style="font-size:1.1rem;font-weight:600;color:var(--text);margin:0;">NEET Discussion Pods</h3>
+            <span style="font-size:0.85rem;color:var(--muted);font-weight:500;">22/40 seated</span>
           </div>
-          <div class="modal-footer">
-            <button class="btn btn-ghost" onclick="closeScheduleBuilder()">Cancel</button>
-            <button class="btn btn-gold" onclick="saveSchedule()">Save schedule</button>
+          <div style="margin-bottom:1rem;">
+            <div style="background:var(--s1);border-radius:8px;height:8px;overflow:hidden;">
+              <div style="background:var(--cyan);height:100%;width:55%;border-radius:8px;transition:width 0.3s;"></div>
+            </div>
           </div>
+          <button class="btn" style="background:var(--cyan);color:#fff;border:1px solid var(--cyan-border);padding:0.6rem 1.5rem;font-size:0.9rem;">Enter</button>
+        </div>
+
+        <!-- Topper's Corner -->
+        <div class="library-room-card" style="background:var(--s2);border:1px solid var(--border2);border-radius:12px;padding:1.5rem;transition:all 0.2s;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+            <h3 style="font-size:1.1rem;font-weight:600;color:var(--text);margin:0;">Topper's Corner</h3>
+            <span style="font-size:0.85rem;color:var(--muted);font-weight:500;">9/12 seated</span>
+          </div>
+          <div style="margin-bottom:1rem;">
+            <div style="background:var(--s1);border-radius:8px;height:8px;overflow:hidden;">
+              <div style="background:var(--cyan);height:100%;width:75%;border-radius:8px;transition:width 0.3s;"></div>
+            </div>
+          </div>
+          <button class="btn" style="background:var(--cyan);color:#fff;border:1px solid var(--cyan-border);padding:0.6rem 1.5rem;font-size:0.9rem;">Enter</button>
         </div>
       </div>
 
-      <!-- Edit-lock gate: changing an existing schedule requires typing a
-           500-char randomized string exactly, same honesty rule as the
-           150-char focus-block unlock code but longer, to make casually
-           reshuffling your own schedule cost real, deliberate effort. -->
-      <div class="modal-overlay" id="scheduleGateModal">
-        <div class="modal" style="max-width:640px;max-height:85vh;overflow-y:auto;">
-          <h3 id="schGateTitle">Type the code to edit this schedule</h3>
-          <p id="schGateDesc">This schedule is locked against casual changes. Type the 500-character string below exactly to unlock editing for this schedule.</p>
-          <div class="code-window" style="overflow:hidden;white-space:nowrap;font-family:monospace;background:var(--s2,#111);border:1px solid var(--border2);padding:0.8rem;margin-bottom:0.8rem;">
-            <div class="sch-code-track" id="schGateCode" aria-hidden="true"></div>
-          </div>
-          <input type="range" id="schGateSlider" min="0" value="0" style="width:100%;margin-bottom:0.8rem;">
-          <input type="text" id="schGateInput" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Start typing the code above..." style="width:100%;font-family:monospace;">
-          <div class="progress-bar" style="position:static;height:4px;margin-top:0.6rem;"><div class="progress-fill" id="schGateProgress" style="width:0%;"></div></div>
-          <p class="empty-note" id="schGateStatus" style="margin-top:0.6rem;"></p>
-          <div class="modal-footer">
-            <button class="btn btn-ghost" onclick="closeScheduleGate()">Cancel</button>
-            <button class="btn btn-gold" id="schGateUnlockBtn" disabled onclick="confirmScheduleGate()">Unlock editing</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- AI Schedule Generation Modal -->
-      <div class="modal-overlay" id="aiScheduleModal">
-        <div class="modal" style="max-width:560px;max-height:85vh;overflow-y:auto;">
-          <h3>✨ AI Schedule from Goals</h3>
-          <p class="empty-note" style="margin-bottom:0.8rem;">Describe your study goals, exam prep, or ideal week — the AI will build a complete schedule for you.</p>
-          <div id="aiGoalInput">
-            <textarea class="ai-modal-textarea" id="aiGoalText" placeholder="e.g. I have JEE Advanced in 3 months. I'm strong in Math but weak in Physics and Chemistry. I can study 6 hours on weekdays and 8 hours on weekends. I'm most productive in the mornings."></textarea>
-            <div class="ai-gen-info">The AI will use your available blocks, subjects, and this description to generate a schedule. You can edit everything before saving.</div>
-          </div>
-          <div id="aiLoadingState" style="display:none;">
-            <div class="ai-loading-box">
-              <div class="ai-spinner"></div>
-              <p class="empty-note" id="aiLoadingMsg">Generating your schedule...</p>
-            </div>
-          </div>
-          <div id="aiErrorState" style="display:none;">
-            <p class="empty-note" style="color:var(--warn);" id="aiErrorMsg"></p>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-ghost" onclick="closeAiModal()">Cancel</button>
-            <button class="btn btn-ai" id="aiGenerateBtn" onclick="retryAiGenerate()">Generate schedule</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- AI Command Modal: create/delete blocks & schedules by natural-language request -->
-      <div class="modal-overlay" id="aiCommandModal">
-        <div class="modal" style="max-width:600px;max-height:85vh;overflow-y:auto;">
-          <h3>✨ AI Command</h3>
-          <p class="empty-note" style="margin-bottom:0.8rem;">Tell it what to change — "create a chemistry-only block", "delete my physics+maths block", "make a schedule with chemistry every day". Nothing happens until you approve the plan below.</p>
-          <div id="aiCmdInput">
-            <textarea class="ai-modal-textarea" id="aiCmdText" placeholder="e.g. Delete my coding session block, and create a chemistry-only block using the same sites as physics+chemistry"></textarea>
-            <div class="ai-gen-info">Sites on any new block are reused from your existing blocks or a small list of well-known sites — never guessed exam-platform domains. Apps and YouTube channels are never auto-added; add those yourself afterward via the normal pickers.</div>
-          </div>
-          <div id="aiCmdLoading" style="display:none;">
-            <div class="ai-loading-box">
-              <div class="ai-spinner"></div>
-              <p class="empty-note">Working out a plan...</p>
-            </div>
-          </div>
-          <div id="aiCmdError" style="display:none;">
-            <p class="empty-note" style="color:var(--warn);" id="aiCmdErrorMsg"></p>
-          </div>
-          <div id="aiCmdPlan" style="display:none;">
-            <p class="empty-note" id="aiCmdSummary" style="margin-bottom:0.7rem;color:var(--text);"></p>
-            <div id="aiCmdActionList" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
-          </div>
-          <div class="modal-footer" id="aiCmdFooterInput">
-            <button class="btn btn-ghost" onclick="closeAiCmdModal()">Cancel</button>
-            <button class="btn btn-ai" id="aiCmdSubmitBtn" onclick="submitAiCommand()">Work out a plan</button>
-          </div>
-          <div class="modal-footer" id="aiCmdFooterConfirm" style="display:none;">
-            <button class="btn btn-ghost" onclick="closeAiCmdModal()">Cancel</button>
-            <button class="btn btn-gold" id="aiCmdConfirmBtn" style="border-color:var(--warn);" onclick="executeAiCommandPlan()">Approve &amp; apply</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- CONNECT EXTENSION -->
-      <div class="bl-card">
-        <div class="bl-card-head">
-          <span class="bl-card-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0V7Z"/><path d="M12 17v5"/></svg></span>
-          <div class="bl-card-title">Connect the extension</div>
-        </div>
-        <p class="empty-note" id="connectExplainer" style="margin-bottom:0.9rem;">One click — if the extension is installed we send it the token directly, no copy/paste.</p>
-        <p class="empty-note" style="margin-bottom:0.9rem;color:var(--warn);">⚠ Also required, separately from connecting: open <code>chrome://extensions</code> → WYNKO → Details → turn on <strong>Allow in Incognito</strong>. Without it the desktop app can't run in a Private/Incognito window at all and will keep closing your browser, even during normal browsing.</p>
-        <button class="btn btn-gold btn-sm" id="connectBtn" onclick="showTokenLabelPrompt()">+ Connect extension</button>
-        <div id="newTokenBox" style="display:none;margin-top:0.9rem;">
-          <p id="connectSuccess" class="empty-note" style="display:none;color:var(--gold);">Connected — the extension has the token, nothing else to do.</p>
-          <div id="manualFallback" style="display:none;">
-            <p class="empty-note" style="margin-bottom:0.5rem;">Couldn't reach the extension automatically (not installed, or a different browser). Paste this in manually instead: right-click the extension icon → Options.</p>
-            <div class="token-box">
-              <input type="text" id="newTokenValue" readonly>
-              <button class="btn btn-gold btn-sm" onclick="copyToken()">Copy</button>
-            </div>
-            <p class="empty-note" style="margin-top:0.4rem;color:var(--warn);">Shown once — copy it now. API base: <code id="apiBaseHint"></code>.</p>
-          </div>
-        </div>
-
-        <!-- Shown only when autoConnectExtension() can't find the extension at all -->
-        <div id="downloadExtensionBox" style="display:none;margin-top:0.9rem;padding-top:0.9rem;border-top:1px solid var(--border);">
-          <p class="empty-note" style="margin-bottom:0.9rem;">Don't have the extension yet? It's not on the Chrome Web Store, so it has to be added by hand — takes about a minute, follow the pictures below exactly and you can't go wrong.</p>
-          <a href="downloads/revm2-extension.zip" download class="btn btn-gold btn-sm" style="display:inline-block;text-decoration:none;margin-bottom:1.1rem;">⬇ Download extension (.zip)</a>
-
-          <details class="ext-guide-details">
-          <summary>Show the 5-step setup guide</summary>
-          <div class="ext-guide">
-
-            <!-- STEP 1 -->
-            <div class="ext-step">
-              <div class="ext-step-head"><span class="ext-step-num">1</span><span class="ext-step-title">Unzip the downloaded file</span></div>
-              <div class="ext-mock">
-                <div class="ext-mock-row">
-                  <div class="ext-mock-file">
-                    <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--gold)" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 12v6M10 13h4M10 15h4M10 17h4"/></svg>
-                    <span>revm2-extension.zip</span>
-                  </div>
-                  <svg class="ext-mock-arrow" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--muted)" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                  <div class="ext-mock-file">
-                    <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--gold)" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-                    <span>revm2-extension (folder)</span>
-                  </div>
-                </div>
-              </div>
-              <p class="ext-step-note">Double-click the .zip to unzip it. Keep the resulting folder somewhere permanent (like Documents) — don't delete it later, Chrome reads the extension straight from it.</p>
-            </div>
-
-            <!-- STEP 2 -->
-            <div class="ext-step">
-              <div class="ext-step-head"><span class="ext-step-num">2</span><span class="ext-step-title">Open the extensions page</span></div>
-              <div class="ext-mock">
-                <div class="ext-mock-browser">
-                  <div class="ext-mock-browser-dots"><i></i><i></i><i></i></div>
-                  <div class="ext-mock-addressbar">chrome://extensions</div>
-                </div>
-              </div>
-              <p class="ext-step-note">Copy <code>chrome://extensions</code> (or <code>edge://extensions</code> if you use Edge) into your browser's address bar at the top and press Enter.</p>
-            </div>
-
-            <!-- STEP 3 -->
-            <div class="ext-step">
-              <div class="ext-step-head"><span class="ext-step-num">3</span><span class="ext-step-title">Turn on Developer mode</span></div>
-              <div class="ext-mock">
-                <div class="ext-mock-row">
-                  <div class="ext-mock-toggle-wrap">
-                    <div class="ext-mock-toggle off"><div class="knob"></div></div>
-                    <span>Off</span>
-                  </div>
-                  <svg class="ext-mock-arrow" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--muted)" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                  <div class="ext-mock-toggle-wrap">
-                    <div class="ext-mock-toggle on"><div class="knob"></div></div>
-                    <span>On</span>
-                  </div>
-                </div>
-              </div>
-              <p class="ext-step-note">There's a "Developer mode" switch in the top-right corner of that page. Click it once so it turns gold/blue like the "On" example above.</p>
-            </div>
-
-            <!-- STEP 4 -->
-            <div class="ext-step">
-              <div class="ext-step-head"><span class="ext-step-num">4</span><span class="ext-step-title">Click "Load unpacked"</span></div>
-              <div class="ext-mock">
-                <div class="ext-mock-row">
-                  <div class="ext-mock-btn">Load unpacked</div>
-                  <svg class="ext-mock-arrow" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--muted)" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                  <div class="ext-mock-folder-pick">
-                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="var(--gold)" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-                    <span>revm2-extension</span>
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--success)" stroke-width="2.2"><path d="M5 13l4 4L19 7"/></svg>
-                  </div>
-                </div>
-              </div>
-              <p class="ext-step-note">Three new buttons appear once Developer mode is on — click <strong>Load unpacked</strong>, then pick the unzipped <strong>revm2-extension</strong> folder from Step 1.</p>
-            </div>
-
-            <!-- STEP 5 -->
-            <div class="ext-step">
-              <div class="ext-step-head"><span class="ext-step-num">5</span><span class="ext-step-title">Turn on "Allow in Incognito"</span></div>
-              <div class="ext-mock">
-                <div class="ext-mock-row">
-                  <div class="ext-mock-toggle-wrap">
-                    <div class="ext-mock-toggle off"><div class="knob"></div></div>
-                    <span>Off</span>
-                  </div>
-                  <svg class="ext-mock-arrow" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--muted)" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                  <div class="ext-mock-toggle-wrap">
-                    <div class="ext-mock-toggle on"><div class="knob"></div></div>
-                    <span>On</span>
-                  </div>
-                </div>
-              </div>
-              <p class="ext-step-note"><strong>Required, not optional.</strong> On the WYNKO card on this page, click <strong>Details</strong>, scroll down, and turn on <strong>Allow in Incognito</strong>. Without this, WYNKO can't run in a Private/Incognito window at all, and the desktop app will keep closing your browser to force the point — even during completely normal, non-private browsing.</p>
-            </div>
-
-          </div>
-          </details>
-
-          <p class="empty-note" style="margin-top:1rem;">That's it — the extension icon will appear in your browser toolbar. Come back to this tab and hit the button below.</p>
-          <button class="btn btn-ghost btn-sm" style="margin-top:0.6rem;" onclick="autoConnectExtension()">✓ Check again</button>
-        </div>
-
-        <div id="deviceList" style="margin-top:1rem;"></div>
-      </div>
+      <style>
+        .library-room-card:hover {
+          border-color: var(--cyan-border);
+          transform: translateY(-2px);
+        }
+        @media (min-width: 768px) {
+          .library-rooms-list {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+      </style>
 
     </div>
   </div>

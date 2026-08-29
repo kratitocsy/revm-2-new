@@ -110,24 +110,42 @@
 
     <!-- STEP 3: Exam -->
     <div class="ob-step" id="step3">
-      <div class="step-label">Step 03 — Your exam</div>
-      <h2 class="step-title">Which exam are you targeting?</h2>
-      <p class="step-desc">Helps us tailor your experience and understand our community.</p>
-      <div class="exam-grid">
-        <div class="exam-card" data-exam="JEE" onclick="selExam(this)"><div class="exam-card-abbr">JEE</div><div class="exam-card-name">JEE</div></div>
-        <div class="exam-card" data-exam="JEE" onclick="selExam(this)"><div class="exam-card-abbr">ADV</div><div class="exam-card-name">JEE</div></div>
-        <div class="exam-card" data-exam="NEET" onclick="selExam(this)"><div class="exam-card-abbr">NEET</div><div class="exam-card-name">NEET</div></div>
-        <div class="exam-card" data-exam="IAT" onclick="selExam(this)"><div class="exam-card-abbr">IAT</div><div class="exam-card-name">IISER Aptitude</div></div>
-        <div class="exam-card" data-exam="NEST" onclick="selExam(this)"><div class="exam-card-abbr">NEST</div><div class="exam-card-name">NEST</div></div>
-        <div class="exam-card" data-exam="BITSAT" onclick="selExam(this)"><div class="exam-card-abbr">BITS</div><div class="exam-card-name">BITSAT</div></div>
-        <div class="exam-card" data-exam="CAT" onclick="selExam(this)"><div class="exam-card-abbr">CAT</div><div class="exam-card-name">CAT</div></div>
-        <div class="exam-card" data-exam="UPSC CSE" onclick="selExam(this)"><div class="exam-card-abbr">UPSC</div><div class="exam-card-name">UPSC CSE</div></div>
-        <div class="exam-card" data-exam="SSC" onclick="selExam(this)"><div class="exam-card-abbr">SSC</div><div class="exam-card-name">SSC CGL/CHSL</div></div>
-        <div class="exam-card" data-exam="GATE" onclick="selExam(this)"><div class="exam-card-abbr">GATE</div><div class="exam-card-name">GATE</div></div>
-        <div class="exam-card" data-exam="MHT-CET" onclick="selExam(this)"><div class="exam-card-abbr">CET</div><div class="exam-card-name">MHT-CET</div></div>
-        <div class="exam-card" data-exam="WBJEE" onclick="selExam(this)"><div class="exam-card-abbr">WB</div><div class="exam-card-name">WBJEE</div></div>
-        <div class="exam-card" data-exam="Other" onclick="selExam(this)"><div class="exam-card-abbr">—</div><div class="exam-card-name">Other</div></div>
+      <div class="step-label">STEP 2 OF 4</div>
+      <h2 class="step-title">Which exam are you preparing for?</h2>
+      <p class="step-desc">Sets your default Recall Curve, review schedule and room recommendations.</p>
+
+      <div class="exam-tile-grid">
+        <div class="exam-tile" data-exam="NEET" onclick="selExam(this)">
+          <div class="exam-tile-abbr">NEET</div>
+          <div class="exam-tile-desc">Medical entrance</div>
+        </div>
+        <div class="exam-tile" data-exam="JEE" onclick="selExam(this)">
+          <div class="exam-tile-abbr">JEE Main/Adv</div>
+          <div class="exam-tile-desc">Engineering</div>
+        </div>
+        <div class="exam-tile" data-exam="UPSC CSE" onclick="selExam(this)">
+          <div class="exam-tile-abbr">UPSC CSE</div>
+          <div class="exam-tile-desc">Civil services</div>
+        </div>
+        <div class="exam-tile" data-exam="CAT" onclick="selExam(this)">
+          <div class="exam-tile-abbr">CAT</div>
+          <div class="exam-tile-desc">MBA entrance</div>
+        </div>
       </div>
+
+      <details class="exam-other-toggle">
+        <summary>Other exam options</summary>
+        <div class="exam-grid" style="margin-top:0.75rem;">
+          <div class="exam-card" data-exam="IAT" onclick="selExam(this)"><div class="exam-card-abbr">IAT</div><div class="exam-card-name">IISER Aptitude</div></div>
+          <div class="exam-card" data-exam="NEST" onclick="selExam(this)"><div class="exam-card-abbr">NEST</div><div class="exam-card-name">NEST</div></div>
+          <div class="exam-card" data-exam="BITSAT" onclick="selExam(this)"><div class="exam-card-abbr">BITS</div><div class="exam-card-name">BITSAT</div></div>
+          <div class="exam-card" data-exam="SSC" onclick="selExam(this)"><div class="exam-card-abbr">SSC</div><div class="exam-card-name">SSC CGL/CHSL</div></div>
+          <div class="exam-card" data-exam="GATE" onclick="selExam(this)"><div class="exam-card-abbr">GATE</div><div class="exam-card-name">GATE</div></div>
+          <div class="exam-card" data-exam="MHT-CET" onclick="selExam(this)"><div class="exam-card-abbr">CET</div><div class="exam-card-name">MHT-CET</div></div>
+          <div class="exam-card" data-exam="WBJEE" onclick="selExam(this)"><div class="exam-card-abbr">WB</div><div class="exam-card-name">WBJEE</div></div>
+          <div class="exam-card" data-exam="Other" onclick="selExam(this)"><div class="exam-card-abbr">—</div><div class="exam-card-name">Other</div></div>
+        </div>
+      </details>
     </div>
 
     <!-- STEP 4: Dates -->
@@ -273,7 +291,7 @@ function resolvePCMB(e){
 }
 
 function selExam(el){
-  document.querySelectorAll('.exam-card').forEach(c=>c.classList.remove('selected'));
+  document.querySelectorAll('.exam-card,.exam-tile').forEach(c=>c.classList.remove('selected'));
   el.classList.add('selected'); exam=el.dataset.exam; validate();
 }
 

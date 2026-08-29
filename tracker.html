@@ -52,137 +52,392 @@
       </div>
     </div>
 
-    <!-- ═══ TRACKER PAGE ═══ -->
+    <!-- ═══ TRACKER PAGE — Module 03: Ebbinghaus Tracker ═══ -->
     <div class="inner-page" id="page-tracker">
+      <div class="et-wrap">
 
-      <!-- HOW-TO-USE GUIDE STRIP — auto-shown every time the Tracker is opened -->
-      <div id="guideStrip" style="background:var(--s1);border-bottom:1px solid var(--border);padding:1.1rem 1.25rem;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;">
-          <div>
-            <div style="font-size:0.95rem;font-weight:800;color:var(--white);"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(139,92,246,0.45))"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 11h6M9 15h6"/></svg> how to actually run this planner</div>
-            <div style="font-size:0.74rem;color:var(--muted);margin-top:0.1rem;">4 quick moves a day, no cap. read once → run on autopilot.</div>
+        <!-- 1. Header Row -->
+        <div class="et-header">
+          <h2 class="et-title">EBBINGHAUS TRACKER</h2>
+          <div class="et-chips">
+            <button class="et-chip et-chip--active" data-range="7d">7 Days</button>
+            <button class="et-chip" data-range="30d">30 Days</button>
+            <button class="et-chip" data-range="all">All Time</button>
           </div>
-          <button onclick="closeGuideStrip()" style="background:none;border:1px solid var(--border2);color:var(--muted);width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:0.8rem;flex-shrink:0;">✕</button>
         </div>
 
-        <div class="guide-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.7rem;">
-          <div class="g-card">
-            <div class="g-num">1</div>
-            <div>
-              <div class="g-title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(139,92,246,0.45))"><circle cx="12" cy="17" r="4"/><path d="M12 3v3M4.2 8.2l2.1 2.1M19.8 8.2l-2.1 2.1M2 20h20M6 20a6 6 0 0 1 12 0"/></svg> morning — log it</div>
-              <div class="g-body">open today's row (auto-numbered, don't stress the date). after every lecture/chapter, drop it straight in <b>Topic/Content</b>. <span class="g-benefit">→ benefit: nothing slips through, zero "what did I even study" moments.</span></div>
+        <!-- 2. Stats Row -->
+        <div class="et-stats">
+          <div class="et-stat et-stat--primary">
+            <div class="et-stat-val" id="etRetention">71%</div>
+            <div class="et-stat-label">RETENTION</div>
+          </div>
+          <div class="et-stat">
+            <div class="et-stat-val" id="etReviews">142</div>
+            <div class="et-stat-label">REVIEWS DONE</div>
+          </div>
+          <div class="et-stat">
+            <div class="et-stat-val et-stat-val--warn" id="etAtRisk">4</div>
+            <div class="et-stat-label">TOPICS AT RISK</div>
+          </div>
+        </div>
+
+        <!-- 3. Recall Curve Chart Area -->
+        <div class="et-curve-card">
+          <div class="et-curve-header">Your Recall Curve</div>
+          <div class="et-curve-chart" id="etCurveChart">
+            <canvas id="etCurveCanvas" style="width:100%;height:200px;display:block;"></canvas>
+          </div>
+        </div>
+
+        <!-- 4. BY CHAPTER List -->
+        <div class="et-chapters-card">
+          <div class="et-chapters-header">BY CHAPTER</div>
+          <div class="et-chapters-list">
+            <div class="et-chapter-row">
+              <div class="et-chapter-info">
+                <span class="et-chapter-name">Electrochemistry</span>
+                <span class="et-chapter-subject">Chemistry</span>
+              </div>
+              <div class="et-chapter-meta">
+                <div class="et-chapter-bar"><div class="et-chapter-bar-fill et-chapter-bar--danger" style="width:38%"></div></div>
+                <span class="et-chapter-pct">38%</span>
+                <span class="et-badge et-badge--danger">HIGH</span>
+              </div>
+            </div>
+            <div class="et-chapter-row">
+              <div class="et-chapter-info">
+                <span class="et-chapter-name">Human Reproduction</span>
+                <span class="et-chapter-subject">Biology</span>
+              </div>
+              <div class="et-chapter-meta">
+                <div class="et-chapter-bar"><div class="et-chapter-bar-fill et-chapter-bar--danger" style="width:44%"></div></div>
+                <span class="et-chapter-pct">44%</span>
+                <span class="et-badge et-badge--danger">HIGH</span>
+              </div>
+            </div>
+            <div class="et-chapter-row">
+              <div class="et-chapter-info">
+                <span class="et-chapter-name">Rotational Motion</span>
+                <span class="et-chapter-subject">Physics</span>
+              </div>
+              <div class="et-chapter-meta">
+                <div class="et-chapter-bar"><div class="et-chapter-bar-fill et-chapter-bar--warn" style="width:67%"></div></div>
+                <span class="et-chapter-pct">67%</span>
+                <span class="et-badge et-badge--warn">MED</span>
+              </div>
+            </div>
+            <div class="et-chapter-row">
+              <div class="et-chapter-info">
+                <span class="et-chapter-name">Coordination Compounds</span>
+                <span class="et-chapter-subject">Chemistry</span>
+              </div>
+              <div class="et-chapter-meta">
+                <div class="et-chapter-bar"><div class="et-chapter-bar-fill et-chapter-bar--success" style="width:89%"></div></div>
+                <span class="et-chapter-pct">89%</span>
+                <span class="et-badge et-badge--success">LOW</span>
+              </div>
             </div>
           </div>
-          <div class="g-card">
-            <div class="g-num">2</div>
-            <div>
-              <div class="g-title"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(139,92,246,0.45))"><path d="M9 4.5a3 3 0 0 0-3 3v.3A3.2 3.2 0 0 0 4.5 11a3.2 3.2 0 0 0 1 5.6 3 3 0 0 0 3 3.4h.5V4.5H9Z"/><path d="M15 4.5a3 3 0 0 1 3 3v.3A3.2 3.2 0 0 1 19.5 11a3.2 3.2 0 0 1-1 5.6 3 3 0 0 1-3 3.4H15V4.5Z"/></svg> right after class — 5-min dump</div>
-              <div class="g-body">class ends → close laptop → stare at a wall for 5 mins → rebuild it from memory. tap the <b>5m</b> circle. <span class="g-benefit">→ benefit: locks the lecture in before it fades, this is the highest-ROI 5 mins of your day.</span></div>
+        </div>
+
+        <!-- Hidden elements to preserve existing JS functionality -->
+        <div style="display:none;">
+          <!-- Guide strip -->
+          <div id="guideStrip"></div>
+          <div id="guideToggleWrap"></div>
+
+          <!-- Stats grid (original IDs) -->
+          <div class="stats-grid" id="statsGrid">
+            <div class="stat-box"><div class="stat-label">Total Days</div><div class="stat-val rm2-skeleton" id="stTotal">—</div><div class="stat-sub rm2-skeleton" id="stRange">—</div></div>
+            <div class="stat-box"><div class="stat-label">Days Started</div><div class="stat-val rm2-skeleton" id="stStarted">0</div><div class="stat-sub" id="stStartedPct">0% of plan</div></div>
+            <div class="stat-box"><div class="stat-label">Reviews Done</div><div class="stat-val c-success rm2-skeleton" id="stDone">0</div><div class="stat-sub" id="stDoneSub">of 0 scheduled</div></div>
+            <div class="stat-box"><div class="stat-label">Due Today</div><div class="stat-val c-warn rm2-skeleton" id="stDue">0</div><div class="stat-sub">pending reviews</div></div>
+            <div class="stat-box"><div class="stat-label">Overdue</div><div class="stat-val c-danger rm2-skeleton" id="stOverdue">0</div><div class="stat-sub">missed reviews</div></div>
+          </div>
+
+          <!-- Alert banner -->
+          <div class="alert-banner" id="alertBanner"><span id="alertTxt"></span></div>
+
+          <!-- Brain Map -->
+          <div class="a-card" id="brainCard">
+            <span id="brainPct">0%</span>
+            <svg id="brainSvg" viewBox="0 0 400 300">
+              <g id="brainEdges"></g>
+              <g id="brainNodes"></g>
+            </svg>
+            <div id="brainCaption"></div>
+          </div>
+
+          <!-- Filter bar -->
+          <div class="filter-bar">
+            <div class="tabs" style="border:none;">
+              <div class="tab active" onclick="setTab('all',this)">All <span class="tab-count" id="tc-all">0</span></div>
+              <div class="tab" onclick="setTab('due',this)">Due today <span class="tab-count" id="tc-due">0</span></div>
+              <div class="tab" onclick="setTab('next7',this)">Next 7d <span class="tab-count" id="tc-next7">0</span></div>
+              <div class="tab" onclick="setTab('overdue',this)">Overdue <span class="tab-count" id="tc-overdue">0</span></div>
+              <div class="tab" onclick="setTab('done',this)">Done <span class="tab-count" id="tc-done">0</span></div>
+            </div>
+            <div class="filter-actions">
+              <input class="search-box" type="text" placeholder="Search topic..." id="searchBox" oninput="renderTable()">
+              <select class="filter-select" id="subFilter" onchange="renderTable()"><option value="">All subjects</option></select>
+              <button class="btn btn-success btn-sm" onclick="markTodayDone()">✓ Today done</button>
+              <button class="btn btn-ghost btn-sm" onclick="exportCSV()">↓ CSV</button>
+              <button class="btn btn-danger btn-sm" onclick="document.getElementById('resetModal').classList.add('show')">↺ Reset</button>
             </div>
           </div>
-          <div class="g-card">
-            <div class="g-num">3</div>
-            <div>
-              <div class="g-title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(139,92,246,0.45))"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg> before bed — 12hr lock-in</div>
-              <div class="g-body">30-45 mins, zero notes, full active recall of today. tap <b>12h</b> when done. <span class="g-benefit">→ benefit: today's stuff officially moves from "shaky" to short-term memory.</span></div>
-            </div>
-          </div>
-          <div class="g-card">
-            <div class="g-num">4</div>
-            <div>
-              <div class="g-title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(139,92,246,0.45))"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> every day — clear what's due</div>
-              <div class="g-body">scan <b>+1D → +30D</b>. each circle = serial no. of an old lesson due today (it's pulling from your past days, that's the Ebbinghaus trick). gold=due, red=overdue, green=done. <span class="g-benefit">→ benefit: this is the actual mechanism that beats the forgetting curve — skipping this step = skipping the whole point.</span></div>
-            </div>
+
+          <!-- Table -->
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>No</th><th>Date</th><th style="min-width:200px">Topic / Content</th><th>Subject</th><th>Status</th>
+                <th class="rev-cell">5m</th><th class="rev-cell">12h</th><th class="rev-cell">+1D</th><th class="rev-cell">+2D</th>
+                <th class="rev-cell">+4D</th><th class="rev-cell">+7D</th><th class="rev-cell">+15D</th><th class="rev-cell">+30D</th>
+              </tr></thead>
+              <tbody id="tbody"></tbody>
+            </table>
           </div>
         </div>
 
-        <div style="background:rgba(139,92,246,0.06);border:1px solid var(--gold);border-radius:6px;padding:0.65rem 0.85rem;margin-top:0.7rem;font-size:0.76rem;color:var(--text);">
-          <b style="color:var(--gold);">tl;dr →</b> log in the morning, 5-min recall after every lecture, 12hr deep recall at night, clear whatever's due/overdue daily. the planner handles the scheduling math — you just show up.
-        </div>
-
-        <!-- VIDEO PITCH — after the cards -->
-        <div style="margin-top:0.9rem;padding-top:0.9rem;border-top:1px solid var(--border);">
-          <div style="font-size:0.7rem;color:var(--muted);margin-bottom:0.5rem;">still confused? watch the walkthrough <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(139,92,246,0.45))"><path d="M12 4v15M6 13l6 6 6-6"/></svg></div>
-          <div style="position:relative;max-width:480px;aspect-ratio:16/9;background:#000;border-radius:6px;overflow:hidden;">
-            <iframe width="100%" height="100%" src="https://www.youtube.com/embed/c0JoQN01tic" title="How to use the Ebbinghaus Spaced Repetition Planner" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;"></iframe>
-          </div>
-          <span style="display:block;font-size:0.62rem;color:var(--dim);line-height:1.5;margin-top:0.5rem;max-width:480px;">
-            Video credit: <b>Snehit Mishra</b> YouTube channel. No copyright claim made over this content — all rights reserved to the Snehit Mishra YouTube channel. Linked purely for educational purposes.
-          </span>
-        </div>
-      </div>
-      <div id="guideToggleWrap" style="display:none;justify-content:flex-end;padding:0.5rem 1.25rem 0;">
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('guideStrip').style.display='block';document.getElementById('guideToggleWrap').style.display='none';">❓ How to use this planner</button>
-      </div>
-      
-
-      <div class="stats-grid" id="statsGrid" style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border);">
-        <div class="stat-box"><div class="stat-label">Total Days</div><div class="stat-val rm2-skeleton" id="stTotal">—</div><div class="stat-sub rm2-skeleton" id="stRange">—</div></div>
-        <div class="stat-box"><div class="stat-label">Days Started</div><div class="stat-val rm2-skeleton" id="stStarted">0</div><div class="stat-sub" id="stStartedPct">0% of plan</div></div>
-        <div class="stat-box"><div class="stat-label">Reviews Done</div><div class="stat-val c-success rm2-skeleton" id="stDone">0</div><div class="stat-sub" id="stDoneSub">of 0 scheduled</div></div>
-        <div class="stat-box"><div class="stat-label">Due Today</div><div class="stat-val c-warn rm2-skeleton" id="stDue">0</div><div class="stat-sub">pending reviews</div></div>
-        <div class="stat-box"><div class="stat-label">Overdue</div><div class="stat-val c-danger rm2-skeleton" id="stOverdue">0</div><div class="stat-sub">missed reviews</div></div>
       </div>
 
-      <div class="alert-banner" id="alertBanner" style="display:none"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(139,92,246,0.45))"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg> <span id="alertTxt"></span></div>
+      <!-- Page-specific styles for Ebbinghaus Tracker -->
+      <style>
+        .et-wrap { padding: 1.5rem; max-width: 800px; margin: 0 auto; }
 
-      <!-- Brain Map -->
-      <div class="a-card" id="brainCard" style="margin:1rem 1.25rem 0;background:radial-gradient(circle at 30% 20%,rgba(139,92,246,0.05),transparent 60%),var(--s1);">
-        <div class="a-card-title" style="display:flex;align-items:center;justify-content:space-between;">
-          <span>Your Memory Map</span>
-          <span id="brainPct" style="color:var(--gold);font-weight:700;font-size:0.82rem;letter-spacing:0;text-transform:none;">0%</span>
-        </div>
-        <svg id="brainSvg" viewBox="0 0 400 300" style="width:100%;max-width:420px;display:block;margin:0.4rem auto;">
-          <path class="brain-outline" d="M60,150 C40,110 50,60 110,40 C150,20 210,15 260,30 C300,42 330,70 345,110 C355,140 350,165 335,180 C345,195 350,215 335,225 C320,240 295,235 285,220 C270,225 260,245 240,250 C225,255 205,250 200,235 C180,245 165,240 160,220 C160,222 162,224 163,226 L168,258 C168,268 178,272 183,266 L186,234 C162,232 132,218 112,194 C87,189 65,174 60,150 Z"/>
-          <path class="brain-sulci" d="M95,90 Q120,80 140,95 Q155,105 175,95"/>
-          <path class="brain-sulci" d="M150,55 Q175,45 200,55 Q220,63 240,55"/>
-          <path class="brain-sulci" d="M250,60 Q275,72 290,95 Q298,112 310,125"/>
-          <path class="brain-sulci" d="M100,135 Q130,128 155,138 Q180,148 205,140"/>
-          <path class="brain-sulci" d="M210,150 Q240,158 260,150 Q280,143 300,150"/>
-          <path class="brain-sulci" d="M120,170 Q145,180 170,172"/>
-          <g id="brainEdges"></g>
-          <g id="brainNodes"></g>
-        </svg>
-        <div id="brainCaption" style="text-align:center;font-size:0.76rem;color:var(--muted);margin-top:0.2rem;">Add topics and revise on time to light it up.</div>
-        <div style="display:flex;justify-content:center;gap:1.2rem;margin-top:0.6rem;flex-wrap:wrap;">
-          <span style="font-size:0.65rem;color:var(--muted);display:flex;align-items:center;gap:0.35rem;"><span style="width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 5px var(--gold);display:inline-block;"></span>Wired in (retained)</span>
-          <span style="font-size:0.65rem;color:var(--muted);display:flex;align-items:center;gap:0.35rem;"><span style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.18);display:inline-block;"></span>Not yet / faded</span>
-        </div>
-      </div>
+        /* Header Row */
+        .et-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 1rem;
+          margin-bottom: 1.5rem;
+        }
+        .et-title {
+          font-family: var(--mono);
+          font-size: 1.1rem;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          color: var(--white);
+          text-transform: uppercase;
+          margin: 0;
+        }
+        .et-chips {
+          display: flex;
+          gap: 0.4rem;
+        }
+        .et-chip {
+          padding: 0.4rem 0.9rem;
+          font-family: var(--font);
+          font-size: 0.72rem;
+          font-weight: 600;
+          border: 1px solid var(--border2);
+          border-radius: 20px;
+          background: transparent;
+          color: var(--muted);
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+        .et-chip:hover {
+          border-color: var(--violet-bright);
+          color: var(--text);
+        }
+        .et-chip--active {
+          background: var(--violet-dim);
+          border-color: var(--violet-bright);
+          color: var(--violet-bright);
+        }
 
-      <!-- Ad slot -->
-      <div class="ad-slot" style="margin:0;border-left:none;border-right:none;">
-        <!-- ADSENSE: replace with your ad code after approval -->
-        <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script> -->
-      </div>
+        /* Stats Row */
+        .et-stats {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 0.75rem;
+          margin-bottom: 1.5rem;
+        }
+        .et-stat {
+          background: var(--s1);
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          padding: 1.25rem 1rem;
+          text-align: center;
+        }
+        .et-stat--primary {
+          border-color: var(--violet-border);
+          background: var(--violet-dim);
+        }
+        .et-stat-val {
+          font-family: var(--mono);
+          font-size: 2rem;
+          font-weight: 900;
+          color: var(--violet-bright);
+          line-height: 1;
+          margin-bottom: 0.4rem;
+        }
+        .et-stat-val--warn { color: var(--warn); }
+        .et-stat-label {
+          font-family: var(--mono);
+          font-size: 0.62rem;
+          font-weight: 600;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: var(--muted);
+        }
 
-      <div class="filter-bar">
-        <div class="tabs" style="border:none;">
-          <div class="tab active" onclick="setTab('all',this)">All <span class="tab-count" id="tc-all">0</span></div>
-          <div class="tab" onclick="setTab('due',this)">Due today <span class="tab-count" id="tc-due">0</span></div>
-          <div class="tab" onclick="setTab('next7',this)">Next 7d <span class="tab-count" id="tc-next7">0</span></div>
-          <div class="tab" onclick="setTab('overdue',this)">Overdue <span class="tab-count" id="tc-overdue">0</span></div>
-          <div class="tab" onclick="setTab('done',this)">Done <span class="tab-count" id="tc-done">0</span></div>
-        </div>
-        <div class="filter-actions">
-          <input class="search-box" type="text" placeholder="Search topic..." id="searchBox" oninput="renderTable()">
-          <select class="filter-select" id="subFilter" onchange="renderTable()"><option value="">All subjects</option></select>
-          <button class="btn btn-success btn-sm" onclick="markTodayDone()">✓ Today done</button>
-          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">↓ CSV</button>
-          <button class="btn btn-danger btn-sm" onclick="document.getElementById('resetModal').classList.add('show')">↺ Reset</button>
-        </div>
-      </div>
+        /* Recall Curve Card */
+        .et-curve-card {
+          background: var(--s1);
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          padding: 1.25rem;
+          margin-bottom: 1.5rem;
+        }
+        .et-curve-header {
+          font-family: var(--mono);
+          font-size: 0.72rem;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--text);
+          margin-bottom: 1rem;
+        }
+        .et-curve-chart {
+          position: relative;
+          min-height: 180px;
+          background: rgba(139, 92, 246, 0.03);
+          border-radius: 8px;
+          border: 1px dashed var(--border2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
 
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>No</th><th>Date</th><th style="min-width:200px">Topic / Content</th><th>Subject</th><th>Status</th>
-            <th class="rev-cell">5m</th><th class="rev-cell">12h</th><th class="rev-cell">+1D</th><th class="rev-cell">+2D</th>
-            <th class="rev-cell">+4D</th><th class="rev-cell">+7D</th><th class="rev-cell">+15D</th><th class="rev-cell">+30D</th>
-          </tr></thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
+        /* BY CHAPTER Card */
+        .et-chapters-card {
+          background: var(--s1);
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          padding: 1.25rem;
+          margin-bottom: 1.5rem;
+        }
+        .et-chapters-header {
+          font-family: var(--mono);
+          font-size: 0.72rem;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: var(--text);
+          margin-bottom: 1rem;
+          padding-bottom: 0.75rem;
+          border-bottom: 1px solid var(--border);
+        }
+        .et-chapters-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.6rem;
+        }
+        .et-chapter-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          padding: 0.75rem 0.85rem;
+          background: var(--s2);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          transition: border-color 0.15s;
+        }
+        .et-chapter-row:hover {
+          border-color: var(--border2);
+        }
+        .et-chapter-info {
+          display: flex;
+          flex-direction: column;
+          gap: 0.2rem;
+          min-width: 0;
+          flex: 1;
+        }
+        .et-chapter-name {
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: var(--white);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .et-chapter-subject {
+          font-size: 0.68rem;
+          color: var(--muted);
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+        }
+        .et-chapter-meta {
+          display: flex;
+          align-items: center;
+          gap: 0.65rem;
+          flex-shrink: 0;
+        }
+        .et-chapter-bar {
+          width: 60px;
+          height: 5px;
+          background: var(--s1);
+          border-radius: 3px;
+          overflow: hidden;
+        }
+        .et-chapter-bar-fill {
+          height: 100%;
+          border-radius: 3px;
+          transition: width 0.3s;
+        }
+        .et-chapter-bar--danger { background: var(--danger); }
+        .et-chapter-bar--warn { background: var(--warn); }
+        .et-chapter-bar--success { background: var(--success); }
+        .et-chapter-pct {
+          font-family: var(--mono);
+          font-size: 0.78rem;
+          font-weight: 700;
+          color: var(--text);
+          min-width: 32px;
+          text-align: right;
+        }
+        .et-badge {
+          font-family: var(--mono);
+          font-size: 0.58rem;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          padding: 0.2rem 0.5rem;
+          border-radius: 4px;
+          text-transform: uppercase;
+        }
+        .et-badge--danger {
+          background: rgba(248, 113, 113, 0.12);
+          color: var(--danger);
+          border: 1px solid rgba(248, 113, 113, 0.25);
+        }
+        .et-badge--warn {
+          background: rgba(251, 191, 36, 0.1);
+          color: var(--warn);
+          border: 1px solid rgba(251, 191, 36, 0.2);
+        }
+        .et-badge--success {
+          background: rgba(74, 222, 128, 0.1);
+          color: var(--success);
+          border: 1px solid rgba(74, 222, 128, 0.2);
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+          .et-wrap { padding: 1rem; }
+          .et-header { flex-direction: column; align-items: flex-start; }
+          .et-stats { grid-template-columns: 1fr; }
+          .et-stat-val { font-size: 1.6rem; }
+          .et-chapter-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+          .et-chapter-meta { width: 100%; justify-content: flex-start; }
+          .et-chapter-bar { flex: 1; }
+        }
+      </style>
     </div>
 
     <!-- ═══ TIMER PAGE ═══ -->

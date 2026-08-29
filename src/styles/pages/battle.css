@@ -1,0 +1,153 @@
+/* Extracted from battle.html — page-specific styles for Battle Arena */
+
+.ba-wrap{max-width:720px;margin:0 auto;padding:1.5rem;}
+
+/* ══ SCOREBOARD CARD ══ */
+.ba-scoreboard{
+  background:var(--s1);
+  border:1px solid var(--border2);
+  border-radius:var(--r-lg);
+  padding:1.8rem 1.5rem;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:1.5rem;
+  margin-bottom:2rem;
+  position:relative;
+  overflow:hidden;
+}
+.ba-scoreboard::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 20% 50%,rgba(139,92,246,0.06),transparent 60%),
+             radial-gradient(circle at 80% 50%,rgba(6,182,212,0.06),transparent 60%);
+  pointer-events:none;
+}
+
+.ba-scoreboard-col{
+  display:flex;flex-direction:column;align-items:center;gap:0.5rem;
+  position:relative;z-index:1;flex:1;
+}
+
+/* Avatars */
+.ba-avatar{
+  width:64px;height:64px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;font-weight:800;letter-spacing:0.04em;
+  border:3px solid;
+}
+.ba-avatar--you{
+  background:var(--violet-dim);border-color:var(--violet);color:var(--violet-bright);
+  box-shadow:0 0 18px rgba(139,92,246,0.25);
+}
+.ba-avatar--opp{
+  background:var(--cyan-dim);border-color:var(--cyan);color:var(--cyan-bright);
+  box-shadow:0 0 18px rgba(6,182,212,0.25);
+}
+
+/* Scores */
+.ba-score{
+  font-size:2.4rem;font-weight:900;letter-spacing:-0.03em;line-height:1;
+}
+.ba-score--you{color:var(--violet-bright);}
+.ba-score--opp{color:var(--cyan-bright);}
+
+.ba-player-name{
+  font-size:0.82rem;font-weight:600;color:var(--muted);
+}
+
+/* VS divider */
+.ba-vs{
+  font-size:0.85rem;font-weight:900;letter-spacing:0.12em;
+  color:var(--dim);text-transform:uppercase;
+  padding:0 0.5rem;position:relative;z-index:1;
+}
+
+/* ══ CHALLENGES SECTION ══ */
+.ba-challenges{margin-bottom:2rem;}
+.ba-section-header{margin-bottom:1rem;}
+.ba-section-title{
+  font-size:0.65rem;font-weight:800;letter-spacing:0.14em;
+  text-transform:uppercase;color:var(--dim);
+}
+
+/* Challenge List */
+.ba-challenge-list{display:flex;flex-direction:column;gap:0.6rem;}
+.ba-challenge-card{
+  display:flex;align-items:center;gap:0.9rem;
+  padding:1rem 1.15rem;
+  background:var(--s1);border:1px solid var(--border2);
+  border-radius:var(--r-md);
+  transition:border-color 0.18s,box-shadow 0.18s;
+}
+.ba-challenge-card:hover{
+  border-color:var(--violet-border);
+  box-shadow:0 0 12px rgba(139,92,246,0.06);
+}
+
+.ba-challenge-info{flex:1;min-width:0;}
+.ba-challenge-name{
+  font-size:0.88rem;font-weight:700;color:var(--white);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.ba-challenge-desc{
+  font-size:0.7rem;color:var(--muted);margin-top:0.15rem;
+}
+
+/* Badges */
+.ba-badge{
+  font-size:0.58rem;font-weight:800;letter-spacing:0.1em;
+  text-transform:uppercase;padding:0.25rem 0.6rem;
+  border-radius:var(--r-full);white-space:nowrap;flex-shrink:0;
+}
+.ba-badge--live{
+  color:var(--cyan-bright);background:var(--cyan-dim);
+  border:1px solid var(--cyan-border);
+  animation:ba-live-pulse 2s ease-in-out infinite;
+}
+@keyframes ba-live-pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(6,182,212,0.3);}
+  50%{box-shadow:0 0 8px 2px rgba(6,182,212,0.15);}
+}
+.ba-badge--time{
+  color:var(--warn);background:rgba(251,191,36,0.08);
+  border:1px solid rgba(251,191,36,0.25);
+}
+
+/* Challenge Buttons */
+.ba-challenge-btn{
+  padding:0.45rem 1rem;border-radius:var(--r-sm);
+  font-size:0.72rem;font-weight:700;font-family:var(--font);
+  cursor:pointer;transition:all 0.18s ease;border:none;
+  white-space:nowrap;flex-shrink:0;
+}
+.ba-challenge-btn--join{
+  background:linear-gradient(135deg,var(--violet),#7c3aed);
+  color:#fff;box-shadow:0 2px 10px rgba(139,92,246,0.25);
+}
+.ba-challenge-btn--join:hover{
+  box-shadow:0 4px 16px rgba(139,92,246,0.4);transform:translateY(-1px);
+}
+.ba-challenge-btn--view{
+  background:transparent;border:1px solid var(--border2);color:var(--muted);
+}
+.ba-challenge-btn--view:hover{
+  border-color:var(--violet-bright);color:var(--violet-bright);
+}
+
+/* ══ RESPONSIVE ══ */
+@media(max-width:640px){
+  .ba-wrap{padding:1rem;}
+  .ba-scoreboard{padding:1.3rem 1rem;gap:1rem;}
+  .ba-avatar{width:52px;height:52px;font-size:0.95rem;}
+  .ba-score{font-size:1.9rem;}
+  .ba-challenge-card{padding:0.85rem 0.9rem;gap:0.7rem;flex-wrap:wrap;}
+  .ba-challenge-name{font-size:0.82rem;}
+  .ba-challenge-btn{padding:0.4rem 0.8rem;font-size:0.68rem;}
+}
+
+@media(max-width:400px){
+  .ba-scoreboard{flex-direction:column;gap:0.8rem;}
+  .ba-vs{padding:0.2rem 0;}
+  .ba-challenge-card{flex-direction:column;align-items:flex-start;gap:0.6rem;}
+  .ba-challenge-btn{width:100%;text-align:center;}
+}

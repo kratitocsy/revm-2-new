@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>WYNKO — Study Groups</title>
+<title>WYNKO — Study Rooms</title>
 <link rel="stylesheet" href="style.css">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png" type="image/png">
@@ -38,31 +38,111 @@
   <div class="app-main">
     <div class="topbar">
       <button class="hamburger-btn" onclick="openMobileSidebar()" aria-label="Open menu">☰</button>
-      <div><div class="topbar-title">Study Groups</div><div class="topbar-sub">WYNKO — study together, live</div></div>
+      <div><div class="topbar-title">Study Rooms</div><div class="topbar-sub">Live directory · join a room and study together</div></div>
     </div>
 
     <div class="gw" id="listView">
-      <div class="gw-head">
-        <div class="gw-tabs">
-          <button class="gw-tab active" data-tab="mine" onclick="setTab('mine',this)">My Groups</button>
-          <button class="gw-tab" data-tab="discover" onclick="setTab('discover',this)">Discover</button>
+      <!-- Header row -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+        <h1 style="font-size:1.5rem;font-weight:700;color:var(--text);margin:0;">Study Rooms · <span style="color:var(--violet);">6 live</span></h1>
+        <button class="btn btn-sm" style="background:var(--violet);color:#fff;border:1px solid var(--violet-border);padding:0.5rem 1rem;font-size:0.85rem;">+ Create room</button>
+      </div>
+
+      <!-- Filter chips row -->
+      <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+        <button class="filter-chip active" style="background:var(--violet);color:#fff;border:1px solid var(--violet-border);padding:0.4rem 0.9rem;border-radius:999px;font-size:0.8rem;cursor:pointer;">All</button>
+        <button class="filter-chip" style="background:var(--s2);color:var(--text);border:1px solid var(--border2);padding:0.4rem 0.9rem;border-radius:999px;font-size:0.8rem;cursor:pointer;">NEET</button>
+        <button class="filter-chip" style="background:var(--s2);color:var(--text);border:1px solid var(--border2);padding:0.4rem 0.9rem;border-radius:999px;font-size:0.8rem;cursor:pointer;">JEE</button>
+        <button class="filter-chip" style="background:var(--s2);color:var(--text);border:1px solid var(--border2);padding:0.4rem 0.9rem;border-radius:999px;font-size:0.8rem;cursor:pointer;">UPSC</button>
+      </div>
+
+      <!-- Room cards grid -->
+      <div style="display:grid;grid-template-columns:1fr;gap:1rem;" class="room-cards-grid">
+        <!-- NEET Biology · Grind Room -->
+        <div class="room-card" style="background:var(--s2);border:1px solid var(--border2);border-radius:12px;padding:1.2rem;transition:all 0.2s;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem;">
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.3rem;flex-wrap:wrap;">
+                <h3 style="font-size:1.1rem;font-weight:600;color:var(--text);margin:0;">NEET Biology · Grind Room</h3>
+                <span style="background:var(--danger);color:#fff;font-size:0.65rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:4px;text-transform:uppercase;">LIVE</span>
+              </div>
+              <div style="font-size:0.8rem;color:var(--muted);">12 inside</div>
+            </div>
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.5;">
+            <div>2h10m avg session</div>
+            <div>Agora WebRTC</div>
+          </div>
+          <button class="btn" style="width:100%;background:var(--violet);color:#fff;border:1px solid var(--violet-border);padding:0.6rem;font-size:0.9rem;">Join room</button>
         </div>
-        <div style="display:flex;gap:0.5rem;">
-          <button class="btn btn-gold btn-sm" id="quickInviteBtn" onclick="openQuickInviteModal()">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:0.2rem;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5 15.4 6.7M8.6 13.5l6.8 3.8"/></svg>
-            Invite friends
-          </button>
-          <button class="btn btn-gold btn-sm" onclick="openCreateModal()">+ Create group</button>
+
+        <!-- JEE Physics · Numericals -->
+        <div class="room-card" style="background:var(--s2);border:1px solid var(--border2);border-radius:12px;padding:1.2rem;transition:all 0.2s;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem;">
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.3rem;flex-wrap:wrap;">
+                <h3 style="font-size:1.1rem;font-weight:600;color:var(--text);margin:0;">JEE Physics · Numericals</h3>
+                <span style="background:var(--danger);color:#fff;font-size:0.65rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:4px;text-transform:uppercase;">LIVE</span>
+              </div>
+              <div style="font-size:0.8rem;color:var(--muted);">8 inside</div>
+            </div>
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.5;">
+            <div>1h40m avg session</div>
+          </div>
+          <button class="btn" style="width:100%;background:var(--violet);color:#fff;border:1px solid var(--violet-border);padding:0.6rem;font-size:0.9rem;">Join room</button>
+        </div>
+
+        <!-- UPSC Prelims · Silent Hall -->
+        <div class="room-card" style="background:var(--s2);border:1px solid var(--border2);border-radius:12px;padding:1.2rem;transition:all 0.2s;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem;">
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.3rem;flex-wrap:wrap;">
+                <h3 style="font-size:1.1rem;font-weight:600;color:var(--text);margin:0;">UPSC Prelims · Silent Hall</h3>
+                <span style="background:var(--danger);color:#fff;font-size:0.65rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:4px;text-transform:uppercase;">LIVE</span>
+              </div>
+              <div style="font-size:0.8rem;color:var(--muted);">21 inside</div>
+            </div>
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.5;">
+            <div>No cam</div>
+            <div>Agora WebRTC</div>
+          </div>
+          <button class="btn" style="width:100%;background:var(--violet);color:#fff;border:1px solid var(--violet-border);padding:0.6rem;font-size:0.9rem;">Join room</button>
+        </div>
+
+        <!-- CAT Quant Small Batch -->
+        <div class="room-card" style="background:var(--s2);border:1px solid var(--border2);border-radius:12px;padding:1.2rem;transition:all 0.2s;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem;">
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.3rem;flex-wrap:wrap;">
+                <h3 style="font-size:1.1rem;font-weight:600;color:var(--text);margin:0;">CAT Quant Small Batch</h3>
+                <span style="background:var(--danger);color:#fff;font-size:0.65rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:4px;text-transform:uppercase;">LIVE</span>
+              </div>
+              <div style="font-size:0.8rem;color:var(--muted);">3 inside</div>
+            </div>
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.5;">
+            <div>Invite only</div>
+          </div>
+          <button class="btn" style="width:100%;background:var(--violet);color:#fff;border:1px solid var(--violet-border);padding:0.6rem;font-size:0.9rem;">Join room</button>
         </div>
       </div>
 
-      <div id="revheadBannerMount"></div>
-
-      <div class="gw-search" id="discoverSearch" style="display:none;">
-        <input type="text" id="searchBox" placeholder="Search public groups by name…" oninput="renderDiscover()">
-      </div>
-
-      <div class="grid" id="groupGrid"></div>
+      <style>
+        @media (min-width: 768px) {
+          .room-cards-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          .room-card button {
+            width: auto !important;
+          }
+        }
+        .room-card:hover {
+          border-color: var(--violet-border);
+          transform: translateY(-2px);
+        }
+      </style>
     </div>
 
     <!-- ═══ GROUP DETAIL VIEW ═══ -->

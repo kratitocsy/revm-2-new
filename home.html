@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>WYNKO — Home</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#8b5cf6">
+<link rel="stylesheet" href="src/styles/pages/home.css">
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <a class="sidebar-logo" href="index.html"><img src="wynko-logo.png" alt="WYNKO" class="sidebar-logo-img"></a>
+    <nav class="sidebar-nav">
+  <div class="nav-section">Modules</div>
+  <div class="nav-item active" onclick="go('home.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>Home</div>
+  <div class="nav-item" onclick="go('timer.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>Focus Lock</div>
+  <div class="nav-item" onclick="go('tracker.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>Recall Curve</div>
+  <div class="nav-item" onclick="go('groups.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Study Rooms</div>
+  <div class="nav-item" onclick="go('blocks.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M5 20V10l7-6 7 6v10"/><path d="M9 20v-4h6v4"/></svg></span>3D Library</div>
+  <div class="nav-item" onclick="go('store.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>Materials</div>
+  <div class="nav-section">Social</div>
+  <div class="nav-item" onclick="go('partners.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>Partners</div>
+  <div class="nav-item" onclick="go('revhead.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>Community</div>
+  <div class="nav-item" onclick="go('chat.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>Group Chat</div>
+</nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-track" id="sTrack">JEE Main 2026</div>
+      <div class="sidebar-exam" id="sExam">128 days remaining</div>
+      <button class="sidebar-logout" onclick="signOutRevM2()" title="Sign out"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:0.3rem;"><path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4"/><path d="M15 8l4 4-4 4M19 12H9"/></svg>Sign out</button>
+    </div>
+  </aside>
+
+  <!-- MOBILE NAV BACKDROP -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
+  <!-- MAIN -->
+  <div class="app-main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <button class="hamburger-btn" onclick="openMobileSidebar()" aria-label="Open menu">&#9776;</button>
+      <div>
+        <div class="topbar-title">Today's Recall</div>
+        <div class="topbar-sub">Wed &middot; 6 AM slot open</div>
+      </div>
+      <div class="topbar-right">
+        <span class="badge-track">JEE Main 2026</span>
+        <span class="badge-streak">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c.5 2.5 2 4.5 2 7a4 4 0 0 1-8 0c0-2.5 1.5-4.5 2-7 1 1.5 2.5 2 4 0z"/><path d="M10 16.5c.5 1.5 1.5 2.5 2 3.5.5-1 1.5-2 2-3.5"/></svg>
+          18 DAY STREAK
+        </span>
+      </div>
+    </div>
+
+    <!-- ═══ HOME DASHBOARD ═══ -->
+    <div class="home-wrap">
+
+      <!-- Greeting -->
+      <div class="home-greeting">Morning, Ananya.</div>
+      <div class="home-greeting-sub">3 topics need attention before tonight. Let's lock them in.</div>
+
+      <!-- TODAY'S RECALL card -->
+      <div class="home-card">
+        <div class="home-card-header">
+          <div>
+            <div class="home-card-title">TODAY'S RECALL</div>
+            <div class="home-card-subtitle">3 topics are fading before tonight</div>
+          </div>
+        </div>
+
+        <!-- Electrochemistry -->
+        <div class="topic-row">
+          <div class="topic-info">
+            <div class="topic-name">Electrochemistry</div>
+            <span class="topic-subject chemistry">Chemistry</span>
+          </div>
+          <div class="topic-retention">62%</div>
+          <div class="risk-bar"><div class="risk-bar-fill med" style="width:62%"></div></div>
+          <span class="risk-badge high">HIGH</span>
+        </div>
+
+        <!-- Human Reproduction -->
+        <div class="topic-row">
+          <div class="topic-info">
+            <div class="topic-name">Human Reproduction</div>
+            <span class="topic-subject biology">Biology</span>
+          </div>
+          <div class="topic-retention">41%</div>
+          <div class="risk-bar"><div class="risk-bar-fill high" style="width:41%"></div></div>
+          <span class="risk-badge high">HIGH</span>
+        </div>
+
+        <!-- Rotational Motion -->
+        <div class="topic-row">
+          <div class="topic-info">
+            <div class="topic-name">Rotational Motion</div>
+            <span class="topic-subject physics">Physics</span>
+          </div>
+          <div class="topic-retention faded">&mdash;</div>
+          <div class="risk-bar"><div class="risk-bar-fill high" style="width:15%"></div></div>
+          <span class="risk-badge med">MED</span>
+        </div>
+      </div>
+
+      <!-- RECALL CURVE widget -->
+      <div class="recall-curve-widget">
+        <div class="recall-curve-label">Recall Curve</div>
+        <div class="recall-curve-canvas">
+          <svg viewBox="0 0 400 120" style="width:100%;height:100%;display:block;" preserveAspectRatio="none">
+            <!-- Grid lines -->
+            <line x1="0" y1="30" x2="400" y2="30" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <line x1="0" y1="60" x2="400" y2="60" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <line x1="0" y1="90" x2="400" y2="90" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <!-- Forgetting curve -->
+            <path d="M0,15 C40,18 80,35 120,50 C160,65 200,75 240,82 C280,88 320,92 360,95 L400,97"
+              fill="none" stroke="var(--violet-bright)" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- Fill under curve -->
+            <path d="M0,15 C40,18 80,35 120,50 C160,65 200,75 240,82 C280,88 320,92 360,95 L400,97 L400,120 L0,120 Z"
+              fill="url(#curveGrad)" opacity="0.3"/>
+            <defs>
+              <linearGradient id="curveGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--violet-bright)" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="var(--violet-bright)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <!-- Threshold line -->
+            <line x1="0" y1="75" x2="400" y2="75" stroke="var(--danger)" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+            <text x="360" y="70" font-size="8" fill="var(--danger)" opacity="0.7">forget threshold</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="quick-actions">
+        <!-- Focus Lock -->
+        <div class="qa-card">
+          <div class="qa-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="qa-title">Focus Lock</div>
+          <button class="qa-btn" onclick="go('timer.html')">Start Focus Lock</button>
+        </div>
+
+        <!-- Study Room -->
+        <div class="qa-card">
+          <div class="qa-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="qa-title">Study Room</div>
+          <button class="qa-btn" onclick="go('groups.html')"><span class="live-dot"></span>Join Study Room</button>
+        </div>
+
+        <!-- 3D Library -->
+        <div class="qa-card">
+          <div class="qa-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M5 20V10l7-6 7 6v10"/><path d="M9 20v-4h6v4"/></svg>
+          </div>
+          <div class="qa-title">3D Library</div>
+          <button class="qa-btn" onclick="go('blocks.html')">Enter 3D Library</button>
+        </div>
+      </div>
+
+      <!-- REVIEW QUEUE -->
+      <div class="home-card">
+        <div class="home-card-header">
+          <div>
+            <div class="home-card-title">REVIEW QUEUE</div>
+            <div class="home-card-subtitle">Topics due for revision</div>
+          </div>
+        </div>
+
+        <div class="rq-item">
+          <div class="rq-info">
+            <div class="rq-name">Electrochemistry</div>
+            <span class="topic-subject chemistry">Chemistry</span>
+          </div>
+          <span class="risk-badge high">HIGH</span>
+        </div>
+
+        <div class="rq-item">
+          <div class="rq-info">
+            <div class="rq-name">Human Reproduction</div>
+            <span class="topic-subject biology">Biology</span>
+          </div>
+          <span class="risk-badge high">HIGH</span>
+        </div>
+      </div>
+
+    </div><!-- /home-wrap -->
+
+  </div><!-- /app-main -->
+
+</div><!-- /app-layout -->
+
+<!-- MOBILE TAB BAR -->
+<nav class="mobile-tab-bar">
+  <a href="home.html" class="mtab active"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></a>
+  <a href="timer.html" class="mtab"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Focus</span></a>
+  <a href="groups.html" class="mtab"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Rooms</span></a>
+  <a href="tracker.html" class="mtab"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>Recall</span></a>
+  <a href="#" class="mtab" onclick="openMobileSidebar();return false;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg><span>More</span></a>
+</nav>
+
+<script src="shared.js"></script>
+<script>
+function go(url){window.location.href=url;}
+</script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>
