@@ -6,7 +6,7 @@
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="style.css">
-<meta name="theme-color" content="#c8a96e">
+<meta name="theme-color" content="#8b5cf6">
 <link rel="stylesheet" href="src/styles/pages/admin.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
 <div class="orb"></div>
 
 <div class="adm-wrap" id="admWrap">
-  <div class="adm-logo rm2-logo" data-size="nav"></div>
+  <img src="wynko-logo.png" alt="WYNKO" style="height:32px;width:auto;">
 </div>
 
 <script src="shared.js"></script>
@@ -41,7 +41,7 @@ async function init(){
   const canSeeAdmin = me?.is_admin || me?.is_moderator || isOwner;
 
   if(!canSeeAdmin){
-    document.getElementById('admWrap').innerHTML = `<div class="rm2-logo" data-size="nav" style="margin:0 auto 1.5rem;"></div><div class="adm-denied"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg> This page is admin-only.<br><br><a class="adm-back" href="tracker.html">← Back to tracker</a></div>`;
+    document.getElementById('admWrap').innerHTML = `<img src="wynko-logo.png" alt="WYNKO" style="height:32px;width:auto;margin:0 auto 1.5rem;display:block;"><div class="adm-denied"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(139,92,246,0.45))"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg> This page is admin-only.<br><br><a class="adm-back" href="tracker.html">← Back to tracker</a></div>`;
     RevM2Logo.init();
     RevM2Loader.hide();
     return;
@@ -102,7 +102,7 @@ function render(profiles, events){
   document.getElementById('admWrap').innerHTML = `
     <div class="adm-top">
       <div style="display:flex;align-items:center;gap:0.9rem;">
-        <div class="rm2-logo" data-size="nav"></div>
+        <img src="wynko-logo.png" alt="WYNKO" style="height:32px;width:auto;">
         <div class="adm-title">Admin — RevM²</div>
       </div>
       <a class="adm-back" href="tracker.html">← Back to tracker</a>

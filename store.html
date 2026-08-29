@@ -11,18 +11,20 @@
 <body>
 <div class="app-layout">
   <aside class="sidebar">
-    <a class="sidebar-logo" href="index.html"><div class="sidebar-logo-text">WYN<span>K</span>O</div></a>
+    <a class="sidebar-logo" href="index.html"><img src="wynko-logo.png" alt="WYNKO" class="sidebar-logo-img"></a>
     <nav class="sidebar-nav">
-      <div class="nav-item nav-item-invite" onclick="goInvite()"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5 15.4 6.7M8.6 13.5l6.8 3.8"/></svg></span>Invite friends</div>
-      <div class="nav-section">Study</div>
-      <div class="nav-item" onclick="location.href='tracker.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 11h6M9 15h6"/></svg></span>Tracker</div>
-      <div class="nav-item" onclick="location.href='timer.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M7 3h10M7 21h10"/><path d="M8 3c0 4 3 5 4 6.5C13 8 16 7 16 3"/><path d="M8 21c0-4 3-5 4-6.5C13 16 16 17 16 21"/></svg></span>Study Timer</div>
-      <div class="nav-item" onclick="location.href='groups.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><path d="M16 21v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7.5" r="3.5"/><path d="M17.5 11a3.5 3.5 0 1 0 0-7"/><path d="M22 21v-1.5a4 4 0 0 0-3-3.87"/></svg></span>Study Groups</div>
-      <div class="nav-item" onclick="location.href='partners.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="7" cy="5" r="2.3"/><path d="M4 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><circle cx="17" cy="5" r="2.3"/><path d="M14 21v-4a3 3 0 0 1 3-3 3 3 0 0 1 3 3v1"/><path d="M10 14.5h4"/></svg></span>Study Partners<span class="nav-badge" id="navPartnersBadge" style="display:none;"></span></div>
-      <div class="nav-item active"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg></span>M² Store</div>
-      <div class="nav-section">Tools</div>
-      <div class="nav-item" onclick="location.href='blocks.html'"><span class="nav-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:inline-block;vertical-align:-2px;filter:drop-shadow(0 0 2.5px rgba(212,175,55,0.45))"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>Blocks</div>
-    </nav>
+  <div class="nav-section">Modules</div>
+  <div class="nav-item" onclick="go('index.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>Home</div>
+  <div class="nav-item" onclick="go('timer.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>Focus Lock</div>
+  <div class="nav-item" onclick="go('tracker.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>Recall Curve</div>
+  <div class="nav-item" onclick="go('groups.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Study Rooms</div>
+  <div class="nav-item" onclick="go('blocks.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M5 20V10l7-6 7 6v10"/><path d="M9 20v-4h6v4"/></svg></span>3D Library</div>
+  <div class="nav-item active" onclick="go('store.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>Materials</div>
+  <div class="nav-section">Social</div>
+  <div class="nav-item" onclick="go('partners.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>Partners</div>
+  <div class="nav-item" onclick="go('revhead.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>Community</div>
+  <div class="nav-item" onclick="go('chat.html')"><span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>Group Chat</div>
+</nav>
   </aside>
 
   <!-- MOBILE NAV BACKDROP -->
@@ -31,10 +33,82 @@
   <div class="app-main">
     <div class="topbar">
       <button class="hamburger-btn" onclick="openMobileSidebar()" aria-label="Open menu">☰</button>
-      <div><div class="topbar-title">M² Store</div><div class="topbar-sub">Earn coins by studying. Spend them on perks.</div></div>
+      <div><div class="topbar-title">Materials</div><div class="topbar-sub">Earn coins by studying. Spend them on perks.</div></div>
     </div>
 
     <div class="sw">
+      <!-- MATERIALS SHARED VAULT -->
+      <div class="vault-section">
+        <div class="vault-header">
+          <h2 class="vault-title">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:0.4rem;filter:drop-shadow(0 0 4px rgba(6,182,212,0.5));"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+            Materials Shared Vault
+          </h2>
+          <span class="vault-sub">Files shared within your study group — view-only, no downloads.</span>
+        </div>
+
+        <!-- Security Badges Row -->
+        <div class="vault-badges-row">
+          <div class="vault-sec-badge">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            HMAC-signed access
+          </div>
+          <div class="vault-sec-badge">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Group-scoped
+          </div>
+          <div class="vault-sec-badge">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Canvas viewer
+          </div>
+          <div class="vault-sec-badge vault-sec-badge--danger">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            Download blocked
+          </div>
+        </div>
+
+        <!-- File List Cards -->
+        <div class="vault-file-list">
+          <div class="vault-file-card">
+            <div class="vault-file-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </div>
+            <div class="vault-file-info">
+              <div class="vault-file-name">Organic Chemistry — Reaction Map.pdf</div>
+              <div class="vault-file-meta">Chemistry Grind · 4.2 MB</div>
+            </div>
+            <span class="vault-view-badge">VIEW ONLY</span>
+          </div>
+
+          <div class="vault-file-card">
+            <div class="vault-file-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </div>
+            <div class="vault-file-info">
+              <div class="vault-file-name">Human Physiology Notes.pdf</div>
+              <div class="vault-file-meta">NEET Biology · 2.8 MB</div>
+            </div>
+            <span class="vault-view-badge">VIEW ONLY</span>
+          </div>
+
+          <div class="vault-file-card">
+            <div class="vault-file-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </div>
+            <div class="vault-file-info">
+              <div class="vault-file-name">Rotational Dynamics Formulae.pdf</div>
+              <div class="vault-file-meta">JEE Physics · 1.1 MB</div>
+            </div>
+            <span class="vault-view-badge">VIEW ONLY</span>
+          </div>
+        </div>
+
+        <div class="vault-note">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:0.3rem;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M12 11v5.5"/><path d="M12 7.5h.01"/></svg>
+          Viewer opens in a locked canvas — no save, no share-out.
+        </div>
+      </div>
+
       <!-- WALLET HERO -->
       <div class="wallet-hero">
         <div class="coin-icon"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="6.5"/><path d="M9.3 14.3V9.7l2.7 2.6 2.7-2.6v4.6"/></svg></div>
@@ -181,7 +255,7 @@ async function loadPackages(){
   document.getElementById('pkgGrid').innerHTML = (data||[]).map(p=>`
   rm2Stagger(document.getElementById('pkgGrid').children);
     <div class="pkg-card ${p.popular?'popular':''}" onclick="openBuy(${JSON.stringify(p).replace(/"/g,'&quot;')})">
-      ${p.popular?'<div class="popular-tag"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(212,175,55,0.45))"><path d="M12 2c1 3-3 4.5-3 8a3 3 0 0 0 6 0c1.5 1 2 2.8 2 4.3A6.3 6.3 0 0 1 5.5 14C5.5 8 12 6 12 2Z"/></svg> Most Popular</div>':''}
+      ${p.popular?'<div class="popular-tag"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;filter:drop-shadow(0 0 3px rgba(139,92,246,0.45))"><path d="M12 2c1 3-3 4.5-3 8a3 3 0 0 0 6 0c1.5 1 2 2.8 2 4.3A6.3 6.3 0 0 1 5.5 14C5.5 8 12 6 12 2Z"/></svg> Most Popular</div>':''}
       <div class="pkg-coins"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:0.15rem"><circle cx="12" cy="12" r="9"/><path d="M8 15V9l4 4 4-4v6"/></svg>${(p.coins*(1+p.bonus_pct/100)).toLocaleString()}</div>
       ${p.bonus_pct?`<div class="pkg-bonus">+${p.bonus_pct}% bonus!</div>`:''}
       <div class="pkg-name">${p.name}</div>
