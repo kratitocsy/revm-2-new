@@ -1018,7 +1018,35 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+/* ============ bypass: allowlisted accounts skip the waitlist landing page ============
+   If a visitor already has a valid Supabase session (from a previous login on this
+   domain) and that session's email is allowlisted, send them straight into the app
+   instead of showing the "opening soon" page. Everyone else sees the landing page
+   completely unchanged. */
+(async function bypassLandingForAllowlistedAccounts(){
+  const ALLOWLISTED_EMAILS = ['kiarase2288@gmail.com', 'jatinsinsinwar18@gmail.com'];
+  try {
+    const bypassClient = window.supabase.createClient(
+      'https://dhzjtjekbvxxsauzhadl.supabase.co',
+      'sb_publishable_9xK5LeyVdu2d4bVE1aFlNg_ef435Jkr'
+    );
+    const { data: { session } } = await bypassClient.auth.getSession();
+    const email = session && session.user && session.user.email
+      ? session.user.email.toLowerCase()
+      : null;
+    if (email && ALLOWLISTED_EMAILS.includes(email)) {
+      // login.html already knows how to route a logged-in user to the right
+      // place (explainer / onboarding / tracker) based on their profile state.
+      window.location.replace('login.html');
+    }
+  } catch (e) {
+    console.error('RM2 landing bypass check failed:', e);
+    // fall through — landing page renders normally
+  }
+})();
+
 document.getElementById('year').textContent = new Date().getFullYear();
 
 /* ============ Supabase (REVM^2 project) ============ */
