@@ -1330,6 +1330,15 @@ joinForm.addEventListener('submit', async (e) => {
   const email = document.getElementById('emailInput').value.trim();
   if (!email) { joinError.textContent = 'Please enter your email.'; return; }
 
+  const ALLOWLISTED_EMAILS = ['kiarase2288@gmail.com', 'jatinsinsinwar18@gmail.com'];
+  if (ALLOWLISTED_EMAILS.includes(email.toLowerCase())) {
+    // Skip the waitlist entirely — send straight to login with the email
+    // prefilled. (They still have to actually sign in; typing an email into
+    // an open text field on its own can't authenticate anyone.)
+    window.location.href = 'login.html?email=' + encodeURIComponent(email);
+    return;
+  }
+
   joinBtn.disabled = true;
   joinBtn.textContent = 'Joining…';
   try {

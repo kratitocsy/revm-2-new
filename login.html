@@ -153,6 +153,16 @@
 <script>
 const sb = window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL, REVM2_CONFIG.SUPABASE_ANON);
 
+// Prefill the sign-in email if it was passed in via ?email= (e.g. redirected
+// here from the landing page's waitlist form for an allowlisted account).
+(function prefillEmailFromQuery(){
+  const qEmail = new URLSearchParams(window.location.search).get('email');
+  if (!qEmail) return;
+  const siEmail = document.getElementById('siEmail');
+  if (siEmail) siEmail.value = qEmail;
+  openLoginDrawer();
+})();
+
 function openLoginDrawer(){
   document.getElementById('loginDrawer').classList.add('open');
   document.getElementById('loginDrawerBackdrop').classList.add('active');
