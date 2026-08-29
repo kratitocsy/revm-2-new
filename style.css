@@ -128,9 +128,13 @@ body{
   transition:transform 0.25s cubic-bezier(0.16,1,0.3,1);
 }
 .sidebar-logo{
-  padding:var(--sp-6) var(--sp-6) var(--sp-4);display:block;
+  padding:var(--sp-4) var(--sp-5) var(--sp-3);display:block;
   border-bottom:1px solid var(--border);
   text-decoration:none;
+}
+.sidebar-logo-img{
+  height:36px;width:auto;display:block;
+  filter:drop-shadow(0 0 8px rgba(139,92,246,0.3));
 }
 .sidebar-logo-text{
   font-family:var(--font);font-size:1.3rem;font-weight:800;

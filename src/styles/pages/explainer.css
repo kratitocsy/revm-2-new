@@ -6,15 +6,15 @@
 .slide{display:none;animation:fadeUp 0.45s ease;}
 .slide.active{display:block;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
-.slide-num{font-size:0.6rem;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);margin-bottom:1.25rem;}
+.slide-num{font-size:0.6rem;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:var(--violet-bright);margin-bottom:1.25rem;}
 .slide-icon{font-size:2.75rem;margin-bottom:1.25rem;line-height:1;}
 .slide h2{font-size:clamp(1.7rem,5vw,2.75rem);font-weight:900;letter-spacing:-0.03em;line-height:1.08;color:var(--white);text-transform:uppercase;margin-bottom:1.1rem;}
-.slide h2 span{color:var(--gold);}
+.slide h2 span{color:var(--violet-bright);}
 .slide p{font-size:0.88rem;color:var(--muted);line-height:1.75;max-width:480px;}
 .slide p strong{color:var(--text);font-weight:500;}
 .exp-bottom{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 2.5rem;border-top:1px solid var(--border);background:rgba(0,0,0,0.55);backdrop-filter:blur(14px);}
 .dots{display:flex;gap:0.4rem;}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--muted);cursor:pointer;transition:all 0.25s;}
-.dot.active{background:var(--gold);width:18px;border-radius:3px;}
+.dot.active{background:var(--violet-bright);width:18px;border-radius:3px;}
 .btn-skip{background:none;border:none;color:var(--muted);font-family:var(--font);font-size:0.72rem;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;transition:color 0.2s;}
 .btn-skip:hover{color:var(--white);}

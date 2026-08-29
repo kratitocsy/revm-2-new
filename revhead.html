@@ -54,7 +54,7 @@ async function init(){
 function shell(inner){
   return `
     <div class="rh-top">
-      <div class="rm2-logo" data-size="nav"></div>
+      <img src="wynko-logo.png" alt="WYNKO" style="height:32px;width:auto;">
       <div class="rh-title">RevHead</div>
       <a class="rh-back" href="tracker.html">← Back to tracker</a>
     </div>
@@ -70,7 +70,7 @@ function renderApplyForm(profile){
   document.getElementById('rhWrap').innerHTML = shell(`
     <div class="rh-hero">
       <h2>Become a RevHead</h2>
-      <p>RevHeads are verified student community leaders — JEE, NEET, UPSC, CAT, GATE and more — who get their own official, verified study group on RevM², a revenue dashboard, and community analytics. Applications are reviewed by the RevM² team, usually within 24 hours.</p>
+      <p>RevHeads are verified student community leaders — JEE, NEET, UPSC, CAT, GATE and more — who get their own official, verified study group on WYNKO, a revenue dashboard, and community analytics. Applications are reviewed by the WYNKO team, usually within 24 hours.</p>
     </div>
     <div class="rh-card">
       ${rejectedNote}
@@ -114,7 +114,7 @@ async function renderDashboard(profile){
         <div class="rh-code">${escHtml(profile.revhead_code || '—')}</div>
         <button class="copy-btn" onclick="copyCode('${profile.revhead_code||''}')">Copy</button>
       </div>
-      <p>Share this with other genuine community leaders. If they apply using it and get verified, you earn 10% of what they make on RevM² for their first 3 months as a RevHead.</p>
+      <p>Share this with other genuine community leaders. If they apply using it and get verified, you earn 10% of what they make on WYNKO for their first 3 months as a RevHead.</p>
     </div>
 
     <div class="rh-card">
@@ -264,7 +264,7 @@ async function loadEarningsEstimate(){
       <div class="stat-card"><div class="label">Est. ad revenue</div><div class="val">₹${Number(e.estimated_ad_revenue).toLocaleString('en-IN')}</div></div>
       <div class="stat-card"><div class="label">Est. premium revenue</div><div class="val">₹${Number(e.estimated_premium_revenue).toLocaleString('en-IN')}</div></div>
     </div>
-    <div style="margin-top:0.75rem;font-size:0.8rem;color:var(--gold);font-weight:700;">Est. total: ₹${Number(e.estimated_total).toLocaleString('en-IN')}/mo (projection only)</div>
+    <div style="margin-top:0.75rem;font-size:0.8rem;color:var(--violet-bright);font-weight:700;">Est. total: ₹${Number(e.estimated_total).toLocaleString('en-IN')}/mo (projection only)</div>
   `;
 }
 
@@ -275,7 +275,7 @@ function copyCode(code){
 function renderHowItWorks(){
   document.getElementById('howItWorksWrap').innerHTML = `
     <div class="rh-card">
-      <h3 style="font-size:0.95rem;color:var(--gold);margin-bottom:0.6rem;">How the RevHead program works</h3>
+      <h3 style="font-size:0.95rem;color:var(--violet-bright);margin-bottom:0.6rem;">How the RevHead program works</h3>
 
       <table class="tier-table">
         <thead><tr><th>Tier</th><th>How you get here</th><th>Earning rate</th><th>Extras</th></tr></thead>
@@ -299,11 +299,11 @@ function renderHowItWorks(){
 
       <div id="howDetail" style="display:none;margin-top:1rem;">
         <ol class="flow-steps">
-          <li><b>Everyone earns from their own community's engagement</b> — the more your members actually study together on RevM², the more your group generates.</li>
+          <li><b>Everyone earns from their own community's engagement</b> — the more your members actually study together on WYNKO, the more your group generates.</li>
           <li><b>Normal groups earn a reduced rate</b> once they cross a minimum member count — this isn't a manual process, it's based on real activity in your group, not just creating it.</li>
           <li><b>Applying and getting verified as a RevHead unlocks the full rate</b> — plus an official verified group, your own referral code, and a community analytics dashboard.</li>
           <li><b>Grow first, apply later works too</b> — if your normal group is already performing well, you'll see a banner here and in Study Groups suggesting you apply, based on your actual numbers.</li>
-          <li><b>Referral code (RevHead-only)</b> — if a new RevHead applied using your code, you earn 10% of what they personally make on RevM² for their first 90 days as a verified RevHead. After that, it stops automatically — they keep 100% going forward.</li>
+          <li><b>Referral code (RevHead-only)</b> — if a new RevHead applied using your code, you earn 10% of what they personally make on WYNKO for their first 90 days as a verified RevHead. After that, it stops automatically — they keep 100% going forward.</li>
           <li><b>Payouts</b> — earnings are tracked in your dashboard as they're generated. Actual bank/UPI disbursement is being built next (via a payment gateway) — for now, think of the numbers you see as your running balance, not yet a completed transfer.</li>
         </ol>
       </div>

@@ -99,33 +99,33 @@
 .stats-strip{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--s1);display:flex;justify-content:center;flex-wrap:wrap;gap:0;}
 .stat-strip-item{padding:1.1rem 2.5rem;text-align:center;border-right:1px solid var(--border);}
 .stat-strip-item:last-child{border-right:none;}
-.stat-strip-num{font-size:1.5rem;font-weight:900;color:var(--gold);display:block;letter-spacing:-0.02em;}
+.stat-strip-num{font-size:1.5rem;font-weight:900;color:var(--violet-bright);display:block;letter-spacing:-0.02em;}
 .stat-strip-label{font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);}
 .full-section{padding:5rem 3rem;max-width:1100px;margin:0 auto;position:relative;z-index:2;}
 .features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);}
 .feat-card{background:var(--s1);padding:1.75rem;transition:background 0.15s;}
 .feat-card:hover{background:var(--s2);}
-.feat-icon{width:36px;height:36px;background:var(--gold-dim);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;color:var(--gold);margin-bottom:1rem;}
+.feat-icon{width:36px;height:36px;background:var(--gold-dim);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;color:var(--violet-bright);margin-bottom:1rem;}
 .feat-card h3{font-size:0.88rem;font-weight:600;color:var(--white);margin-bottom:0.4rem;letter-spacing:-0.01em;}
 .feat-card p{font-size:0.78rem;color:var(--muted);line-height:1.65;}
-.feat-tag{display:inline-block;margin-top:0.75rem;font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);background:var(--gold-dim);padding:0.15rem 0.5rem;}
+.feat-tag{display:inline-block;margin-top:0.75rem;font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--violet-bright);background:var(--gold-dim);padding:0.15rem 0.5rem;}
 .tracks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.75rem;}
 .track-card{background:var(--s2);border:1px solid var(--border);padding:1.25rem 1rem;text-align:center;transition:all 0.15s;}
 .track-card:hover{border-color:var(--gold-border);}
-.track-abbr{font-size:0.95rem;font-weight:900;color:var(--gold);margin-bottom:0.3rem;letter-spacing:0.02em;}
+.track-abbr{font-size:0.95rem;font-weight:900;color:var(--violet-bright);margin-bottom:0.3rem;letter-spacing:0.02em;}
 .track-name{font-size:0.78rem;font-weight:500;color:var(--white);margin-bottom:0.2rem;}
 .track-subs{font-size:0.68rem;color:var(--muted);}
 .steps{position:relative;margin-top:1.5rem;}
 .steps::before{content:'';position:absolute;left:19px;top:0;bottom:0;width:1px;background:var(--border);}
 .step{display:flex;gap:1.25rem;padding:1.25rem 0;}
-.step-num{width:38px;height:38px;flex-shrink:0;background:var(--black);border:1px solid var(--gold-border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--gold);position:relative;z-index:1;}
+.step-num{width:38px;height:38px;flex-shrink:0;background:var(--black);border:1px solid var(--gold-border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--violet-bright);position:relative;z-index:1;}
 .step h3{font-size:0.88rem;font-weight:600;color:var(--white);margin-bottom:0.25rem;padding-top:0.55rem;}
 .step p{font-size:0.8rem;color:var(--muted);line-height:1.65;}
 .story-card{background:var(--s2);border:1px solid var(--border);padding:2.25rem;position:relative;overflow:hidden;}
-.story-card::after{content:'M²';position:absolute;right:1.5rem;top:0.5rem;font-size:7rem;font-weight:900;color:rgba(200,169,110,0.04);line-height:1;pointer-events:none;}
+.story-card::after{content:'M²';position:absolute;right:1.5rem;top:0.5rem;font-size:7rem;font-weight:900;color:rgba(139,92,246,0.04);line-height:1;pointer-events:none;}
 .story-card p{font-size:0.88rem;color:var(--muted);line-height:1.8;max-width:600px;}
 .story-card p+p{margin-top:0.9rem;}
-.story-card strong{color:var(--gold);font-weight:500;}
+.story-card strong{color:var(--violet-bright);font-weight:500;}
 .divider{height:1px;background:var(--border);}
 .story-video{position:relative;width:100%;padding-top:56.25%;margin:1.6rem 0;background:#000;border:1px solid var(--border);}
 .story-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
@@ -140,7 +140,7 @@
 .science-head{max-width:640px;margin-bottom:2.25rem;}
 .science-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);}
 .science-card{background:var(--bg);padding:1.5rem 1.6rem;}
-.science-card-label{font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:0.6rem;}
+.science-card-label{font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--violet-bright);margin-bottom:0.6rem;}
 .science-card p{font-size:0.8rem;color:var(--muted);line-height:1.75;}
 .science-card p strong{color:var(--text);font-weight:600;}
 
@@ -153,17 +153,17 @@
 .flagship-row:last-of-type{border-bottom:none;}
 .flagship-row.reverse .flagship-visual{order:2;}
 .flagship-row.reverse .flagship-text{order:1;}
-.flagship-num{font-size:0.62rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:0.75rem;display:flex;align-items:center;gap:0.6rem;}
+.flagship-num{font-size:0.62rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--violet-bright);margin-bottom:0.75rem;display:flex;align-items:center;gap:0.6rem;}
 .flagship-num::after{content:'';flex:1;height:1px;background:var(--border);}
 .flagship-text h3{font-family:var(--font-display);font-size:clamp(1.55rem,2.6vw,2.05rem);font-weight:560;color:var(--white);letter-spacing:-0.01em;line-height:1.14;margin-bottom:1rem;}
-.flagship-text h3 em{color:var(--gold);font-style:italic;}
+.flagship-text h3 em{color:var(--violet-bright);font-style:italic;}
 .flagship-text > p{font-size:0.86rem;color:var(--muted);line-height:1.85;margin-bottom:1.1rem;}
 .flagship-principle{
   display:flex;gap:0.6rem;align-items:flex-start;
   border-left:2px solid var(--gold-border);background:var(--gold-dim);
   padding:0.65rem 0.9rem;font-size:0.75rem;color:var(--muted);line-height:1.6;margin-bottom:1.4rem;
 }
-.flagship-principle b{color:var(--gold);font-weight:700;letter-spacing:0.02em;white-space:nowrap;}
+.flagship-principle b{color:var(--violet-bright);font-weight:700;letter-spacing:0.02em;white-space:nowrap;}
 .flagship-visual{
   background:var(--s1);border:1px solid var(--border);
   padding:1.6rem;position:relative;min-height:320px;
@@ -171,7 +171,7 @@
 }
 .flagship-visual::before{
   content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(ellipse at 30% 0%,rgba(200,169,110,0.06),transparent 60%);
+  background:radial-gradient(ellipse at 30% 0%,rgba(139,92,246,0.06),transparent 60%);
 }
 
 /* Mock — Focus Lock */
@@ -180,8 +180,8 @@
 .mock-dot{width:7px;height:7px;border-radius:50%;background:var(--dim);}
 .mock-url{margin-left:0.5rem;font-size:0.62rem;color:var(--muted);font-family:monospace;}
 .mock-lock-body{padding:1.6rem 1.4rem;text-align:center;}
-.mock-lock-icon{width:38px;height:38px;margin:0 auto 1rem;border:1px solid var(--gold-border);background:var(--gold-dim);display:flex;align-items:center;justify-content:center;color:var(--gold);animation:mockPulse 2.4s ease-in-out infinite;}
-@keyframes mockPulse{0%,100%{box-shadow:0 0 0 0 rgba(200,169,110,0.25);}50%{box-shadow:0 0 0 10px rgba(200,169,110,0);}}
+.mock-lock-icon{width:38px;height:38px;margin:0 auto 1rem;border:1px solid var(--gold-border);background:var(--gold-dim);display:flex;align-items:center;justify-content:center;color:var(--violet-bright);animation:mockPulse 2.4s ease-in-out infinite;}
+@keyframes mockPulse{0%,100%{box-shadow:0 0 0 0 rgba(139,92,246,0.25);}50%{box-shadow:0 0 0 10px rgba(139,92,246,0);}}
 .mock-lock-title{font-size:0.88rem;font-weight:700;color:var(--white);margin-bottom:0.3rem;}
 .mock-lock-sub{font-size:0.68rem;color:var(--muted);margin-bottom:1.2rem;}
 .mock-chip-row{display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center;margin-bottom:1.2rem;}
@@ -194,24 +194,24 @@
 .mock-grid{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:0.9rem;}
 .mock-tile{background:var(--black);border:1px solid var(--border2);padding:1rem 0.8rem;display:flex;flex-direction:column;align-items:center;gap:0.5rem;position:relative;}
 .mock-tile.speaking{border-color:var(--gold-border);}
-.mock-avatar{width:34px;height:34px;border-radius:50%;background:var(--s3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;color:var(--gold);}
+.mock-avatar{width:34px;height:34px;border-radius:50%;background:var(--s3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;color:var(--violet-bright);}
 .mock-tile-name{font-size:0.62rem;color:var(--muted);}
-.mock-wave{position:absolute;top:0.5rem;right:0.5rem;width:16px;height:10px;background:repeating-linear-gradient(90deg,var(--gold) 0 2px,transparent 2px 4px);opacity:0.7;animation:mockWave 1s ease-in-out infinite;}
+.mock-wave{position:absolute;top:0.5rem;right:0.5rem;width:16px;height:10px;background:repeating-linear-gradient(90deg,var(--violet-bright) 0 2px,transparent 2px 4px);opacity:0.7;animation:mockWave 1s ease-in-out infinite;}
 @keyframes mockWave{0%,100%{opacity:0.35;}50%{opacity:0.9;}}
 .mock-tile.dnd .mock-tile-name{color:var(--danger);}
-.mock-leaderboard{position:relative;z-index:1;text-align:center;font-size:0.68rem;color:var(--gold);border-top:1px solid var(--border);padding-top:0.9rem;}
+.mock-leaderboard{position:relative;z-index:1;text-align:center;font-size:0.68rem;color:var(--violet-bright);border-top:1px solid var(--border);padding-top:0.9rem;}
 
 /* Mock — Partners */
 .mock-swipe{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:1rem;}
 .mock-swipe-card{width:100%;max-width:260px;background:var(--black);border:1px solid var(--border2);padding:1.5rem 1.25rem;text-align:center;}
-.mock-swipe-avatar{width:46px;height:46px;border-radius:50%;background:var(--s3);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:700;color:var(--gold);margin:0 auto 0.75rem;}
+.mock-swipe-avatar{width:46px;height:46px;border-radius:50%;background:var(--s3);border:1px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:700;color:var(--violet-bright);margin:0 auto 0.75rem;}
 .mock-swipe-name{font-size:0.82rem;font-weight:600;color:var(--white);margin-bottom:0.2rem;}
-.mock-compat{font-size:0.68rem;color:var(--gold);margin-bottom:0.85rem;}
+.mock-compat{font-size:0.68rem;color:var(--violet-bright);margin-bottom:0.85rem;}
 .mock-swipe-tags{display:flex;flex-wrap:wrap;gap:0.35rem;justify-content:center;}
 .mock-swipe-tags span{font-size:0.6rem;color:var(--muted);border:1px solid var(--border2);padding:0.22rem 0.5rem;}
 .mock-swipe-actions{display:flex;gap:0.9rem;}
 .mock-swipe-actions button{width:38px;height:38px;border-radius:50%;border:1px solid var(--border2);background:var(--black);color:var(--muted);font-size:0.95rem;cursor:default;}
-.mock-swipe-actions .mock-check{color:var(--gold);border-color:var(--gold-border);}
+.mock-swipe-actions .mock-check{color:var(--violet-bright);border-color:var(--gold-border);}
 
 @media(max-width:768px){
   .science-grid{grid-template-columns:1fr;}
@@ -241,7 +241,7 @@
 .bento-card:hover{background:var(--s2);box-shadow:inset 0 0 0 1px var(--gold-border),0 20px 46px rgba(0,0,0,0.4);z-index:3;}
 .bento-card .flagship-num{margin-bottom:0.6rem;}
 .bento-card h3{font-family:var(--font-display);font-weight:560;color:var(--white);letter-spacing:-0.01em;line-height:1.15;margin-bottom:0.6rem;font-size:1.35rem;}
-.bento-card h3 em{color:var(--gold);font-style:italic;}
+.bento-card h3 em{color:var(--violet-bright);font-style:italic;}
 .bento-card > p{font-size:0.8rem;color:var(--muted);line-height:1.75;margin-bottom:0.9rem;}
 .bento-card .flagship-principle{margin-bottom:1rem;font-size:0.72rem;}
 .bento-2x2{grid-column:span 2;grid-row:span 2;}
@@ -258,7 +258,7 @@
 /* Mock — Forgetting curve (loss aversion) */
 .mock-curve{display:flex;align-items:flex-end;gap:0.5rem;height:70px;margin:0.4rem 0 0.5rem;}
 .mock-curve-bar{
-  flex:1;height:var(--h);background:linear-gradient(to top,var(--gold),rgba(200,169,110,0.25));
+  flex:1;height:var(--h);background:linear-gradient(to top,var(--violet-bright),rgba(139,92,246,0.25));
   position:relative;min-height:6px;
   animation:barGrow 1s cubic-bezier(.16,1,.3,1) both;
 }
@@ -273,15 +273,15 @@
 .mock-check-box{width:14px;height:14px;border:1px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:var(--success);}
 .mock-check-row.done .mock-check-box{border-color:var(--success);background:rgba(74,222,128,0.12);}
 .mock-check-row.nag{border-color:var(--gold-border);animation:nagPulse 2.2s ease-in-out infinite;}
-@keyframes nagPulse{0%,100%{box-shadow:0 0 0 0 rgba(200,169,110,0.18);}50%{box-shadow:0 0 0 6px rgba(200,169,110,0);}}
+@keyframes nagPulse{0%,100%{box-shadow:0 0 0 0 rgba(139,92,246,0.18);}50%{box-shadow:0 0 0 6px rgba(139,92,246,0);}}
 
 /* Mock — Streak / identity */
 .mock-streak{margin-top:auto;display:flex;align-items:center;gap:1.25rem;padding-top:0.5rem;}
-.mock-streak-num{font-size:2.4rem;font-weight:900;color:var(--gold);letter-spacing:-0.03em;line-height:1;}
+.mock-streak-num{font-size:2.4rem;font-weight:900;color:var(--violet-bright);letter-spacing:-0.03em;line-height:1;}
 .mock-streak-label{font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:0.2rem;}
 .mock-streak-days{display:flex;gap:0.3rem;margin-left:auto;}
 .mock-streak-days span{width:10px;height:22px;background:var(--dim);}
-.mock-streak-days span.on{background:var(--gold);animation:streakRise 0.5s cubic-bezier(.16,1,.3,1) both;}
+.mock-streak-days span.on{background:var(--violet-bright);animation:streakRise 0.5s cubic-bezier(.16,1,.3,1) both;}
 .mock-streak-days span.on:nth-child(1){animation-delay:0.05s;}
 .mock-streak-days span.on:nth-child(2){animation-delay:0.1s;}
 .mock-streak-days span.on:nth-child(3){animation-delay:0.15s;}
@@ -318,18 +318,18 @@
 
 .mock-bounty{margin-top:auto;border:1px solid var(--border2);background:var(--black);padding:1rem;}
 .mock-bounty-head{display:flex;justify-content:space-between;gap:0.5rem;font-size:0.68rem;color:var(--white);margin-bottom:0.9rem;}
-.mock-bounty-pool{color:var(--gold);font-weight:700;white-space:nowrap;}
+.mock-bounty-pool{color:var(--violet-bright);font-weight:700;white-space:nowrap;}
 .mock-bounty-row{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.55rem;}
 .mock-bounty-bar{flex:1;height:6px;background:var(--s3);overflow:hidden;}
-.mock-bounty-bar div{height:100%;background:var(--gold);transform:scaleX(0);transform-origin:left;animation:bountyFill 1s cubic-bezier(.16,1,.3,1) forwards;}
+.mock-bounty-bar div{height:100%;background:var(--violet-bright);transform:scaleX(0);transform-origin:left;animation:bountyFill 1s cubic-bezier(.16,1,.3,1) forwards;}
 @keyframes bountyFill{to{transform:scaleX(1);}}
 .mock-bounty-pct{font-size:0.62rem;color:var(--muted);width:26px;text-align:right;flex-shrink:0;}
 
 .mock-revhead{margin-top:auto;border:1px solid var(--border2);background:var(--black);padding:1rem;}
-.mock-revhead-link{font-family:monospace;font-size:0.68rem;color:var(--gold);border:1px dashed var(--gold-border);padding:0.55rem 0.7rem;margin-bottom:0.9rem;text-align:center;}
+.mock-revhead-link{font-family:monospace;font-size:0.68rem;color:var(--violet-bright);border:1px dashed var(--gold-border);padding:0.55rem 0.7rem;margin-bottom:0.9rem;text-align:center;}
 .mock-revhead-stats{display:flex;gap:1.75rem;}
 .mock-revhead-num{display:block;font-size:1.3rem;font-weight:900;color:var(--white);}
-.mock-revhead-num.gold{color:var(--gold);animation:mockPulse 2s ease-in-out infinite;border-radius:50%;width:fit-content;}
+.mock-revhead-num.gold{color:var(--violet-bright);animation:mockPulse 2s ease-in-out infinite;border-radius:50%;width:fit-content;}
 .mock-revhead-label{font-size:0.58rem;color:var(--muted);}
 
 /* ── MOBILE HERO ── */
