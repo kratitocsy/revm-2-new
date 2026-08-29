@@ -1,6 +1,6 @@
 {
-  "name": "RevM² — Study OS",
-  "short_name": "RevM²",
+  "name": "WYNKO — Focus · Study · Together",
+  "short_name": "Wynko",
   "description": "Ebbinghaus revision tracker, study timer, marks calculator and rank predictor for JEE, NEET, CAT and UPSC.",
   "start_url": "/tracker.html",
   "display": "standalone",
