@@ -469,13 +469,13 @@ async function syncSessionToMobile(active, session){
 /* ── mobile-native permission onboarding card ── */
 const MOBILE_PERMS = [
   { key:'accessibility', label:'Detect blocked apps', method:'requestAccessibility',
-    desc:'Lets RevM2 see which app is in front, so it can show the block screen over a blocked one.' },
+    desc:'Lets WYNKO see which app is in front, so it can show the block screen over a blocked one.' },
   { key:'overlay', label:'Show block screen', method:'requestOverlay',
     desc:'Draws the full-screen block over a blocked app. Without this, blocked apps are detected but nothing actually covers them.' },
   { key:'vpn', label:'Block websites', method:'requestVpn',
     desc:'A local, on-device-only VPN that blackholes blocked domains — nothing routes through a remote server.' },
   { key:'deviceAdmin', label:'Uninstall resistance', method:'requestDeviceAdmin',
-    desc:'Optional: requires deactivating admin here before RevM2 can be uninstalled, so leaving mid-session takes a deliberate extra step.' }
+    desc:'Optional: requires deactivating admin here before WYNKO can be uninstalled, so leaving mid-session takes a deliberate extra step.' }
 ];
 async function refreshMobilePermCard(){
   if(!isMobileApp()) return;
