@@ -46,14 +46,14 @@
     <div class="topbar">
       <button class="hamburger-btn" onclick="openMobileSidebar()" aria-label="Open menu">&#9776;</button>
       <div>
-        <div class="topbar-title">Today's Recall</div>
-        <div class="topbar-sub">Wed &middot; 6 AM slot open</div>
+        <div class="topbar-title" id="topbarTitle">Today's Recall</div>
+        <div class="topbar-sub" id="topbarSub">&nbsp;</div>
       </div>
       <div class="topbar-right">
-        <span class="badge-track">JEE Main 2026</span>
+        <span class="badge-track" id="badgeTrack">Loading…</span>
         <span class="badge-streak">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c.5 2.5 2 4.5 2 7a4 4 0 0 1-8 0c0-2.5 1.5-4.5 2-7 1 1.5 2.5 2 4 0z"/><path d="M10 16.5c.5 1.5 1.5 2.5 2 3.5.5-1 1.5-2 2-3.5"/></svg>
-          18 DAY STREAK
+          <span id="badgeStreakText">— DAY STREAK</span>
         </span>
       </div>
     </div>
@@ -62,49 +62,20 @@
     <div class="home-wrap">
 
       <!-- Greeting -->
-      <div class="home-greeting">Morning, Ananya.</div>
-      <div class="home-greeting-sub">3 topics need attention before tonight. Let's lock them in.</div>
+      <div class="home-greeting" id="homeGreeting">Welcome back.</div>
+      <div class="home-greeting-sub" id="homeGreetingSub">Loading your recall data&hellip;</div>
 
       <!-- TODAY'S RECALL card -->
       <div class="home-card">
         <div class="home-card-header">
           <div>
             <div class="home-card-title">TODAY'S RECALL</div>
-            <div class="home-card-subtitle">3 topics are fading before tonight</div>
+            <div class="home-card-subtitle" id="todayRecallSubtitle">Loading&hellip;</div>
           </div>
         </div>
 
-        <!-- Electrochemistry -->
-        <div class="topic-row">
-          <div class="topic-info">
-            <div class="topic-name">Electrochemistry</div>
-            <span class="topic-subject chemistry">Chemistry</span>
-          </div>
-          <div class="topic-retention">62%</div>
-          <div class="risk-bar"><div class="risk-bar-fill med" style="width:62%"></div></div>
-          <span class="risk-badge high">HIGH</span>
-        </div>
-
-        <!-- Human Reproduction -->
-        <div class="topic-row">
-          <div class="topic-info">
-            <div class="topic-name">Human Reproduction</div>
-            <span class="topic-subject biology">Biology</span>
-          </div>
-          <div class="topic-retention">41%</div>
-          <div class="risk-bar"><div class="risk-bar-fill high" style="width:41%"></div></div>
-          <span class="risk-badge high">HIGH</span>
-        </div>
-
-        <!-- Rotational Motion -->
-        <div class="topic-row">
-          <div class="topic-info">
-            <div class="topic-name">Rotational Motion</div>
-            <span class="topic-subject physics">Physics</span>
-          </div>
-          <div class="topic-retention faded">&mdash;</div>
-          <div class="risk-bar"><div class="risk-bar-fill high" style="width:15%"></div></div>
-          <span class="risk-badge med">MED</span>
+        <div id="todayRecallRows">
+          <div style="font-size:0.78rem;color:var(--muted);padding:0.5rem 0;">Loading&hellip;</div>
         </div>
       </div>
 
@@ -171,24 +142,45 @@
         <div class="home-card-header">
           <div>
             <div class="home-card-title">REVIEW QUEUE</div>
-            <div class="home-card-subtitle">Topics due for revision</div>
+            <div class="home-card-subtitle" id="reviewQueueSubtitle">Topics due for revision</div>
           </div>
         </div>
 
-        <div class="rq-item">
-          <div class="rq-info">
-            <div class="rq-name">Electrochemistry</div>
-            <span class="topic-subject chemistry">Chemistry</span>
-          </div>
-          <span class="risk-badge high">HIGH</span>
+        <div id="reviewQueueRows">
+          <div style="font-size:0.78rem;color:var(--muted);padding:0.5rem 0;">Loading&hellip;</div>
         </div>
+      </div>
 
-        <div class="rq-item">
-          <div class="rq-info">
-            <div class="rq-name">Human Reproduction</div>
-            <span class="topic-subject biology">Biology</span>
+      <!-- THIS WEEK -->
+      <div class="home-card">
+        <div class="home-card-header">
+          <div>
+            <div class="home-card-title">THIS WEEK</div>
+            <div class="home-card-subtitle">Focused time &amp; reviews cleared</div>
           </div>
-          <span class="risk-badge high">HIGH</span>
+        </div>
+        <div style="display:flex;gap:2rem;flex-wrap:wrap;padding:0.5rem 0 0.25rem;">
+          <div>
+            <div id="weekFocusedTime" style="font-size:1.5rem;font-weight:700;color:var(--text);">&mdash;</div>
+            <div style="font-size:0.7rem;letter-spacing:0.05em;color:var(--muted);text-transform:uppercase;">Focused time</div>
+          </div>
+          <div>
+            <div id="weekReviewsDone" style="font-size:1.5rem;font-weight:700;color:var(--text);">&mdash;</div>
+            <div style="font-size:0.7rem;letter-spacing:0.05em;color:var(--muted);text-transform:uppercase;">Reviews completed</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE NOW -->
+      <div class="home-card" id="liveNowCard" style="display:none;">
+        <div class="home-card-header">
+          <div>
+            <div class="home-card-title">LIVE NOW</div>
+            <div class="home-card-subtitle" id="liveNowSubtitle">&nbsp;</div>
+          </div>
+        </div>
+        <div style="padding:0.25rem 0 0.5rem;">
+          <button class="qa-btn" onclick="go('groups.html')"><span class="live-dot"></span>Join room</button>
         </div>
       </div>
 
@@ -208,8 +200,160 @@
 </nav>
 
 <script src="shared.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 function go(url){window.location.href=url;}
+
+const sb = window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL, REVM2_CONFIG.SUPABASE_ANON);
+let myUserId;
+
+/* ── Ebbinghaus-style topic strength ────────────────────────────────
+   Same model as the Recall Curve page (tracker.html): 100% baseline
+   at time of study, split equally across the 5min/12h/Day1...Day30
+   spaced-repetition intervals as each is checked off. Any interval
+   whose due date has passed decays the strength exponentially
+   (tau≈6 days) until it's actually reviewed. Approximation for
+   motivation/prioritization, not a clinical memory measurement. */
+function computeTopicStrength(row, asOf){
+  if(!row.topic) return null;
+  const rd=new Date(row.date+'T00:00:00');
+  if(rd>asOf) return null;
+  const doneCount=INTERVALS.filter(iv=>row[iv.key]).length;
+  const baseline=doneCount/INTERVALS.length*100;
+  if(doneCount>=INTERVALS.length) return {strength:100,overdueDays:0,topic:row.topic,subject:row.subject};
+  const nextIv=INTERVALS[doneCount];
+  const nextDue=new Date(rd.getTime()+nextIv.days*86400000);
+  const overdueDays=Math.max(0,(asOf-nextDue)/86400000);
+  const strength=overdueDays>0?baseline*Math.exp(-overdueDays/6):baseline;
+  return {strength,overdueDays,topic:row.topic,subject:row.subject};
+}
+
+function riskLevel(strength){
+  return strength<50?'high':strength<75?'med':'low';
+}
+
+const SUBJECT_CLASS = {Physics:'physics',Chemistry:'chemistry',Biology:'biology',Maths:'physics',Mathematics:'physics'};
+
+function topicRowHtml(t){
+  const cls = SUBJECT_CLASS[t.subject]||'physics';
+  const pct = Math.round(t.strength);
+  const risk = riskLevel(t.strength);
+  return `<div class="topic-row">
+    <div class="topic-info">
+      <div class="topic-name">${escHtml(t.topic)}</div>
+      <span class="topic-subject ${cls}">${escHtml(t.subject||'General')}</span>
+    </div>
+    <div class="topic-retention">${pct}%</div>
+    <div class="risk-bar"><div class="risk-bar-fill ${risk}" style="width:${pct}%"></div></div>
+    <span class="risk-badge ${risk}">${risk.toUpperCase()}</span>
+  </div>`;
+}
+
+function rqRowHtml(t){
+  const cls = SUBJECT_CLASS[t.subject]||'physics';
+  const risk = riskLevel(t.strength);
+  return `<div class="rq-item">
+    <div class="rq-info">
+      <div class="rq-name">${escHtml(t.topic)}</div>
+      <span class="topic-subject ${cls}">${escHtml(t.subject||'General')}</span>
+    </div>
+    <span class="risk-badge ${risk}">${risk.toUpperCase()}</span>
+  </div>`;
+}
+
+async function initHome(){
+  const session = await requireAuth();
+  if(!session) return;
+  myUserId = session.user.id;
+
+  const { data: profile, error } = await sb.from('user_profiles')
+    .select('full_name,display_name,tracker_data,current_streak,total_reviews_done,track,exam')
+    .eq('id', myUserId).single();
+  if(error || !profile){ console.error('RM2 home: could not load profile', error); return; }
+
+  // Greeting
+  const rawName = profile.display_name || profile.full_name || '';
+  const firstName = rawName.split(' ')[0] || 'there';
+  const hour = new Date().getHours();
+  const greetWord = hour<12?'Morning':hour<17?'Afternoon':'Evening';
+  document.getElementById('homeGreeting').textContent = `${greetWord}, ${firstName}.`;
+
+  // Topbar
+  document.getElementById('badgeTrack').textContent = profile.track || 'Custom Track';
+  document.getElementById('badgeStreakText').textContent = `${profile.current_streak||0} DAY STREAK`;
+  const now=new Date();
+  document.getElementById('topbarSub').textContent = now.toLocaleDateString('en-IN',{weekday:'short'}) + ' · ' + now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+
+  // Topic strengths from real tracker_data (Ebbinghaus rows)
+  const rows = profile.tracker_data || [];
+  const results = rows.map(r=>computeTopicStrength(r, now)).filter(Boolean);
+  results.sort((a,b)=>a.strength-b.strength);
+
+  const atRisk = results.slice(0,3);
+  const recallRowsEl = document.getElementById('todayRecallRows');
+  if(atRisk.length){
+    recallRowsEl.innerHTML = atRisk.map(topicRowHtml).join('');
+    document.getElementById('homeGreetingSub').textContent =
+      `${atRisk.length} topic${atRisk.length===1?'':'s'} need attention before tonight. Let's lock ${atRisk.length===1?'it':'them'} in.`;
+    document.getElementById('todayRecallSubtitle').textContent =
+      `${atRisk.length} topic${atRisk.length===1?'':'s'} are fading right now`;
+  } else if(rows.length){
+    recallRowsEl.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);padding:0.5rem 0;">Everything is holding steady — nothing urgent right now.</div>';
+    document.getElementById('homeGreetingSub').textContent = 'Your recall is holding steady. Nice work.';
+    document.getElementById('todayRecallSubtitle').textContent = 'Nothing at risk right now';
+  } else {
+    recallRowsEl.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);padding:0.5rem 0;">No topics added yet — add some on the Recall Curve page to start tracking.</div>';
+    document.getElementById('homeGreetingSub').textContent = "Let's add your first topic to start tracking recall.";
+    document.getElementById('todayRecallSubtitle').textContent = 'No topics tracked yet';
+  }
+
+  const dueForReview = results.filter(t=>t.strength<70).slice(0,5);
+  const rqEl = document.getElementById('reviewQueueRows');
+  if(dueForReview.length){
+    rqEl.innerHTML = dueForReview.map(rqRowHtml).join('');
+    document.getElementById('reviewQueueSubtitle').textContent = `${dueForReview.length} topic${dueForReview.length===1?'':'s'} due for revision`;
+  } else {
+    rqEl.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);padding:0.5rem 0;">Nothing due for revision right now.</div>';
+    document.getElementById('reviewQueueSubtitle').textContent = 'All caught up';
+  }
+
+  // This week — real focused time from daily_study_totals, all-time
+  // reviews-cleared counter from the profile (we don't have a
+  // per-review timestamp to compute a true weekly count from).
+  try{
+    const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate()-6);
+    const weekAgoStr = weekAgo.toISOString().split('T')[0];
+    const { data: daily } = await sb.from('daily_study_totals')
+      .select('seconds').eq('user_id', myUserId).gte('study_date', weekAgoStr);
+    const weekSecs = (daily||[]).reduce((a,r)=>a+(r.seconds||0),0);
+    document.getElementById('weekFocusedTime').textContent = fmtTime(weekSecs);
+  }catch(e){ console.warn('RM2 home: week totals unavailable', e); document.getElementById('weekFocusedTime').textContent='—'; }
+  document.getElementById('weekReviewsDone').textContent = (profile.total_reviews_done||0).toLocaleString('en-IN');
+
+  // Live now — best-effort: is there an active (unended) session
+  // right now in any study group the user belongs to?
+  try{
+    const { data: memberships } = await sb.from('group_members').select('group_id').eq('user_id', myUserId);
+    const groupIds = (memberships||[]).map(m=>m.group_id);
+    if(groupIds.length){
+      const { data: live } = await sb.from('study_sessions')
+        .select('group_id').in('group_id', groupIds).is('ended_at', null).eq('is_private', false);
+      if(live && live.length){
+        const counts = {};
+        live.forEach(s=>{ counts[s.group_id]=(counts[s.group_id]||0)+1; });
+        const topGroupId = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
+        const { data: group } = await sb.from('study_groups').select('name').eq('id', topGroupId).single();
+        if(group){
+          document.getElementById('liveNowSubtitle').textContent =
+            `${group.name} · ${counts[topGroupId]} studying right now`;
+          document.getElementById('liveNowCard').style.display='';
+        }
+      }
+    }
+  }catch(e){ console.warn('RM2 home: live-now check unavailable', e); }
+}
+
+initHome();
 </script>
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
 </body>
