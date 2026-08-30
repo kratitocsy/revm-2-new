@@ -306,3 +306,63 @@
     display: none;
   }
 }
+
+/* ── Log-today quick add + inline "mark reviewed" actions ────────── */
+.home-log-card { margin-bottom: 1.25rem; }
+.home-log-form {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding-top: 0.4rem;
+}
+.home-log-form select,
+.home-log-form input[type="text"] {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  font-family: inherit;
+}
+.home-log-form select { min-width: 8rem; }
+.home-log-form input[type="text"] { flex: 1; min-width: 10rem; }
+.home-log-form button {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--violet-border);
+  background: var(--violet);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.home-log-form button:hover { background: var(--violet-bright); }
+.home-log-form button:disabled { opacity: 0.5; cursor: default; }
+.home-log-note { font-size: 0.72rem; color: var(--muted); margin-top: 0.4rem; }
+
+.topic-next-due, .rq-next-due {
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.mark-reviewed-btn {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 4px 9px;
+  border-radius: 5px;
+  border: 1px solid var(--cyan-border);
+  background: var(--cyan-dim);
+  color: var(--cyan-bright);
+  cursor: pointer;
+  white-space: nowrap;
+  margin-left: 0.5rem;
+  transition: background 0.2s, color 0.2s;
+}
+.mark-reviewed-btn:hover { background: var(--cyan); color: #06131a; }
+.topic-row, .rq-item { flex-wrap: wrap; }

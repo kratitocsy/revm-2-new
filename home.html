@@ -65,6 +65,22 @@
       <div class="home-greeting" id="homeGreeting">Welcome back.</div>
       <div class="home-greeting-sub" id="homeGreetingSub">Loading your recall data&hellip;</div>
 
+      <!-- LOG WHAT YOU STUDIED TODAY -->
+      <div class="home-card home-log-card">
+        <div class="home-card-header">
+          <div>
+            <div class="home-card-title">WHAT DID YOU STUDY TODAY?</div>
+            <div class="home-card-subtitle">Add it once — we'll remind you exactly when to revise it</div>
+          </div>
+        </div>
+        <form class="home-log-form" id="logTodayForm">
+          <select id="logSubject"></select>
+          <input type="text" id="logTopic" placeholder="Topic (e.g. Rotational Motion)" maxlength="80" required>
+          <button type="submit" id="logSubmitBtn">Add</button>
+        </form>
+        <div class="home-log-note">First review reminder: 5 minutes from now. Then 12h, Day 1, 2, 4, 7, 15, 30 — same schedule as your Recall Curve page.</div>
+      </div>
+
       <!-- TODAY'S RECALL card -->
       <div class="home-card">
         <div class="home-card-header">
@@ -206,6 +222,8 @@ function go(url){window.location.href=url;}
 
 const sb = window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL, REVM2_CONFIG.SUPABASE_ANON);
 let myUserId;
+let rows = [];   // tracker_data — same array/schema tracker.html reads and writes
+let slog = {};   // study_log — kept as-is and passed through on every save so we never wipe it
 
 /* ── Ebbinghaus-style topic strength ────────────────────────────────
    Same model as the Recall Curve page (tracker.html): 100% baseline
@@ -213,19 +231,21 @@ let myUserId;
    spaced-repetition intervals as each is checked off. Any interval
    whose due date has passed decays the strength exponentially
    (tau≈6 days) until it's actually reviewed. Approximation for
-   motivation/prioritization, not a clinical memory measurement. */
-function computeTopicStrength(row, asOf){
+   motivation/prioritization, not a clinical memory measurement.
+   Unchanged from tracker.html — only the presentation on this page
+   is different, the maths behind "what's due and when" is identical. */
+function computeTopicStrength(row, rowIndex, asOf){
   if(!row.topic) return null;
   const rd=new Date(row.date+'T00:00:00');
   if(rd>asOf) return null;
   const doneCount=INTERVALS.filter(iv=>row[iv.key]).length;
   const baseline=doneCount/INTERVALS.length*100;
-  if(doneCount>=INTERVALS.length) return {strength:100,overdueDays:0,topic:row.topic,subject:row.subject};
+  if(doneCount>=INTERVALS.length) return {strength:100,overdueDays:0,topic:row.topic,subject:row.subject,rowIndex,done:true};
   const nextIv=INTERVALS[doneCount];
   const nextDue=new Date(rd.getTime()+nextIv.days*86400000);
   const overdueDays=Math.max(0,(asOf-nextDue)/86400000);
   const strength=overdueDays>0?baseline*Math.exp(-overdueDays/6):baseline;
-  return {strength,overdueDays,topic:row.topic,subject:row.subject};
+  return {strength,overdueDays,topic:row.topic,subject:row.subject,rowIndex,done:false,nextIv,nextDue};
 }
 
 function riskLevel(strength){
@@ -233,6 +253,20 @@ function riskLevel(strength){
 }
 
 const SUBJECT_CLASS = {Physics:'physics',Chemistry:'chemistry',Biology:'biology',Maths:'physics',Mathematics:'physics'};
+
+function nextDueLabel(t){
+  if(t.done) return 'Fully reviewed';
+  const isOverdue = t.nextDue <= new Date();
+  const when = t.nextDue.toLocaleDateString('en-IN',{day:'numeric',month:'short'}) +
+    (t.nextDue.getHours()||t.nextDue.getMinutes() ? ', '+t.nextDue.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '');
+  return isOverdue ? `${t.nextIv.label} review — due now` : `Next: ${t.nextIv.label} review · ${when}`;
+}
+
+function markReviewedBtn(t){
+  if(t.done) return '';
+  const canMark = t.nextDue <= new Date();
+  return `<button class="mark-reviewed-btn" data-row-index="${t.rowIndex}" ${canMark?'':'disabled title="Not due yet"'}>${canMark?'Mark reviewed':'Not due yet'}</button>`;
+}
 
 function topicRowHtml(t){
   const cls = SUBJECT_CLASS[t.subject]||'physics';
@@ -242,10 +276,12 @@ function topicRowHtml(t){
     <div class="topic-info">
       <div class="topic-name">${escHtml(t.topic)}</div>
       <span class="topic-subject ${cls}">${escHtml(t.subject||'General')}</span>
+      <div class="topic-next-due">${escHtml(nextDueLabel(t))}</div>
     </div>
     <div class="topic-retention">${pct}%</div>
     <div class="risk-bar"><div class="risk-bar-fill ${risk}" style="width:${pct}%"></div></div>
     <span class="risk-badge ${risk}">${risk.toUpperCase()}</span>
+    ${markReviewedBtn(t)}
   </div>`;
 }
 
@@ -256,9 +292,105 @@ function rqRowHtml(t){
     <div class="rq-info">
       <div class="rq-name">${escHtml(t.topic)}</div>
       <span class="topic-subject ${cls}">${escHtml(t.subject||'General')}</span>
+      <div class="rq-next-due">${escHtml(nextDueLabel(t))}</div>
     </div>
     <span class="risk-badge ${risk}">${risk.toUpperCase()}</span>
+    ${markReviewedBtn(t)}
   </div>`;
+}
+
+/* Marks the next due interval complete for a tracker_data row and
+   saves via the same debounced sync tracker.html uses — so the
+   Recall Curve page picks up exactly what you check off here. */
+async function markReviewed(rowIndex){
+  const row = rows[rowIndex];
+  if(!row) return;
+  const doneCount = INTERVALS.filter(iv=>row[iv.key]).length;
+  if(doneCount>=INTERVALS.length) return;
+  row[INTERVALS[doneCount].key] = true;
+  syncTrackerToSupabase(rows, slog);
+  await renderHomeFromState();
+}
+
+/* Adds a new topic studied today — same tracker_data shape
+   tracker.html builds, so it slots straight into the same Recall
+   Curve and schedule. */
+async function addTopicToday(subject, topic){
+  const todayStr = new Date().toISOString().split('T')[0];
+  const newRow = { date: todayStr, topic, subject };
+  INTERVALS.forEach(iv=>{ newRow[iv.key] = false; });
+  rows.push(newRow);
+  syncTrackerToSupabase(rows, slog);
+  await renderHomeFromState();
+}
+
+let cachedProfile = null;
+
+/* Re-renders greeting/recall/review-queue from current in-memory
+   `rows`, without re-fetching from Supabase — used right after a
+   local edit (add topic / mark reviewed) so the UI updates instantly
+   while the debounced sync writes it to Supabase in the background. */
+async function renderHomeFromState(){
+  const now = new Date();
+  const results = rows.map((r,i)=>computeTopicStrength(r, i, now)).filter(Boolean);
+  results.sort((a,b)=>a.strength-b.strength);
+
+  const atRisk = results.filter(t=>!t.done).slice(0,3);
+  const recallRowsEl = document.getElementById('todayRecallRows');
+  if(atRisk.length){
+    recallRowsEl.innerHTML = atRisk.map(topicRowHtml).join('');
+    document.getElementById('homeGreetingSub').textContent =
+      `${atRisk.length} topic${atRisk.length===1?'':'s'} need attention before tonight. Let's lock ${atRisk.length===1?'it':'them'} in.`;
+    document.getElementById('todayRecallSubtitle').textContent =
+      `${atRisk.length} topic${atRisk.length===1?'':'s'} are fading right now`;
+  } else if(rows.length){
+    recallRowsEl.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);padding:0.5rem 0;">Everything is holding steady — nothing urgent right now.</div>';
+    document.getElementById('homeGreetingSub').textContent = 'Your recall is holding steady. Nice work.';
+    document.getElementById('todayRecallSubtitle').textContent = 'Nothing at risk right now';
+  } else {
+    recallRowsEl.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);padding:0.5rem 0;">Nothing logged yet — use \'What did you study today?\' above to start tracking.</div>';
+    document.getElementById('homeGreetingSub').textContent = "Let's log what you studied today to start tracking recall.";
+    document.getElementById('todayRecallSubtitle').textContent = 'No topics tracked yet';
+  }
+
+  const dueForReview = results.filter(t=>!t.done && t.strength<70).slice(0,5);
+  const rqEl = document.getElementById('reviewQueueRows');
+  if(dueForReview.length){
+    rqEl.innerHTML = dueForReview.map(rqRowHtml).join('');
+    document.getElementById('reviewQueueSubtitle').textContent = `${dueForReview.length} topic${dueForReview.length===1?'':'s'} due for revision`;
+  } else {
+    rqEl.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);padding:0.5rem 0;">Nothing due for revision right now.</div>';
+    document.getElementById('reviewQueueSubtitle').textContent = 'All caught up';
+  }
+
+  const totalDone = rows.reduce((sum,r)=>sum+INTERVALS.filter(iv=>r[iv.key]).length,0);
+  document.getElementById('weekReviewsDone').textContent = totalDone.toLocaleString('en-IN');
+}
+
+function wireInteractions(){
+  document.getElementById('logTodayForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const subjectEl = document.getElementById('logSubject');
+    const topicEl = document.getElementById('logTopic');
+    const subject = subjectEl.value || 'General';
+    const topic = topicEl.value.trim();
+    if(!topic) return;
+    const btn = document.getElementById('logSubmitBtn');
+    btn.disabled = true;
+    await addTopicToday(subject, topic);
+    topicEl.value = '';
+    btn.disabled = false;
+  });
+
+  // Delegated click handler — rows are re-rendered often, so a single
+  // listener on the containers is simpler than rebinding every time.
+  ['todayRecallRows','reviewQueueRows'].forEach(id=>{
+    document.getElementById(id).addEventListener('click', (e)=>{
+      const btn = e.target.closest('.mark-reviewed-btn');
+      if(!btn || btn.disabled) return;
+      markReviewed(Number(btn.dataset.rowIndex));
+    });
+  });
 }
 
 async function initHome(){
@@ -267,9 +399,19 @@ async function initHome(){
   myUserId = session.user.id;
 
   const { data: profile, error } = await sb.from('user_profiles')
-    .select('full_name,display_name,tracker_data,current_streak,total_reviews_done,track,exam')
+    .select('full_name,display_name,tracker_data,study_log,subjects,current_streak,total_reviews_done,track,exam')
     .eq('id', myUserId).single();
   if(error || !profile){ console.error('RM2 home: could not load profile', error); return; }
+  cachedProfile = profile;
+  rows = profile.tracker_data || [];
+  slog = profile.study_log || {};
+
+  // Subject dropdown for the "what did you study today" form
+  const subjectSel = document.getElementById('logSubject');
+  const subjects = (profile.subjects && profile.subjects.length) ? profile.subjects : ['Physics','Chemistry','Biology','General'];
+  subjectSel.innerHTML = subjects.map(s=>`<option value="${escAttr(s)}">${escHtml(s)}</option>`).join('');
+
+  wireInteractions();
 
   // Greeting
   const rawName = profile.display_name || profile.full_name || '';
@@ -284,42 +426,11 @@ async function initHome(){
   const now=new Date();
   document.getElementById('topbarSub').textContent = now.toLocaleDateString('en-IN',{weekday:'short'}) + ' · ' + now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
 
-  // Topic strengths from real tracker_data (Ebbinghaus rows)
-  const rows = profile.tracker_data || [];
-  const results = rows.map(r=>computeTopicStrength(r, now)).filter(Boolean);
-  results.sort((a,b)=>a.strength-b.strength);
+  await renderHomeFromState();
 
-  const atRisk = results.slice(0,3);
-  const recallRowsEl = document.getElementById('todayRecallRows');
-  if(atRisk.length){
-    recallRowsEl.innerHTML = atRisk.map(topicRowHtml).join('');
-    document.getElementById('homeGreetingSub').textContent =
-      `${atRisk.length} topic${atRisk.length===1?'':'s'} need attention before tonight. Let's lock ${atRisk.length===1?'it':'them'} in.`;
-    document.getElementById('todayRecallSubtitle').textContent =
-      `${atRisk.length} topic${atRisk.length===1?'':'s'} are fading right now`;
-  } else if(rows.length){
-    recallRowsEl.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);padding:0.5rem 0;">Everything is holding steady — nothing urgent right now.</div>';
-    document.getElementById('homeGreetingSub').textContent = 'Your recall is holding steady. Nice work.';
-    document.getElementById('todayRecallSubtitle').textContent = 'Nothing at risk right now';
-  } else {
-    recallRowsEl.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);padding:0.5rem 0;">No topics added yet — add some on the Recall Curve page to start tracking.</div>';
-    document.getElementById('homeGreetingSub').textContent = "Let's add your first topic to start tracking recall.";
-    document.getElementById('todayRecallSubtitle').textContent = 'No topics tracked yet';
-  }
-
-  const dueForReview = results.filter(t=>t.strength<70).slice(0,5);
-  const rqEl = document.getElementById('reviewQueueRows');
-  if(dueForReview.length){
-    rqEl.innerHTML = dueForReview.map(rqRowHtml).join('');
-    document.getElementById('reviewQueueSubtitle').textContent = `${dueForReview.length} topic${dueForReview.length===1?'':'s'} due for revision`;
-  } else {
-    rqEl.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);padding:0.5rem 0;">Nothing due for revision right now.</div>';
-    document.getElementById('reviewQueueSubtitle').textContent = 'All caught up';
-  }
-
-  // This week — real focused time from daily_study_totals, all-time
-  // reviews-cleared counter from the profile (we don't have a
-  // per-review timestamp to compute a true weekly count from).
+  // This week — real focused time from daily_study_totals.
+  // (Reviews-cleared count is set inside renderHomeFromState from
+  // the live rows array, so it updates instantly on Mark Reviewed.)
   try{
     const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate()-6);
     const weekAgoStr = weekAgo.toISOString().split('T')[0];
@@ -328,7 +439,6 @@ async function initHome(){
     const weekSecs = (daily||[]).reduce((a,r)=>a+(r.seconds||0),0);
     document.getElementById('weekFocusedTime').textContent = fmtTime(weekSecs);
   }catch(e){ console.warn('RM2 home: week totals unavailable', e); document.getElementById('weekFocusedTime').textContent='—'; }
-  document.getElementById('weekReviewsDone').textContent = (profile.total_reviews_done||0).toLocaleString('en-IN');
 
   // Live now — best-effort: is there an active (unended) session
   // right now in any study group the user belongs to?
