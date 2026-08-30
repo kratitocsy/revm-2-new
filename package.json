@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "build:shared": "vite build --config vite.shared.config.js",
-    "dev:shared": "vite build --config vite.shared.config.js --watch"
+    "dev:shared": "vite build --config vite.shared.config.js --watch",
+    "build:sidebars": "node scripts/build-sidebars.js"
   },
   "devDependencies": {
     "vite": "^5.4.0"
