@@ -89,6 +89,68 @@ same position in `<head>` — so cascade order is unchanged. This part needed
 no build step (CSS has no load-order/global-scope hazards the way the JS
 did), so it's a plain 1:1 move, already live in every page.
 
+## components/ — deduplicated, page-agnostic markup
+
+The main app sidebar (`<aside class="sidebar">`) was byte-for-byte
+duplicated across 10 pages — home, tracker, timer, battle, groups,
+chat, partners, store, revhead, blocks (blocks differs only by
+omitting the sign-out button; groups/partners/store differ only by
+omitting the footer entirely). `pledge.html` has a **genuinely
+different** sidebar (different nav items, emoji icons, an "Invite
+friends" entry) and is deliberately left untouched — it is not a
+duplicate of the standard one.
+
+`src/components/Sidebar.js` is now the single source of truth for
+the standard sidebar's markup (data-driven nav item list). It is
+stamped into each page at build time by `scripts/build-sidebars.js`
+— same philosophy as `shared.js`: the served `.html` stays plain
+static markup (no client-side injection, no flash-of-missing-sidebar),
+it's just generated instead of hand-copied.
+
+**Don't hand-edit the sidebar block in any of those 10 `.html` files.**
+Edit `src/components/Sidebar.js`, then run:
+```
+npm run build:sidebars
+```
+and commit both. (Verified: rebuilding with zero config changes
+reproduces every page's sidebar as byte-identical markup, whitespace
+aside.)
+
+Also in `src/components/`, not yet wired into any live page (each
+documents the pattern it replaces and is ready to adopt page-by-page):
+- `Modal.js` — generic open/close/backdrop-click, extracted from the
+  shape `src/lib/core/exam-switcher.js` and home.html's `logModeModal`
+  both hand-roll separately.
+- `Button.js` — the `.btn-spinner` show/hide/disable/relabel dance
+  that `login.html` (and others) do by hand on every button.
+- `Header.js` — the public/marketing top nav (landing, film,
+  product-tour) — parameterized, not consolidated 1:1 like Sidebar,
+  since each marketing page's links genuinely differ.
+
+## features/ — feature-owned logic, pulled out of the generic lib/
+
+`src/lib/core/auth.js` → `src/features/auth/auth.js` and
+`src/lib/core/tracker-sync.js` → `src/features/tracker/tracker-sync.js`:
+these are feature-specific (sign-out/session handling; Ebbinghaus
+tracker sync), unlike the truly generic utilities that stayed in
+`src/lib/core/` (`config.js`, `store.js`, `format.js`, `nav.js`,
+`analytics.js`, `exam-switcher.js`). Moved, re-pointed their internal
+imports, and rebuilt `shared.js` — **byte-identical output**, confirming
+the move changed nothing at runtime.
+
+**Not yet moved into `features/`** (would need their own pass):
+- `groups.page.js` (`src/pages/`) → would become `features/groups/`,
+  but per the note below it's a tangled single controller, not
+  cleanly separable yet.
+- `materials.js` / `materials-viewer.js` (repo root) → would become
+  `features/materials/`, but they're loaded via `<script src="materials.js">`
+  directly from `groups.html`, so the move needs that reference updated
+  too — skipped here to keep this pass's diff minimal and verifiable.
+- `focus-lock` — there is no extracted focus-lock module yet; that
+  logic is still inline in `blocks.html`/`timer.html`/`admin.html`.
+  See "What's still monolithic" below — extract those first, then a
+  `features/focus-lock/` becomes possible.
+
 ## groups.html — extracted, not yet split further
 
 `groups.html`'s 3,056-line inline `<script>` block is now
