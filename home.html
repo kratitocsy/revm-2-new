@@ -65,6 +65,23 @@
       <div class="home-greeting" id="homeGreeting">Welcome back.</div>
       <div class="home-greeting-sub" id="homeGreetingSub">Loading your recall data&hellip;</div>
 
+      <!-- COMPLETE YOUR PROFILE nudge — shown once the account isn't brand
+           new anymore and onboarding still hasn't been done. Never blocks
+           anything; dismissible per-browser via localStorage, and
+           re-appears the day after dismissal if still not onboarded, so
+           it doesn't get permanently forgotten but also isn't naggy every
+           single visit. -->
+      <div class="home-card" id="completeProfileCard" style="display:none;border:1px solid var(--violet-border,rgba(139,92,246,0.30));">
+        <div class="home-card-header">
+          <div>
+            <div class="home-card-title">SET UP YOUR STUDY PROFILE</div>
+            <div class="home-card-subtitle">Takes under a minute — tell us your exam and subjects so schedules, recall targets, and recommendations actually fit you</div>
+          </div>
+          <button type="button" id="dismissProfileNudge" style="background:none;border:none;color:var(--muted,#6b6b80);cursor:pointer;font-size:1.1rem;line-height:1;padding:0.2rem 0.4rem;" aria-label="Dismiss">&times;</button>
+        </div>
+        <button type="button" class="home-log-form" style="display:block;width:100%;text-align:center;padding:0.7rem;border:none;border-radius:8px;background:var(--accent,#8b5cf6);color:#fff;font-weight:600;cursor:pointer;" onclick="window.location.href='onboarding.html'">Complete setup →</button>
+      </div>
+
       <!-- LOG WHAT YOU STUDIED TODAY -->
       <div class="home-card home-log-card">
         <div class="home-card-header">
@@ -399,7 +416,7 @@ async function initHome(){
   myUserId = session.user.id;
 
   const { data: profile, error } = await sb.from('user_profiles')
-    .select('full_name,display_name,tracker_data,study_log,subjects,current_streak,total_reviews_done,track,exam')
+    .select('full_name,display_name,tracker_data,study_log,subjects,current_streak,total_reviews_done,track,exam,onboarded,created_at,total_study_seconds')
     .eq('id', myUserId).single();
   if(error || !profile){ console.error('RM2 home: could not load profile', error); return; }
   cachedProfile = profile;
@@ -412,6 +429,24 @@ async function initHome(){
   subjectSel.innerHTML = subjects.map(s=>`<option value="${escAttr(s)}">${escHtml(s)}</option>`).join('');
 
   wireInteractions();
+
+  // Suggest completing onboarding once the account isn't brand new
+  // anymore — never blocks anything, and never shows on someone's very
+  // first session. "Not brand new" = signed up over a day ago, or has
+  // already logged real study time (whichever comes first, since a very
+  // active first day shouldn't need the arbitrary 24h wait).
+  if(!profile.onboarded){
+    const accountAgeMs = profile.created_at ? (Date.now() - new Date(profile.created_at).getTime()) : 0;
+    const pastFirstSession = accountAgeMs > 24*60*60*1000 || (profile.total_study_seconds||0) > 0;
+    const dismissedUntil = Number(localStorage.getItem('rm2_profile_nudge_dismissed_until') || 0);
+    if(pastFirstSession && Date.now() > dismissedUntil){
+      document.getElementById('completeProfileCard').style.display = '';
+    }
+  }
+  document.getElementById('dismissProfileNudge').addEventListener('click', ()=>{
+    document.getElementById('completeProfileCard').style.display = 'none';
+    localStorage.setItem('rm2_profile_nudge_dismissed_until', String(Date.now() + 24*60*60*1000));
+  });
 
   // Greeting
   const rawName = profile.display_name || profile.full_name || '';

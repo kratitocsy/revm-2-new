@@ -80,7 +80,7 @@ function next(){ cur<total-1?go(cur+1):done(); }
 async function done(){
   const {data:{session}}=await sb.auth.getSession();
   if(session) await sb.from('user_profiles').upsert({id:session.user.id,explainer_seen:true},{onConflict:'id'});
-  window.location.href='onboarding.html';
+  window.location.href='home.html';
 }
 
 initStarfield();

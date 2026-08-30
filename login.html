@@ -404,7 +404,6 @@ async function redirect(user){
 
   const {data:profile}=await sb.from('user_profiles').select('explainer_seen,onboarded').eq('id',user.id).single();
   if(!profile||!profile.explainer_seen) window.location.href='explainer.html';
-  else if(!profile.onboarded) window.location.href='onboarding.html';
   else window.location.href='home.html';
 }
 
