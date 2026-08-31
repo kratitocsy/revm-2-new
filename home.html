@@ -58,27 +58,52 @@
       </div>
     </div>
 
+    <!-- Mobile-only redesigned header (Figma "Improve WYNKO Mobile Homepage") -->
+    <div class="fm-header">
+      <div class="fm-header-top">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:0.85rem;background:var(--fm-grad);">W</div>
+          <span style="font-size:0.85rem;font-weight:900;letter-spacing:0.08em;background:var(--fm-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">WYNKO</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="fm-pill-track" id="fmPillTrack">Loading…</span>
+          <span class="fm-pill-streak">🔥 <span id="fmPillStreakText">— DAY STREAK</span></span>
+        </div>
+      </div>
+      <div class="home-greeting" id="fmGreeting" style="font-size:1.15rem;">Welcome back.</div>
+      <div class="home-greeting-sub" id="fmGreetingSub">Loading your recall data&hellip;</div>
+    </div>
+
     <!-- ═══ HOME DASHBOARD ═══ -->
     <div class="home-wrap">
 
-      <!-- Greeting -->
+      <!-- Greeting (desktop) -->
       <div class="home-greeting" id="homeGreeting">Welcome back.</div>
       <div class="home-greeting-sub" id="homeGreetingSub">Loading your recall data&hellip;</div>
 
       <!-- LOG WHAT YOU STUDIED TODAY -->
-      <div class="home-card home-log-card">
-        <div class="home-card-header">
-          <div>
-            <div class="home-card-title">WHAT DID YOU STUDY TODAY?</div>
-            <div class="home-card-subtitle">Add it once — we'll remind you exactly when to revise it</div>
+      <div class="fm-add-card">
+        <p class="fm-add-title">What did you study today?</p>
+        <p class="fm-add-sub">Add it once — we'll remind you exactly when to revise it</p>
+        <form id="logTodayForm">
+          <div class="fm-add-row">
+            <select id="logSubject"></select>
+            <input type="text" id="logTopic" placeholder="Topic (e.g. Rotational Motion)" maxlength="80" required>
           </div>
-        </div>
-        <form class="home-log-form" id="logTodayForm">
-          <select id="logSubject"></select>
-          <input type="text" id="logTopic" placeholder="Topic (e.g. Rotational Motion)" maxlength="80" required>
-          <button type="submit" id="logSubmitBtn">Add</button>
+          <div id="customSubjectBox" class="fm-custom-box" style="display:none;">
+            <p class="fm-custom-box-label">New subject</p>
+            <div class="fm-custom-box-row">
+              <input type="text" id="customSubjectInput" placeholder="e.g. Sanskrit, Data Science…" maxlength="40">
+              <button type="button" class="fm-btn-grad" id="customSubjectConfirm">Add</button>
+              <button type="button" class="fm-btn-ghost-x" id="customSubjectCancel">✕</button>
+            </div>
+            <p id="customSubjectError" style="font-size:0.66rem;color:#ef4444;margin-top:6px;display:none;"></p>
+          </div>
+          <div class="fm-add-footer-row">
+            <button type="submit" id="logSubmitBtn" class="fm-add-btn">+ Add</button>
+          </div>
         </form>
-        <div class="home-log-note">First review reminder: 5 minutes from now. Then 12h, Day 1, 2, 4, 7, 15, 30 — same schedule as your Recall Curve page.</div>
+        <p class="fm-add-note">First review: 5 min from now · Then 12h, Day 1, 2, 4, 7, 15, 30 — same spaced-repetition schedule as your Recall Curve page.</p>
       </div>
 
       <!-- TODAY'S RECALL card -->
@@ -248,11 +273,47 @@ function computeTopicStrength(row, rowIndex, asOf){
   return {strength,overdueDays,topic:row.topic,subject:row.subject,rowIndex,done:false,nextIv,nextDue};
 }
 
-function riskLevel(strength){
-  return strength<50?'high':strength<75?'med':'low';
+/* Ported from the Figma "Improve WYNKO Mobile Homepage" prototype's
+   SUBJECT_COLORS / PRIORITY_STYLES / STATUS_STYLES + retentionColor(). */
+const SUBJECT_COLORS = {
+  Physics:{bg:'rgba(59,130,246,0.18)',text:'#60a5fa'},
+  Chemistry:{bg:'rgba(16,185,129,0.18)',text:'#34d399'},
+  Biology:{bg:'rgba(245,158,11,0.18)',text:'#f59e0b'},
+  Maths:{bg:'rgba(167,139,250,0.18)',text:'#a78bfa'},
+  Mathematics:{bg:'rgba(167,139,250,0.18)',text:'#a78bfa'},
+  General:{bg:'rgba(124,58,237,0.18)',text:'#a78bfa'},
+};
+const CUSTOM_PALETTE = [
+  {bg:'rgba(139,92,246,0.18)',text:'#8b5cf6'},{bg:'rgba(236,72,153,0.18)',text:'#ec4899'},
+  {bg:'rgba(99,102,241,0.18)',text:'#6366f1'},{bg:'rgba(20,184,166,0.18)',text:'#14b8a6'},
+  {bg:'rgba(234,179,8,0.18)',text:'#eab308'},{bg:'rgba(239,68,68,0.18)',text:'#ef4444'},
+  {bg:'rgba(217,70,239,0.18)',text:'#d946ef'},{bg:'rgba(251,146,60,0.18)',text:'#fb923c'},
+];
+function subjectColor(subject){
+  if(SUBJECT_COLORS[subject]) return SUBJECT_COLORS[subject];
+  // Deterministic hash so a custom subject always gets the same color,
+  // even across reloads, instead of depending on creation order.
+  let hash=0; for(let i=0;i<subject.length;i++) hash=(hash*31+subject.charCodeAt(i))>>>0;
+  return CUSTOM_PALETTE[hash % CUSTOM_PALETTE.length];
 }
-
-const SUBJECT_CLASS = {Physics:'physics',Chemistry:'chemistry',Biology:'biology',Maths:'physics',Mathematics:'physics'};
+function retentionColor(pct){ return pct>=70?'#34d399':pct>=40?'#f59e0b':'#ef4444'; }
+function priorityFromStrength(strength){ return strength<40?'HIGH':strength<70?'MEDIUM':'LOW'; }
+const PRIORITY_STYLES = {
+  HIGH:{bg:'rgba(239,68,68,0.22)',text:'#ef4444'},
+  MEDIUM:{bg:'rgba(245,158,11,0.22)',text:'#f59e0b'},
+  LOW:{bg:'rgba(16,185,129,0.22)',text:'#34d399'},
+};
+const STATUS_STYLES = {
+  'NOT DUE YET':{bg:'transparent',text:'#0d9488',border:'rgba(13,148,136,0.5)'},
+  'DUE TODAY':{bg:'rgba(249,115,22,0.15)',text:'#f97316',border:'rgba(249,115,22,0.5)'},
+  'OVERDUE':{bg:'rgba(239,68,68,0.15)',text:'#ef4444',border:'rgba(239,68,68,0.5)'},
+};
+function statusFromTopic(t){
+  if(t.done) return 'NOT DUE YET';
+  if(t.overdueDays>0) return 'OVERDUE';
+  const isToday = t.nextDue.toDateString() === new Date().toDateString();
+  return isToday ? 'DUE TODAY' : 'NOT DUE YET';
+}
 
 function nextDueLabel(t){
   if(t.done) return 'Fully reviewed';
@@ -262,42 +323,50 @@ function nextDueLabel(t){
   return isOverdue ? `${t.nextIv.label} review — due now` : `Next: ${t.nextIv.label} review · ${when}`;
 }
 
+function retentionRingHtml(pct){
+  const r=14, circ=2*Math.PI*r, fill=(pct/100)*circ, color=retentionColor(pct);
+  return `<div class="fm-ring-wrap">
+    <svg width="36" height="36" viewBox="0 0 36 36">
+      <circle cx="18" cy="18" r="${r}" fill="none" stroke="#1a1a35" stroke-width="3"/>
+      <circle cx="18" cy="18" r="${r}" fill="none" stroke="${color}" stroke-width="3"
+        stroke-dasharray="${fill.toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round"
+        transform="rotate(-90 18 18)"/>
+    </svg>
+    <span class="fm-ring-pct" style="color:${color};">${Math.round(pct)}%</span>
+  </div>`;
+}
+
 function markReviewedBtn(t){
   if(t.done) return '';
   const canMark = t.nextDue <= new Date();
-  return `<button class="mark-reviewed-btn" data-row-index="${t.rowIndex}" ${canMark?'':'disabled title="Not due yet"'}>${canMark?'Mark reviewed':'Not due yet'}</button>`;
+  return `<button class="fm-mark-btn" data-row-index="${t.rowIndex}" ${canMark?'':'disabled'} title="${canMark?'Mark as reviewed':'Not due yet'}">
+    <span class="fm-mark-circle"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+    <span class="fm-mark-label">${canMark?'Review':'Wait'}</span>
+  </button>`;
 }
 
 function topicRowHtml(t){
-  const cls = SUBJECT_CLASS[t.subject]||'physics';
-  const pct = Math.round(t.strength);
-  const risk = riskLevel(t.strength);
-  return `<div class="topic-row">
-    <div class="topic-info">
-      <div class="topic-name">${escHtml(t.topic)}</div>
-      <span class="topic-subject ${cls}">${escHtml(t.subject||'General')}</span>
-      <div class="topic-next-due">${escHtml(nextDueLabel(t))}</div>
+  const sc = subjectColor(t.subject||'General');
+  const priority = priorityFromStrength(t.strength);
+  const ps = PRIORITY_STYLES[priority];
+  const status = statusFromTopic(t);
+  const ss = STATUS_STYLES[status];
+  return `<div class="fm-topic-row">
+    ${retentionRingHtml(t.strength)}
+    <div class="fm-topic-info">
+      <div class="fm-topic-name">${escHtml(t.topic)}</div>
+      <div class="fm-topic-badges">
+        <span class="fm-subject-badge" style="background:${sc.bg};color:${sc.text};">${escHtml(t.subject||'General')}</span>
+        <span class="fm-priority-badge" style="background:${ps.bg};color:${ps.text};">${priority}</span>
+        <span class="fm-status-badge" style="background:${ss.bg};color:${ss.text};border-color:${ss.border};">${status}</span>
+      </div>
+      <div class="fm-topic-next">${escHtml(nextDueLabel(t))}</div>
     </div>
-    <div class="topic-retention">${pct}%</div>
-    <div class="risk-bar"><div class="risk-bar-fill ${risk}" style="width:${pct}%"></div></div>
-    <span class="risk-badge ${risk}">${risk.toUpperCase()}</span>
     ${markReviewedBtn(t)}
   </div>`;
 }
 
-function rqRowHtml(t){
-  const cls = SUBJECT_CLASS[t.subject]||'physics';
-  const risk = riskLevel(t.strength);
-  return `<div class="rq-item">
-    <div class="rq-info">
-      <div class="rq-name">${escHtml(t.topic)}</div>
-      <span class="topic-subject ${cls}">${escHtml(t.subject||'General')}</span>
-      <div class="rq-next-due">${escHtml(nextDueLabel(t))}</div>
-    </div>
-    <span class="risk-badge ${risk}">${risk.toUpperCase()}</span>
-    ${markReviewedBtn(t)}
-  </div>`;
-}
+function rqRowHtml(t){ return topicRowHtml(t); }
 
 /* Marks the next due interval complete for a tracker_data row and
    saves via the same debounced sync tracker.html uses — so the
@@ -330,6 +399,11 @@ let cachedProfile = null;
    `rows`, without re-fetching from Supabase — used right after a
    local edit (add topic / mark reviewed) so the UI updates instantly
    while the debounced sync writes it to Supabase in the background. */
+function setGreetingSub(text){
+  document.getElementById('homeGreetingSub').textContent = text;
+  const fm = document.getElementById('fmGreetingSub'); if(fm) fm.textContent = text;
+}
+
 async function renderHomeFromState(){
   const now = new Date();
   const results = rows.map((r,i)=>computeTopicStrength(r, i, now)).filter(Boolean);
@@ -339,17 +413,16 @@ async function renderHomeFromState(){
   const recallRowsEl = document.getElementById('todayRecallRows');
   if(atRisk.length){
     recallRowsEl.innerHTML = atRisk.map(topicRowHtml).join('');
-    document.getElementById('homeGreetingSub').textContent =
-      `${atRisk.length} topic${atRisk.length===1?'':'s'} need attention before tonight. Let's lock ${atRisk.length===1?'it':'them'} in.`;
+    setGreetingSub(`${atRisk.length} topic${atRisk.length===1?'':'s'} need attention before tonight. Let's lock ${atRisk.length===1?'it':'them'} in.`);
     document.getElementById('todayRecallSubtitle').textContent =
       `${atRisk.length} topic${atRisk.length===1?'':'s'} are fading right now`;
   } else if(rows.length){
     recallRowsEl.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);padding:0.5rem 0;">Everything is holding steady — nothing urgent right now.</div>';
-    document.getElementById('homeGreetingSub').textContent = 'Your recall is holding steady. Nice work.';
+    setGreetingSub('Your recall is holding steady. Nice work.');
     document.getElementById('todayRecallSubtitle').textContent = 'Nothing at risk right now';
   } else {
     recallRowsEl.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);padding:0.5rem 0;">Nothing logged yet — use \'What did you study today?\' above to start tracking.</div>';
-    document.getElementById('homeGreetingSub').textContent = "Let's log what you studied today to start tracking recall.";
+    setGreetingSub("Let's log what you studied today to start tracking recall.");
     document.getElementById('todayRecallSubtitle').textContent = 'No topics tracked yet';
   }
 
@@ -367,12 +440,67 @@ async function renderHomeFromState(){
   document.getElementById('weekReviewsDone').textContent = totalDone.toLocaleString('en-IN');
 }
 
+let mySubjects = [];
+
+function populateSubjectSelect(){
+  const subjectSel = document.getElementById('logSubject');
+  const current = subjectSel.value;
+  subjectSel.innerHTML = mySubjects.map(s=>`<option value="${escAttr(s)}">${escHtml(s)}</option>`).join('')
+    + `<option disabled>──────────</option><option value="__custom__">＋ Add Custom…</option>`;
+  if(mySubjects.includes(current)) subjectSel.value = current;
+}
+
+/* Saves a newly-typed subject to user_profiles.subjects so it's
+   available in the dropdown next time too, then selects it. */
+async function addCustomSubject(name){
+  if(mySubjects.includes(name)) return;
+  mySubjects.push(name);
+  populateSubjectSelect();
+  document.getElementById('logSubject').value = name;
+  try{
+    await sb.from('user_profiles').update({subjects: mySubjects}).eq('id', myUserId);
+  }catch(e){ console.warn('RM2 home: could not save custom subject', e); }
+}
+
 function wireInteractions(){
+  const subjectSel = document.getElementById('logSubject');
+  const customBox = document.getElementById('customSubjectBox');
+  const customInput = document.getElementById('customSubjectInput');
+  const customError = document.getElementById('customSubjectError');
+
+  subjectSel.addEventListener('change', ()=>{
+    if(subjectSel.value === '__custom__'){
+      customBox.style.display = '';
+      customInput.value = '';
+      customError.style.display = 'none';
+      customInput.focus();
+    } else {
+      customBox.style.display = 'none';
+    }
+  });
+
+  function confirmCustomSubject(){
+    const trimmed = customInput.value.trim();
+    if(!trimmed){ customError.textContent='Enter a subject name'; customError.style.display=''; return; }
+    if(mySubjects.includes(trimmed)){ customError.textContent='Subject already exists'; customError.style.display=''; return; }
+    addCustomSubject(trimmed);
+    customBox.style.display = 'none';
+  }
+  document.getElementById('customSubjectConfirm').addEventListener('click', confirmCustomSubject);
+  document.getElementById('customSubjectCancel').addEventListener('click', ()=>{
+    customBox.style.display = 'none';
+    subjectSel.value = mySubjects[0] || '';
+  });
+  customInput.addEventListener('keydown', (e)=>{
+    if(e.key==='Enter'){ e.preventDefault(); confirmCustomSubject(); }
+    if(e.key==='Escape'){ customBox.style.display='none'; subjectSel.value = mySubjects[0] || ''; }
+  });
+
   document.getElementById('logTodayForm').addEventListener('submit', async (e)=>{
     e.preventDefault();
-    const subjectEl = document.getElementById('logSubject');
     const topicEl = document.getElementById('logTopic');
-    const subject = subjectEl.value || 'General';
+    if(subjectSel.value === '__custom__') return; // must confirm the custom subject first
+    const subject = subjectSel.value || 'General';
     const topic = topicEl.value.trim();
     if(!topic) return;
     const btn = document.getElementById('logSubmitBtn');
@@ -386,7 +514,7 @@ function wireInteractions(){
   // listener on the containers is simpler than rebinding every time.
   ['todayRecallRows','reviewQueueRows'].forEach(id=>{
     document.getElementById(id).addEventListener('click', (e)=>{
-      const btn = e.target.closest('.mark-reviewed-btn');
+      const btn = e.target.closest('.fm-mark-btn');
       if(!btn || btn.disabled) return;
       markReviewed(Number(btn.dataset.rowIndex));
     });
@@ -405,12 +533,9 @@ async function initHome(){
   cachedProfile = profile;
   rows = profile.tracker_data || [];
   slog = profile.study_log || {};
+  mySubjects = (profile.subjects && profile.subjects.length) ? profile.subjects.slice() : ['Physics','Chemistry','Biology'];
 
-  // Subject dropdown for the "what did you study today" form
-  const subjectSel = document.getElementById('logSubject');
-  const subjects = (profile.subjects && profile.subjects.length) ? profile.subjects : ['Physics','Chemistry','Biology','General'];
-  subjectSel.innerHTML = subjects.map(s=>`<option value="${escAttr(s)}">${escHtml(s)}</option>`).join('');
-
+  populateSubjectSelect();
   wireInteractions();
 
   // Greeting
@@ -418,11 +543,17 @@ async function initHome(){
   const firstName = rawName.split(' ')[0] || 'there';
   const hour = new Date().getHours();
   const greetWord = hour<12?'Morning':hour<17?'Afternoon':'Evening';
-  document.getElementById('homeGreeting').textContent = `${greetWord}, ${firstName}.`;
+  const greetingText = `${greetWord}, ${firstName}.`;
+  document.getElementById('homeGreeting').textContent = greetingText;
+  document.getElementById('fmGreeting').textContent = greetingText;
 
-  // Topbar
-  document.getElementById('badgeTrack').textContent = profile.track || 'Custom Track';
-  document.getElementById('badgeStreakText').textContent = `${profile.current_streak||0} DAY STREAK`;
+  // Topbar / mobile header badges
+  const trackText = profile.track || 'Custom Track';
+  const streakText = `${profile.current_streak||0} DAY STREAK`;
+  document.getElementById('badgeTrack').textContent = trackText;
+  document.getElementById('badgeStreakText').textContent = streakText;
+  document.getElementById('fmPillTrack').textContent = trackText;
+  document.getElementById('fmPillStreakText').textContent = streakText;
   const now=new Date();
   document.getElementById('topbarSub').textContent = now.toLocaleDateString('en-IN',{weekday:'short'}) + ' · ' + now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
 
