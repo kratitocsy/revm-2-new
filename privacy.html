@@ -8,18 +8,24 @@
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#8b5cf6">
-<link rel="stylesheet" href="src/styles/pages/privacy.css">
+<link rel="stylesheet" href="src/styles/tailwind.build.css">
 </head>
 <body>
 <canvas id="starfield"></canvas>
 <nav class="topnav">
-  <a href="index.html"><img src="wynko-logo.png" alt="WYNKO" style="height:32px;width:auto;"></a>
+  <a href="index.html"><img src="wynko-logo.png" alt="WYNKO" class="h-8 w-auto"></a>
   <ul class="topnav-links"><li><a href="index.html">← Back to WYNKO</a></li></ul>
   <a class="topnav-cta" href="login.html">Launch app →</a>
 </nav>
-<div class="policy-wrap">
+<div class="relative z-[5] max-w-[720px] mx-auto pt-20 px-8 pb-16
+            [&_h1]:text-[1.8rem] [&_h1]:font-black [&_h1]:text-white [&_h1]:uppercase [&_h1]:tracking-[-0.02em] [&_h1]:mb-2
+            [&_h2]:text-[0.88rem] [&_h2]:font-bold [&_h2]:text-white [&_h2]:uppercase [&_h2]:tracking-[0.06em] [&_h2]:mt-8 [&_h2]:mb-[0.65rem]
+            [&_p]:text-[0.85rem] [&_p]:text-muted [&_p]:leading-[1.8] [&_p]:mb-2
+            [&_li]:text-[0.85rem] [&_li]:text-muted [&_li]:leading-[1.8] [&_li]:mb-2
+            [&_ul]:pl-5
+            [&_a]:text-violet-bright [&_a]:no-underline">
   <h1>Privacy Policy</h1>
-  <div class="date">Last updated: June 2026</div>
+  <div class="text-[0.72rem] text-muted mb-10">Last updated: June 2026</div>
 
   <p>WYNKO ("we", "our", "us") is committed to protecting your privacy. This policy explains what information we collect and how we use it.</p>
 
@@ -59,7 +65,7 @@
   <h2>Contact</h2>
   <p>For any privacy concerns, contact us at: <a href="mailto:privacy@revm2.in">privacy@revm2.in</a></p>
 
-  <p style="margin-top:2rem;font-size:0.75rem;color:var(--dim)">This privacy policy applies to revm2.vercel.app and revm2.in.</p>
+  <p class="!mt-8 !text-xs !text-dim">This privacy policy applies to revm2.vercel.app and revm2.in.</p>
 </div>
 <script src="shared.js"></script>
 <script>initStarfield();</script>
