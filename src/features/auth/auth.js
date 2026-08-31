@@ -1,4 +1,4 @@
-import { REVM2_CONFIG } from '../../lib/core/config.js';
+import { REVM2_CONFIG } from '../../lib/supabase.js';
 /* ── SIGN OUT ─────────────────────────────────────────────── */
 /* Call from any page after `const sb = supabase.createClient(...)` exists.
    Signs out of Supabase and sends the user back to login.html. Does NOT

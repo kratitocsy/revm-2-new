@@ -1,5 +1,5 @@
 /* ============================================================
-   RevM² — src/components/Modal.js
+   RevM² — src/components/Modal/Modal.js
 
    Every modal in the app follows the same shape:
      <div class="modal-overlay" id="...">
@@ -7,12 +7,12 @@
      </div>
    toggled via `.classList.add/remove('show')` on the overlay.
    That pattern was previously hand-rolled separately in
-   src/lib/core/exam-switcher.js (dynamically injected) and inline
+   src/components/Sidebar/exam-switcher.js (dynamically injected) and inline
    in home.html (logModeModal, static markup) — same shape, two
    copies. This is the shared version.
 
    Usage:
-     import { openModal, closeModal, injectModal } from '../components/Modal.js';
+     import { openModal, closeModal, injectModal } from '../components/Modal/Modal.js';
 
      injectModal('myModal', '<h3>Title</h3><p>Body</p>');
      openModal('myModal');

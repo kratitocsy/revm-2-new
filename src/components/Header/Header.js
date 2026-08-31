@@ -1,5 +1,5 @@
 /* ============================================================
-   RevM² — src/components/Header.js
+   RevM² — src/components/Header/Header.js
 
    Not to be confused with the app Sidebar. This is the top nav
    bar used on the public/marketing pages only — landing.html,
@@ -14,7 +14,7 @@
    pages don't hand-roll a fourth variant.
 
    Usage:
-     import { renderHeader } from '../components/Header.js';
+     import { renderHeader } from '../components/Header/Header.js';
      document.getElementById('headerSlot').outerHTML = renderHeader({
        links: [{ href: '#features', label: 'Features' }, { href: '#pricing', label: 'Pricing' }],
        ctaHref: 'login.html',

@@ -1,5 +1,5 @@
 /* ============================================================
-   RevM² — src/components/Button.js
+   RevM² — src/components/Button/Button.js
 
    Buttons here are plain CSS classes (styled in style.css /
    src/styles/base.css) — there's no JS component to render one.
@@ -26,7 +26,7 @@
        <div class="btn-spinner" style="display:none;"></div>
      </button>
 
-     import { setButtonLoading } from '../components/Button.js';
+     import { setButtonLoading } from '../components/Button/Button.js';
      setButtonLoading(document.getElementById('saveBtn'), true, 'Saving…');
      // ...
      setButtonLoading(document.getElementById('saveBtn'), false);

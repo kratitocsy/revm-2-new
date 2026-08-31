@@ -27,19 +27,8 @@ var RevM2Shared = function(exports) {
      * Leave empty to hide the "Continue with Telegram" button. */
     TELEGRAM_BOT_ID: ""
   };
-  const INTERVALS = [
-    { key: "r0", label: "5m", days: 0 },
-    { key: "r1", label: "12h", days: 0.5 },
-    { key: "r2", label: "+1D", days: 1 },
-    { key: "r3", label: "+2D", days: 2 },
-    { key: "r4", label: "+4D", days: 4 },
-    { key: "r5", label: "+7D", days: 7 },
-    { key: "r6", label: "+15D", days: 15 },
-    { key: "r7", label: "+30D", days: 30 }
-  ];
-  const config = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  const supabaseConfig = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
     __proto__: null,
-    INTERVALS,
     REVM2_CONFIG
   }, Symbol.toStringTag, { value: "Module" }));
   const Store = {
@@ -64,10 +53,20 @@ var RevM2Shared = function(exports) {
       }
     }
   };
-  const store = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  const storage = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
     __proto__: null,
     Store
   }, Symbol.toStringTag, { value: "Module" }));
+  const INTERVALS = [
+    { key: "r0", label: "5m", days: 0 },
+    { key: "r1", label: "12h", days: 0.5 },
+    { key: "r2", label: "+1D", days: 1 },
+    { key: "r3", label: "+2D", days: 2 },
+    { key: "r4", label: "+4D", days: 4 },
+    { key: "r5", label: "+7D", days: 7 },
+    { key: "r6", label: "+15D", days: 15 },
+    { key: "r7", label: "+30D", days: 30 }
+  ];
   const TODAY = (() => {
     const d = /* @__PURE__ */ new Date();
     d.setHours(0, 0, 0, 0);
@@ -91,16 +90,6 @@ var RevM2Shared = function(exports) {
     s = String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/\n/g, "\\n").replace(/\r/g, "\\r");
     return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
-  const format = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-    __proto__: null,
-    TODAY,
-    TODAY_STR,
-    escAttr,
-    escHtml,
-    fmtDateFull,
-    fmtDateShort,
-    fmtTime
-  }, Symbol.toStringTag, { value: "Module" }));
   function go(url) {
     window.location.href = url;
   }
@@ -111,10 +100,33 @@ var RevM2Shared = function(exports) {
       window.location.href = "groups.html?quickinvite=1";
     }
   }
-  const nav = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  async function logEvent(eventType, feature = null, meta = null) {
+    try {
+      if (typeof sb === "undefined") return;
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) return;
+      await sb.from("user_events").insert({
+        user_id: session.user.id,
+        event_type: eventType,
+        feature,
+        meta
+      });
+    } catch (e) {
+    }
+  }
+  const utils = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
     __proto__: null,
+    INTERVALS,
+    TODAY,
+    TODAY_STR,
+    escAttr,
+    escHtml,
+    fmtDateFull,
+    fmtDateShort,
+    fmtTime,
     go,
-    goInvite
+    goInvite,
+    logEvent
   }, Symbol.toStringTag, { value: "Module" }));
   async function signOutRevM2() {
     try {
@@ -223,24 +235,6 @@ var RevM2Shared = function(exports) {
     startDesktopAuthSync,
     syncNativeAuthToken
   }, Symbol.toStringTag, { value: "Module" }));
-  async function logEvent(eventType, feature = null, meta = null) {
-    try {
-      if (typeof sb === "undefined") return;
-      const { data: { session } } = await sb.auth.getSession();
-      if (!session) return;
-      await sb.from("user_events").insert({
-        user_id: session.user.id,
-        event_type: eventType,
-        feature,
-        meta
-      });
-    } catch (e) {
-    }
-  }
-  const analytics = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-    __proto__: null,
-    logEvent
-  }, Symbol.toStringTag, { value: "Module" }));
   exports._syncTimer = null;
   function syncTrackerToSupabase(rows, slog) {
     if (exports._syncTimer) clearTimeout(exports._syncTimer);
@@ -302,6 +296,64 @@ var RevM2Shared = function(exports) {
     pullConfigFromSupabase,
     pullTrackerFromSupabase,
     syncTrackerToSupabase
+  }, Symbol.toStringTag, { value: "Module" }));
+  function openMobileSidebar() {
+    const sb2 = document.querySelector(".sidebar");
+    const bd = document.getElementById("sidebarBackdrop");
+    if (sb2) sb2.classList.add("mobile-open");
+    if (bd) bd.classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+  function closeMobileSidebar() {
+    const sb2 = document.querySelector(".sidebar");
+    const bd = document.getElementById("sidebarBackdrop");
+    if (sb2) sb2.classList.remove("mobile-open");
+    if (bd) bd.classList.remove("active");
+    document.body.style.overflow = "";
+  }
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".sidebar .nav-item").forEach((el) => {
+      el.addEventListener("click", () => {
+        if (window.innerWidth <= 768) closeMobileSidebar();
+      });
+    });
+    window.addEventListener("resize", () => {
+      var _a;
+      if (window.innerWidth > 768) closeMobileSidebar();
+      else (_a = document.querySelector(".sidebar")) == null ? void 0 : _a.classList.remove("hover-open");
+    });
+  });
+  const mobileSidebar = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+    __proto__: null,
+    closeMobileSidebar,
+    openMobileSidebar
+  }, Symbol.toStringTag, { value: "Module" }));
+  function initSidebarHoverReveal() {
+    const sidebar = document.querySelector(".sidebar");
+    if (!sidebar) return;
+    if (document.getElementById("sidebarHoverZone")) return;
+    const zone = document.createElement("div");
+    zone.id = "sidebarHoverZone";
+    zone.className = "sidebar-hover-zone";
+    document.body.appendChild(zone);
+    let closeTimer = null;
+    function reveal() {
+      clearTimeout(closeTimer);
+      sidebar.classList.add("hover-open");
+    }
+    function scheduleHide() {
+      clearTimeout(closeTimer);
+      closeTimer = setTimeout(() => sidebar.classList.remove("hover-open"), 180);
+    }
+    zone.addEventListener("mouseenter", reveal);
+    sidebar.addEventListener("mouseenter", reveal);
+    zone.addEventListener("mouseleave", scheduleHide);
+    sidebar.addEventListener("mouseleave", scheduleHide);
+  }
+  document.addEventListener("DOMContentLoaded", initSidebarHoverReveal);
+  const sidebarHover = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+    __proto__: null,
+    initSidebarHoverReveal
   }, Symbol.toStringTag, { value: "Module" }));
   const EXAM_SWITCH_LIST = [
     ["JEE", "JEE"],
@@ -529,7 +581,7 @@ var RevM2Shared = function(exports) {
     } catch (e) {
     }
   }
-  const sound = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  const soundToggle = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
     __proto__: null,
     isSoundOn,
     playRocketLaunch,
@@ -956,64 +1008,6 @@ var RevM2Shared = function(exports) {
     __proto__: null,
     RevM2Notifications
   }, Symbol.toStringTag, { value: "Module" }));
-  function openMobileSidebar() {
-    const sb2 = document.querySelector(".sidebar");
-    const bd = document.getElementById("sidebarBackdrop");
-    if (sb2) sb2.classList.add("mobile-open");
-    if (bd) bd.classList.add("active");
-    document.body.style.overflow = "hidden";
-  }
-  function closeMobileSidebar() {
-    const sb2 = document.querySelector(".sidebar");
-    const bd = document.getElementById("sidebarBackdrop");
-    if (sb2) sb2.classList.remove("mobile-open");
-    if (bd) bd.classList.remove("active");
-    document.body.style.overflow = "";
-  }
-  document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".sidebar .nav-item").forEach((el) => {
-      el.addEventListener("click", () => {
-        if (window.innerWidth <= 768) closeMobileSidebar();
-      });
-    });
-    window.addEventListener("resize", () => {
-      var _a;
-      if (window.innerWidth > 768) closeMobileSidebar();
-      else (_a = document.querySelector(".sidebar")) == null ? void 0 : _a.classList.remove("hover-open");
-    });
-  });
-  const mobileSidebar = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-    __proto__: null,
-    closeMobileSidebar,
-    openMobileSidebar
-  }, Symbol.toStringTag, { value: "Module" }));
-  function initSidebarHoverReveal() {
-    const sidebar = document.querySelector(".sidebar");
-    if (!sidebar) return;
-    if (document.getElementById("sidebarHoverZone")) return;
-    const zone = document.createElement("div");
-    zone.id = "sidebarHoverZone";
-    zone.className = "sidebar-hover-zone";
-    document.body.appendChild(zone);
-    let closeTimer = null;
-    function reveal() {
-      clearTimeout(closeTimer);
-      sidebar.classList.add("hover-open");
-    }
-    function scheduleHide() {
-      clearTimeout(closeTimer);
-      closeTimer = setTimeout(() => sidebar.classList.remove("hover-open"), 180);
-    }
-    zone.addEventListener("mouseenter", reveal);
-    sidebar.addEventListener("mouseenter", reveal);
-    zone.addEventListener("mouseleave", scheduleHide);
-    sidebar.addEventListener("mouseleave", scheduleHide);
-  }
-  document.addEventListener("DOMContentLoaded", initSidebarHoverReveal);
-  const sidebarHover = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-    __proto__: null,
-    initSidebarHoverReveal
-  }, Symbol.toStringTag, { value: "Module" }));
   const RM2_REDUCED_MOTION = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   function rm2AnimateNumber(el, target, opts = {}) {
     if (!el) return;
@@ -1141,32 +1135,30 @@ var RevM2Shared = function(exports) {
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
     else boot();
   })();
-  const animate = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  const animateNumber = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
     __proto__: null,
     RM2_REDUCED_MOTION,
     rm2AnimateNumber,
     rm2Stagger
   }, Symbol.toStringTag, { value: "Module" }));
   const modules = [
-    config,
-    store,
-    format,
-    nav,
+    supabaseConfig,
+    storage,
+    utils,
     auth,
-    analytics,
     trackerSync,
+    mobileSidebar,
+    sidebarHover,
     examSwitcher,
     typographyReveal,
     starfield,
-    sound,
+    soundToggle,
     logo,
     loadingOverlay,
     callRingtone,
     incomingCallToast,
     unreadBadges,
-    mobileSidebar,
-    sidebarHover,
-    animate
+    animateNumber
   ];
   for (const mod of modules) {
     for (const [key, value] of Object.entries(mod)) {

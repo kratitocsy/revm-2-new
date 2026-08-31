@@ -5,59 +5,66 @@
    drop-in replacement for the old shared.js.
 
    DO NOT hand-edit shared.js at the repo root anymore — it is
-   generated. Edit the module under src/lib/ instead, then run:
+   generated. Edit the module under src/ instead, then run:
      npm run build:shared
    See docs/MODULARIZATION.md for the full picture.
+
+   NOTE: Header/Header.js, Sidebar/Sidebar.js, Modal/Modal.js and
+   Button/Button.js are deliberately NOT imported here. They were
+   not wired into shared.js before this reorg either (see
+   docs/MODULARIZATION.md — "not yet wired into any live page") and
+   this pass is a structural move, not a behavior change. Sidebar.js
+   is still consumed separately, at build time, by
+   scripts/build-sidebars.js (a Node script, not part of the browser
+   bundle). Adding the other three to this barrel is a real follow-up
+   task, not a rename.
    ============================================================ */
 
-import * as config from './core/config.js';
-import * as store from './core/store.js';
-import * as format from './core/format.js';
-import * as nav from './core/nav.js';
+import * as supabaseConfig from './supabase.js';
+import * as storage from './storage.js';
+import * as utils from './utils.js';
 import * as auth from '../features/auth/auth.js';
-import * as analytics from './core/analytics.js';
 import * as trackerSync from '../features/tracker/tracker-sync.js';
-import * as examSwitcher from './core/exam-switcher.js';
 
-import * as typographyReveal from './ui/typography-reveal.js';
-import * as starfield from './ui/starfield.js';
-import * as sound from './ui/sound.js';
-import * as logo from './ui/logo.js';
-import * as loadingOverlay from './ui/loading-overlay.js';
-import * as callRingtone from './ui/call-ringtone.js';
-import * as incomingCallToast from './ui/incoming-call-toast.js';
-import * as unreadBadges from './ui/unread-badges.js';
-import * as mobileSidebar from './ui/mobile-sidebar.js';
-import * as sidebarHover from './ui/sidebar-hover.js';
-import * as animate from './ui/animate.js';
+import * as mobileSidebar from '../components/Sidebar/mobile-sidebar.js';
+import * as sidebarHover from '../components/Sidebar/sidebar-hover.js';
+import * as examSwitcher from '../components/Sidebar/exam-switcher.js';
+import * as typographyReveal from '../components/TypographyReveal/TypographyReveal.js';
+import * as starfield from '../components/Starfield/Starfield.js';
+import * as soundToggle from '../components/SoundToggle/SoundToggle.js';
+import * as logo from '../components/Logo/Logo.js';
+import * as loadingOverlay from '../components/LoadingOverlay/LoadingOverlay.js';
+import * as callRingtone from '../components/CallRingtone/CallRingtone.js';
+import * as incomingCallToast from '../components/IncomingCallToast/IncomingCallToast.js';
+import * as unreadBadges from '../components/UnreadBadges/UnreadBadges.js';
+import * as animateNumber from '../components/AnimateNumber/AnimateNumber.js';
 
 // Every page (and every inline onclick="" handler in every .html
 // file) still expects these on `window`, exactly as the old
 // shared.js provided them. Re-export everything, then mirror it.
-export * from './core/config.js';
-export * from './core/store.js';
-export * from './core/format.js';
-export * from './core/nav.js';
+export * from './supabase.js';
+export * from './storage.js';
+export * from './utils.js';
 export * from '../features/auth/auth.js';
-export * from './core/analytics.js';
 export * from '../features/tracker/tracker-sync.js';
-export * from './core/exam-switcher.js';
-export * from './ui/typography-reveal.js';
-export * from './ui/starfield.js';
-export * from './ui/sound.js';
-export * from './ui/logo.js';
-export * from './ui/loading-overlay.js';
-export * from './ui/call-ringtone.js';
-export * from './ui/incoming-call-toast.js';
-export * from './ui/unread-badges.js';
-export * from './ui/mobile-sidebar.js';
-export * from './ui/sidebar-hover.js';
-export * from './ui/animate.js';
+export * from '../components/Sidebar/mobile-sidebar.js';
+export * from '../components/Sidebar/sidebar-hover.js';
+export * from '../components/Sidebar/exam-switcher.js';
+export * from '../components/TypographyReveal/TypographyReveal.js';
+export * from '../components/Starfield/Starfield.js';
+export * from '../components/SoundToggle/SoundToggle.js';
+export * from '../components/Logo/Logo.js';
+export * from '../components/LoadingOverlay/LoadingOverlay.js';
+export * from '../components/CallRingtone/CallRingtone.js';
+export * from '../components/IncomingCallToast/IncomingCallToast.js';
+export * from '../components/UnreadBadges/UnreadBadges.js';
+export * from '../components/AnimateNumber/AnimateNumber.js';
 
 const modules = [
-  config, store, format, nav, auth, analytics, trackerSync, examSwitcher,
-  typographyReveal, starfield, sound, logo, loadingOverlay, callRingtone,
-  incomingCallToast, unreadBadges, mobileSidebar, sidebarHover, animate,
+  supabaseConfig, storage, utils, auth, trackerSync,
+  mobileSidebar, sidebarHover, examSwitcher,
+  typographyReveal, starfield, soundToggle, logo, loadingOverlay,
+  callRingtone, incomingCallToast, unreadBadges, animateNumber,
 ];
 
 for (const mod of modules) {

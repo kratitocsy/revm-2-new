@@ -1,7 +1,7 @@
 /* ============================================================
    RevM² — scripts/build-sidebars.js
 
-   Stamps the shared Sidebar component (src/components/Sidebar.js)
+   Stamps the shared Sidebar component (src/components/Sidebar/Sidebar.js)
    into every page that uses the standard sidebar. Same philosophy
    as vite.shared.config.js building shared.js: the source of truth
    is one small module, the served .html files stay plain static
@@ -9,7 +9,7 @@
    they're just generated instead of hand-duplicated.
 
    DO NOT hand-edit the sidebar block inside these .html files
-   anymore. Edit src/components/Sidebar.js, then run:
+   anymore. Edit src/components/Sidebar/Sidebar.js, then run:
      npm run build:sidebars
    and commit both.
 
@@ -21,7 +21,7 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
-import { renderSidebar } from '../src/components/Sidebar.js';
+import { renderSidebar } from '../src/components/Sidebar/Sidebar.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');

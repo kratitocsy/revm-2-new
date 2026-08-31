@@ -1,5 +1,5 @@
 /* ============================================================
-   RevM² — src/components/Sidebar.js
+   RevM² — src/components/Sidebar/Sidebar.js
 
    The main app sidebar (logo, nav, track/exam footer, sign-out)
    was duplicated byte-for-byte across every logged-in page —
@@ -14,7 +14,7 @@
    This component is the single source of truth for that markup.
    Usage (unchanged pages keep working — nothing auto-runs):
 
-     import { renderSidebar } from '../components/Sidebar.js';
+     import { renderSidebar } from '../components/Sidebar/Sidebar.js';
      document.getElementById('sidebarSlot').outerHTML =
        renderSidebar({ active: 'home.html' });
 
