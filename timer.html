@@ -14,7 +14,7 @@
 <div class="app-layout">
 
   <!-- SIDEBAR -->
-  <aside class="sidebar">
+<aside class="sidebar">
     <a class="sidebar-logo" href="index.html"><img src="wynko-logo.png" alt="WYNKO" class="sidebar-logo-img"></a>
     <nav class="sidebar-nav">
   <div class="nav-section">Modules</div>
@@ -204,8 +204,10 @@
         <!-- 3. Goal Display -->
         <div class="fl-goal-section">
           <label class="fl-goal-label">Goal:</label>
-          <input type="text" class="fl-goal-input" id="flGoalInput" value="Organic Chemistry — Reaction Mechanisms" placeholder="What are you working on?">
+          <input type="text" class="fl-goal-input" id="flGoalInput" value="" placeholder="What are you working on?">
         </div>
+        <div class="fl-goal-hint" id="flGoalHint">Saved as today's topic when you end the session — it'll show up on Home with its own revision schedule.</div>
+        <div class="fl-goal-saved" id="flGoalSavedNote" style="display:none;">&#10003; Added to today's recall — first review in 5 minutes.</div>
 
         <!-- Hidden fields to preserve existing JS functionality -->
         <div style="display:none;">
@@ -386,6 +388,22 @@
         .fl-goal-input:focus {
           border-color: var(--violet-bright);
           background: var(--s2);
+        }
+        .fl-goal-hint {
+          font-size: 0.68rem;
+          color: var(--muted);
+          margin: -1.5rem 0 2rem 0.25rem;
+          line-height: 1.4;
+        }
+        .fl-goal-saved {
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--success);
+          background: rgba(74,222,128,0.1);
+          border: 1px solid rgba(74,222,128,0.22);
+          border-radius: 6px;
+          padding: 0.5rem 0.85rem;
+          margin: -1.5rem 0 2rem 0.25rem;
         }
 
         /* Enforcement Layers Card */
@@ -1287,7 +1305,7 @@ function toggleTimer(){
     startRemoteSession(sub);
     timerIv=setInterval(()=>{
       if(timerMode==='unlimited'){ timerSecs++; renderTimerDisplay(); return; }
-      if(timerSecs<=0){clearInterval(timerIv);timerRunning=false;logSession();document.getElementById('timerDisplay').classList.remove('running');document.getElementById('timerStartBtn').textContent='▶ Start';return;}
+      if(timerSecs<=0){clearInterval(timerIv);timerRunning=false;logSession();commitFocusLockTopic();document.getElementById('timerDisplay').classList.remove('running');document.getElementById('timerStartBtn').textContent='▶ Start';return;}
       timerSecs--;renderTimerDisplay();
     },1000);
   }
@@ -1299,6 +1317,46 @@ function resetTimer(){
   document.getElementById('timerStartBtn').textContent='▶ Start';
   document.getElementById('timerDisplay').classList.remove('running');
   renderTimerDisplay();
+}
+
+/* Ends the active Focus Lock session (the big red "End session" button
+   in the mockup) and, if a goal was typed in, logs it as a topic
+   studied today — same tracker_data shape as the Home page's "what did
+   you study today" card and the Recall Curve page, so it immediately
+   gets its own 5min/12h/Day1…Day30 review schedule and shows up in the
+   Home review queue. Works for both the single countdown timer and the
+   per-subject Unlimited-mode timers. */
+function endFocusSession(){
+  if(timerMode==='unlimited'){
+    stopAllSubjectTimers();
+  } else if(timerRunning){
+    clearInterval(timerIv);
+    timerRunning=false;
+    document.getElementById('timerDisplay').classList.remove('running');
+    logSession();
+  }
+  document.getElementById('timerStartBtn').textContent='▶ Start';
+  commitFocusLockTopic();
+}
+
+function commitFocusLockTopic(){
+  const goalEl=document.getElementById('flGoalInput');
+  const topic=(goalEl.value||'').trim();
+  if(!topic) return;
+  const subject=document.getElementById('timerSub').value||(cfg.subjects||['General'])[0]||'General';
+  const todayStr=new Date().toISOString().split('T')[0];
+  const newRow={date:todayStr,topic,subject};
+  INTERVALS.forEach(iv=>{ newRow[iv.key]=false; });
+  rows.push(newRow);
+  save();
+  updateStats();renderTable();
+  goalEl.value='';
+  const note=document.getElementById('flGoalSavedNote');
+  if(note){
+    note.style.display='block';
+    clearTimeout(window._flGoalNoteTimer);
+    window._flGoalNoteTimer=setTimeout(()=>{ note.style.display='none'; },4000);
+  }
 }
 
 function renderTimerDisplay(){

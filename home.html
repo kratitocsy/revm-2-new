@@ -14,7 +14,7 @@
 <div class="app-layout">
 
   <!-- SIDEBAR -->
-  <aside class="sidebar">
+<aside class="sidebar">
     <a class="sidebar-logo" href="index.html"><img src="wynko-logo.png" alt="WYNKO" class="sidebar-logo-img"></a>
     <nav class="sidebar-nav">
   <div class="nav-section">Modules</div>
@@ -62,6 +62,9 @@
     <div class="fm-header">
       <div class="fm-header-top">
         <div style="display:flex;align-items:center;gap:8px;">
+          <button onclick="openMobileSidebar()" aria-label="Open menu" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;color:var(--muted);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
           <div style="width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:0.85rem;background:var(--fm-grad);">W</div>
           <span style="font-size:0.85rem;font-weight:900;letter-spacing:0.08em;background:var(--fm-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">WYNKO</span>
         </div>
@@ -77,12 +80,29 @@
     <!-- ═══ HOME DASHBOARD ═══ -->
     <div class="home-wrap">
 
-      <!-- Greeting (desktop) -->
+      <!-- Greeting -->
       <div class="home-greeting" id="homeGreeting">Welcome back.</div>
       <div class="home-greeting-sub" id="homeGreetingSub">Loading your recall data&hellip;</div>
 
+      <!-- COMPLETE YOUR PROFILE nudge — shown once the account isn't brand
+           new anymore and onboarding still hasn't been done. Never blocks
+           anything; dismissible per-browser via localStorage, and
+           re-appears the day after dismissal if still not onboarded, so
+           it doesn't get permanently forgotten but also isn't naggy every
+           single visit. -->
+      <div class="home-card" id="completeProfileCard" style="display:none;border:1px solid var(--violet-border,rgba(139,92,246,0.30));">
+        <div class="home-card-header">
+          <div>
+            <div class="home-card-title">SET UP YOUR STUDY PROFILE</div>
+            <div class="home-card-subtitle">Takes under a minute — tell us your exam and subjects so schedules, recall targets, and recommendations actually fit you</div>
+          </div>
+          <button type="button" id="dismissProfileNudge" style="background:none;border:none;color:var(--muted,#6b6b80);cursor:pointer;font-size:1.1rem;line-height:1;padding:0.2rem 0.4rem;" aria-label="Dismiss">&times;</button>
+        </div>
+        <button type="button" class="home-log-form" style="display:block;width:100%;text-align:center;padding:0.7rem;border:none;border-radius:8px;background:var(--accent,#8b5cf6);color:#fff;font-weight:600;cursor:pointer;" onclick="window.location.href='onboarding.html'">Complete setup →</button>
+      </div>
+
       <!-- LOG WHAT YOU STUDIED TODAY -->
-      <div class="fm-add-card">
+      <div class="fm-add-card" id="manualLogCard" style="display:none;">
         <p class="fm-add-title">What did you study today?</p>
         <p class="fm-add-sub">Add it once — we'll remind you exactly when to revise it</p>
         <form id="logTodayForm">
@@ -103,127 +123,154 @@
             <button type="submit" id="logSubmitBtn" class="fm-add-btn">+ Add</button>
           </div>
         </form>
-        <p class="fm-add-note">First review: 5 min from now · Then 12h, Day 1, 2, 4, 7, 15, 30 — same spaced-repetition schedule as your Recall Curve page.</p>
+        <p class="fm-add-note">First review: 5 min from now · Then 12h, Day 1, 2, 4, 7, 15, 30 — same spaced-repetition schedule as your Recall Curve page. <a href="#" id="switchToFocusLockMode" style="color:var(--violet-bright);">Prefer to log automatically from Focus Lock instead?</a></p>
       </div>
 
-      <!-- TODAY'S RECALL card -->
-      <div class="home-card">
+      <!-- AUTO MODE NOTICE — shown instead of the manual form when the
+           user has chosen to log only from Focus Lock's session goal. -->
+      <div class="home-card home-log-card" id="autoModeNotice" style="display:none;">
         <div class="home-card-header">
           <div>
-            <div class="home-card-title">TODAY'S RECALL</div>
-            <div class="home-card-subtitle" id="todayRecallSubtitle">Loading&hellip;</div>
+            <div class="home-card-title">LOGGING FROM FOCUS LOCK</div>
+            <div class="home-card-subtitle">Whatever you type as your session goal in Focus Lock is added here automatically when the session ends.</div>
           </div>
         </div>
-
-        <div id="todayRecallRows">
-          <div style="font-size:0.78rem;color:var(--muted);padding:0.5rem 0;">Loading&hellip;</div>
-        </div>
+        <div class="home-log-note"><a href="#" id="switchToManualMode" style="color:var(--violet-bright);">Want to add topics here yourself instead?</a></div>
       </div>
 
-      <!-- RECALL CURVE widget -->
-      <div class="recall-curve-widget">
-        <div class="recall-curve-label">Recall Curve</div>
-        <div class="recall-curve-canvas">
-          <svg viewBox="0 0 400 120" style="width:100%;height:100%;display:block;" preserveAspectRatio="none">
-            <!-- Grid lines -->
-            <line x1="0" y1="30" x2="400" y2="30" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
-            <line x1="0" y1="60" x2="400" y2="60" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
-            <line x1="0" y1="90" x2="400" y2="90" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
-            <!-- Forgetting curve -->
-            <path d="M0,15 C40,18 80,35 120,50 C160,65 200,75 240,82 C280,88 320,92 360,95 L400,97"
-              fill="none" stroke="var(--violet-bright)" stroke-width="2.5" stroke-linecap="round"/>
-            <!-- Fill under curve -->
-            <path d="M0,15 C40,18 80,35 120,50 C160,65 200,75 240,82 C280,88 320,92 360,95 L400,97 L400,120 L0,120 Z"
-              fill="url(#curveGrad)" opacity="0.3"/>
-            <defs>
-              <linearGradient id="curveGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="var(--violet-bright)" stop-opacity="0.4"/>
-                <stop offset="100%" stop-color="var(--violet-bright)" stop-opacity="0"/>
-              </linearGradient>
-            </defs>
-            <!-- Threshold line -->
-            <line x1="0" y1="75" x2="400" y2="75" stroke="var(--danger)" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
-            <text x="360" y="70" font-size="8" fill="var(--danger)" opacity="0.7">forget threshold</text>
-          </svg>
-        </div>
-      </div>
+      <div class="home-grid">
+        <!-- ══ MAIN COLUMN ══ -->
+        <div class="home-col-main">
 
-      <!-- QUICK ACTIONS -->
-      <div class="quick-actions">
-        <!-- Focus Lock -->
-        <div class="qa-card">
-          <div class="qa-icon">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <div class="qa-title">Focus Lock</div>
-          <button class="qa-btn" onclick="go('timer.html')">Start Focus Lock</button>
-        </div>
+          <!-- TODAY'S RECALL card (stat row + curve, like the mockup) -->
+          <div class="home-card">
+            <div class="home-card-header">
+              <div>
+                <div class="home-card-title">TODAY'S RECALL</div>
+                <div class="home-card-subtitle" id="todayRecallSubtitle">Loading&hellip;</div>
+              </div>
+            </div>
 
-        <!-- Study Room -->
-        <div class="qa-card">
-          <div class="qa-icon">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          </div>
-          <div class="qa-title">Study Room</div>
-          <button class="qa-btn" onclick="go('groups.html')"><span class="live-dot"></span>Join Study Room</button>
-        </div>
+            <div class="recall-stat-row" id="recallStatRow" style="display:none;">
+              <div class="recall-stat">
+                <div class="recall-stat-num" id="statRetentionNow">&mdash;</div>
+                <div class="recall-stat-label">Retention now</div>
+              </div>
+              <div class="recall-stat">
+                <div class="recall-stat-num warn" id="statProjected">&mdash;</div>
+                <div class="recall-stat-label">Projected &middot; 9 PM</div>
+              </div>
+              <div class="recall-stat">
+                <div class="recall-stat-num" id="statReviewsDue">&mdash;</div>
+                <div class="recall-stat-label">Reviews due</div>
+              </div>
+            </div>
 
-        <!-- 3D Library -->
-        <div class="qa-card">
-          <div class="qa-icon">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M5 20V10l7-6 7 6v10"/><path d="M9 20v-4h6v4"/></svg>
-          </div>
-          <div class="qa-title">3D Library</div>
-          <button class="qa-btn" onclick="go('blocks.html')">Enter 3D Library</button>
-        </div>
-      </div>
+            <!-- RECALL CURVE -->
+            <div class="recall-curve-canvas">
+              <svg viewBox="0 0 400 120" style="width:100%;height:100%;display:block;" preserveAspectRatio="none">
+                <!-- Grid lines -->
+                <line x1="0" y1="30" x2="400" y2="30" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+                <line x1="0" y1="60" x2="400" y2="60" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+                <line x1="0" y1="90" x2="400" y2="90" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+                <!-- Forgetting curve -->
+                <path d="M0,15 C40,18 80,35 120,50 C160,65 200,75 240,82 C280,88 320,92 360,95 L400,97"
+                  fill="none" stroke="var(--violet-bright)" stroke-width="2.5" stroke-linecap="round"/>
+                <!-- Fill under curve -->
+                <path d="M0,15 C40,18 80,35 120,50 C160,65 200,75 240,82 C280,88 320,92 360,95 L400,97 L400,120 L0,120 Z"
+                  fill="url(#curveGrad)" opacity="0.3"/>
+                <defs>
+                  <linearGradient id="curveGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--violet-bright)" stop-opacity="0.4"/>
+                    <stop offset="100%" stop-color="var(--violet-bright)" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <!-- Threshold line -->
+                <line x1="0" y1="75" x2="400" y2="75" stroke="var(--danger)" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+                <text x="360" y="70" font-size="8" fill="var(--danger)" opacity="0.7">forget threshold</text>
+              </svg>
+            </div>
 
-      <!-- REVIEW QUEUE -->
-      <div class="home-card">
-        <div class="home-card-header">
-          <div>
-            <div class="home-card-title">REVIEW QUEUE</div>
-            <div class="home-card-subtitle" id="reviewQueueSubtitle">Topics due for revision</div>
+            <div id="todayRecallRows" style="margin-top:0.9rem;">
+              <div style="font-size:0.78rem;color:var(--muted);padding:0.5rem 0;">Loading&hellip;</div>
+            </div>
           </div>
-        </div>
 
-        <div id="reviewQueueRows">
-          <div style="font-size:0.78rem;color:var(--muted);padding:0.5rem 0;">Loading&hellip;</div>
-        </div>
-      </div>
+          <!-- QUICK ACTIONS -->
+          <div class="quick-actions">
+            <!-- Focus Lock — real, launching -->
+            <div class="qa-card">
+              <div class="qa-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div class="qa-title">Start Focus Lock</div>
+              <div class="qa-sub">Logs what you study when the session ends</div>
+              <button class="qa-btn" onclick="go('timer.html')">Start Focus Lock</button>
+            </div>
 
-      <!-- THIS WEEK -->
-      <div class="home-card">
-        <div class="home-card-header">
-          <div>
-            <div class="home-card-title">THIS WEEK</div>
-            <div class="home-card-subtitle">Focused time &amp; reviews cleared</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:2rem;flex-wrap:wrap;padding:0.5rem 0 0.25rem;">
-          <div>
-            <div id="weekFocusedTime" style="font-size:1.5rem;font-weight:700;color:var(--text);">&mdash;</div>
-            <div style="font-size:0.7rem;letter-spacing:0.05em;color:var(--muted);text-transform:uppercase;">Focused time</div>
-          </div>
-          <div>
-            <div id="weekReviewsDone" style="font-size:1.5rem;font-weight:700;color:var(--text);">&mdash;</div>
-            <div style="font-size:0.7rem;letter-spacing:0.05em;color:var(--muted);text-transform:uppercase;">Reviews completed</div>
-          </div>
-        </div>
-      </div>
+            <!-- Schedules (blocks.html — real Focus Lock schedule builder, launching) -->
+            <div class="qa-card">
+              <div class="qa-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+              </div>
+              <div class="qa-title">Study Schedules</div>
+              <div class="qa-sub">Build a day-by-day Focus Lock schedule</div>
+              <button class="qa-btn" onclick="go('blocks.html')">Open Schedules</button>
+            </div>
 
-      <!-- LIVE NOW -->
-      <div class="home-card" id="liveNowCard" style="display:none;">
-        <div class="home-card-header">
-          <div>
-            <div class="home-card-title">LIVE NOW</div>
-            <div class="home-card-subtitle" id="liveNowSubtitle">&nbsp;</div>
+            <!-- Study Rooms — not launching yet -->
+            <div class="qa-card" style="opacity:0.55;">
+              <div class="qa-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div class="qa-title">Study Rooms</div>
+              <div class="qa-sub">Coming soon</div>
+              <button class="qa-btn" disabled style="opacity:0.6;cursor:default;">Coming Soon</button>
+            </div>
           </div>
-        </div>
-        <div style="padding:0.25rem 0 0.5rem;">
-          <button class="qa-btn" onclick="go('groups.html')"><span class="live-dot"></span>Join room</button>
-        </div>
-      </div>
+
+        </div><!-- /home-col-main -->
+
+        <!-- ══ SIDE COLUMN ══ -->
+        <div class="home-col-side">
+
+          <!-- REVIEW QUEUE -->
+          <div class="home-card">
+            <div class="home-card-header">
+              <div>
+                <div class="home-card-title">REVIEW QUEUE</div>
+                <div class="home-card-subtitle" id="reviewQueueSubtitle">Topics due for revision</div>
+              </div>
+              <a class="home-see-all" href="tracker.html">See all</a>
+            </div>
+
+            <div id="reviewQueueRows">
+              <div style="font-size:0.78rem;color:var(--muted);padding:0.5rem 0;">Loading&hellip;</div>
+            </div>
+          </div>
+
+          <!-- THIS WEEK -->
+          <div class="home-card">
+            <div class="home-card-header">
+              <div>
+                <div class="home-card-title">THIS WEEK</div>
+                <div class="home-card-subtitle">Focused time &amp; reviews cleared</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:2rem;flex-wrap:wrap;padding:0.5rem 0 0.25rem;">
+              <div>
+                <div id="weekFocusedTime" style="font-size:1.5rem;font-weight:700;color:var(--text);">&mdash;</div>
+                <div style="font-size:0.7rem;letter-spacing:0.05em;color:var(--muted);text-transform:uppercase;">Focused time</div>
+              </div>
+              <div>
+                <div id="weekReviewsDone" style="font-size:1.5rem;font-weight:700;color:var(--text);">&mdash;</div>
+                <div style="font-size:0.7rem;letter-spacing:0.05em;color:var(--muted);text-transform:uppercase;">Reviews completed</div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /home-col-side -->
+      </div><!-- /home-grid -->
 
     </div><!-- /home-wrap -->
 
@@ -231,13 +278,26 @@
 
 </div><!-- /app-layout -->
 
+<!-- REVISION LOG MODE — one-time chooser, shown when revision_log_mode
+     is still unset for this account. -->
+<div class="modal-overlay" id="logModeModal">
+  <div class="modal">
+    <h3>How do you want to log revision?</h3>
+    <p>WYNKO can build your Recall Curve from whatever you type as your session goal in Focus Lock, or you can add topics yourself here on Home. You can switch anytime.</p>
+    <div style="display:flex;flex-direction:column;gap:0.6rem;">
+      <button type="button" class="btn btn-gold" id="chooseFocusLockMode" style="justify-content:center;">Automatically from Focus Lock</button>
+      <button type="button" class="btn btn-ghost" id="chooseManualMode" style="justify-content:center;">I'll enter it myself</button>
+    </div>
+  </div>
+</div>
+
 <!-- MOBILE TAB BAR -->
 <nav class="mobile-tab-bar">
   <a href="home.html" class="mtab active"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></a>
   <a href="timer.html" class="mtab"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Focus</span></a>
-  <a href="groups.html" class="mtab"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Rooms</span></a>
+  <a href="#" class="mtab" style="opacity:0.5;" onclick="comingSoon('Study Rooms');return false;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Rooms</span></a>
   <a href="tracker.html" class="mtab"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>Recall</span></a>
-  <a href="#" class="mtab" onclick="openMobileSidebar();return false;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg><span>More</span></a>
+  <a href="blocks.html" class="mtab"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><span>Schedules</span></a>
 </nav>
 
 <script src="shared.js"></script>
@@ -273,8 +333,14 @@ function computeTopicStrength(row, rowIndex, asOf){
   return {strength,overdueDays,topic:row.topic,subject:row.subject,rowIndex,done:false,nextIv,nextDue};
 }
 
-/* Ported from the Figma "Improve WYNKO Mobile Homepage" prototype's
-   SUBJECT_COLORS / PRIORITY_STYLES / STATUS_STYLES + retentionColor(). */
+function riskLevel(strength){
+  return strength<50?'high':strength<75?'med':'low';
+}
+
+/* Subject color-coding, priority/status badges, and the circular
+   retention ring — ported from the Figma "Improve WYNKO Mobile
+   Homepage" prototype. Same underlying strength/overdueDays numbers
+   as before; this only changes how they're displayed. */
 const SUBJECT_COLORS = {
   Physics:{bg:'rgba(59,130,246,0.18)',text:'#60a5fa'},
   Chemistry:{bg:'rgba(16,185,129,0.18)',text:'#34d399'},
@@ -287,33 +353,27 @@ const CUSTOM_PALETTE = [
   {bg:'rgba(139,92,246,0.18)',text:'#8b5cf6'},{bg:'rgba(236,72,153,0.18)',text:'#ec4899'},
   {bg:'rgba(99,102,241,0.18)',text:'#6366f1'},{bg:'rgba(20,184,166,0.18)',text:'#14b8a6'},
   {bg:'rgba(234,179,8,0.18)',text:'#eab308'},{bg:'rgba(239,68,68,0.18)',text:'#ef4444'},
-  {bg:'rgba(217,70,239,0.18)',text:'#d946ef'},{bg:'rgba(251,146,60,0.18)',text:'#fb923c'},
 ];
 function subjectColor(subject){
   if(SUBJECT_COLORS[subject]) return SUBJECT_COLORS[subject];
-  // Deterministic hash so a custom subject always gets the same color,
-  // even across reloads, instead of depending on creation order.
   let hash=0; for(let i=0;i<subject.length;i++) hash=(hash*31+subject.charCodeAt(i))>>>0;
   return CUSTOM_PALETTE[hash % CUSTOM_PALETTE.length];
 }
 function retentionColor(pct){ return pct>=70?'#34d399':pct>=40?'#f59e0b':'#ef4444'; }
 function priorityFromStrength(strength){ return strength<40?'HIGH':strength<70?'MEDIUM':'LOW'; }
-const PRIORITY_STYLES = {
-  HIGH:{bg:'rgba(239,68,68,0.22)',text:'#ef4444'},
-  MEDIUM:{bg:'rgba(245,158,11,0.22)',text:'#f59e0b'},
-  LOW:{bg:'rgba(16,185,129,0.22)',text:'#34d399'},
-};
-const STATUS_STYLES = {
-  'NOT DUE YET':{bg:'transparent',text:'#0d9488',border:'rgba(13,148,136,0.5)'},
-  'DUE TODAY':{bg:'rgba(249,115,22,0.15)',text:'#f97316',border:'rgba(249,115,22,0.5)'},
-  'OVERDUE':{bg:'rgba(239,68,68,0.15)',text:'#ef4444',border:'rgba(239,68,68,0.5)'},
-};
+const PRIORITY_STYLES = {HIGH:{bg:'rgba(239,68,68,0.22)',text:'#ef4444'},MEDIUM:{bg:'rgba(245,158,11,0.22)',text:'#f59e0b'},LOW:{bg:'rgba(16,185,129,0.22)',text:'#34d399'}};
+const STATUS_STYLES = {'NOT DUE YET':{bg:'transparent',text:'#0d9488',border:'rgba(13,148,136,0.5)'},'DUE TODAY':{bg:'rgba(249,115,22,0.15)',text:'#f97316',border:'rgba(249,115,22,0.5)'},'OVERDUE':{bg:'rgba(239,68,68,0.15)',text:'#ef4444',border:'rgba(239,68,68,0.5)'}};
 function statusFromTopic(t){
   if(t.done) return 'NOT DUE YET';
   if(t.overdueDays>0) return 'OVERDUE';
-  const isToday = t.nextDue.toDateString() === new Date().toDateString();
-  return isToday ? 'DUE TODAY' : 'NOT DUE YET';
+  return t.nextDue.toDateString()===new Date().toDateString() ? 'DUE TODAY' : 'NOT DUE YET';
 }
+function retentionRingHtml(pct){
+  const r=14, circ=2*Math.PI*r, fill=(pct/100)*circ, color=retentionColor(pct);
+  return `<div class="fm-ring-wrap"><svg width="36" height="36" viewBox="0 0 36 36"><circle cx="18" cy="18" r="${r}" fill="none" stroke="#1a1a35" stroke-width="3"/><circle cx="18" cy="18" r="${r}" fill="none" stroke="${color}" stroke-width="3" stroke-dasharray="${fill.toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round" transform="rotate(-90 18 18)"/></svg><span class="fm-ring-pct" style="color:${color};">${Math.round(pct)}%</span></div>`;
+}
+
+const SUBJECT_CLASS = {Physics:'physics',Chemistry:'chemistry',Biology:'biology',Maths:'physics',Mathematics:'physics'};
 
 function nextDueLabel(t){
   if(t.done) return 'Fully reviewed';
@@ -323,26 +383,10 @@ function nextDueLabel(t){
   return isOverdue ? `${t.nextIv.label} review — due now` : `Next: ${t.nextIv.label} review · ${when}`;
 }
 
-function retentionRingHtml(pct){
-  const r=14, circ=2*Math.PI*r, fill=(pct/100)*circ, color=retentionColor(pct);
-  return `<div class="fm-ring-wrap">
-    <svg width="36" height="36" viewBox="0 0 36 36">
-      <circle cx="18" cy="18" r="${r}" fill="none" stroke="#1a1a35" stroke-width="3"/>
-      <circle cx="18" cy="18" r="${r}" fill="none" stroke="${color}" stroke-width="3"
-        stroke-dasharray="${fill.toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round"
-        transform="rotate(-90 18 18)"/>
-    </svg>
-    <span class="fm-ring-pct" style="color:${color};">${Math.round(pct)}%</span>
-  </div>`;
-}
-
 function markReviewedBtn(t){
   if(t.done) return '';
   const canMark = t.nextDue <= new Date();
-  return `<button class="fm-mark-btn" data-row-index="${t.rowIndex}" ${canMark?'':'disabled'} title="${canMark?'Mark as reviewed':'Not due yet'}">
-    <span class="fm-mark-circle"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-    <span class="fm-mark-label">${canMark?'Review':'Wait'}</span>
-  </button>`;
+  return `<button class="fm-mark-btn" data-row-index="${t.rowIndex}" ${canMark?'':'disabled'} title="${canMark?'Mark as reviewed':'Not due yet'}"><span class="fm-mark-circle"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="fm-mark-label">${canMark?'Review':'Wait'}</span></button>`;
 }
 
 function topicRowHtml(t){
@@ -409,6 +453,26 @@ async function renderHomeFromState(){
   const results = rows.map((r,i)=>computeTopicStrength(r, i, now)).filter(Boolean);
   results.sort((a,b)=>a.strength-b.strength);
 
+  // Stat row: retention now / projected retention by 9 PM tonight if
+  // nothing gets reviewed / reviews due right now — same underlying
+  // decay model as computeTopicStrength, just evaluated at a later
+  // "asOf" for the projection.
+  const statRowEl = document.getElementById('recallStatRow');
+  if(results.length){
+    statRowEl.style.display = '';
+    const avgNow = Math.round(results.reduce((a,t)=>a+t.strength,0)/results.length);
+    const tonight = new Date(now); tonight.setHours(21,0,0,0);
+    const asOfProjection = tonight > now ? tonight : now;
+    const projResults = rows.map((r,i)=>computeTopicStrength(r,i,asOfProjection)).filter(Boolean);
+    const avgProjected = projResults.length ? Math.round(projResults.reduce((a,t)=>a+t.strength,0)/projResults.length) : avgNow;
+    const reviewsDueNow = results.filter(t=>!t.done && t.strength<70).length;
+    document.getElementById('statRetentionNow').textContent = `${avgNow}%`;
+    document.getElementById('statProjected').textContent = `${avgProjected}%`;
+    document.getElementById('statReviewsDue').textContent = String(reviewsDueNow);
+  } else {
+    statRowEl.style.display = 'none';
+  }
+
   const atRisk = results.filter(t=>!t.done).slice(0,3);
   const recallRowsEl = document.getElementById('todayRecallRows');
   if(atRisk.length){
@@ -440,6 +504,14 @@ async function renderHomeFromState(){
   document.getElementById('weekReviewsDone').textContent = totalDone.toLocaleString('en-IN');
 }
 
+/* ── Revision log mode: 'focus_lock' (auto, from the Focus Lock goal
+   field only) or 'manual' (the Home "what did you study today" form
+   only). Asked once via a modal the first time it's unset; switchable
+   anytime from either card's footer link. ── */
+function comingSoon(feature){
+  alert(`${feature} is coming soon — not part of this launch yet.`);
+}
+
 let mySubjects = [];
 
 function populateSubjectSelect(){
@@ -460,6 +532,19 @@ async function addCustomSubject(name){
   try{
     await sb.from('user_profiles').update({subjects: mySubjects}).eq('id', myUserId);
   }catch(e){ console.warn('RM2 home: could not save custom subject', e); }
+}
+
+function applyLogMode(mode){
+  document.getElementById('manualLogCard').style.display = mode==='manual' ? '' : 'none';
+  document.getElementById('autoModeNotice').style.display = mode==='focus_lock' ? '' : 'none';
+}
+
+async function saveLogMode(mode){
+  applyLogMode(mode);
+  document.getElementById('logModeModal').classList.remove('show');
+  if(cachedProfile) cachedProfile.revision_log_mode = mode;
+  const { error } = await sb.from('user_profiles').update({revision_log_mode: mode}).eq('id', myUserId);
+  if(error) console.error('RM2 home: could not save revision_log_mode', error);
 }
 
 function wireInteractions(){
@@ -510,6 +595,11 @@ function wireInteractions(){
     btn.disabled = false;
   });
 
+  document.getElementById('chooseFocusLockMode').addEventListener('click', ()=>saveLogMode('focus_lock'));
+  document.getElementById('chooseManualMode').addEventListener('click', ()=>saveLogMode('manual'));
+  document.getElementById('switchToFocusLockMode').addEventListener('click', (e)=>{ e.preventDefault(); saveLogMode('focus_lock'); });
+  document.getElementById('switchToManualMode').addEventListener('click', (e)=>{ e.preventDefault(); saveLogMode('manual'); });
+
   // Delegated click handler — rows are re-rendered often, so a single
   // listener on the containers is simpler than rebinding every time.
   ['todayRecallRows','reviewQueueRows'].forEach(id=>{
@@ -527,7 +617,7 @@ async function initHome(){
   myUserId = session.user.id;
 
   const { data: profile, error } = await sb.from('user_profiles')
-    .select('full_name,display_name,tracker_data,study_log,subjects,current_streak,total_reviews_done,track,exam')
+    .select('full_name,display_name,tracker_data,study_log,subjects,current_streak,total_reviews_done,track,exam,onboarded,created_at,total_study_seconds,revision_log_mode')
     .eq('id', myUserId).single();
   if(error || !profile){ console.error('RM2 home: could not load profile', error); return; }
   cachedProfile = profile;
@@ -537,6 +627,34 @@ async function initHome(){
 
   populateSubjectSelect();
   wireInteractions();
+
+  // Revision log mode: ask once (modal) if never set, otherwise just
+  // show whichever card the user picked. Independent of onboarding —
+  // existing accounts that onboarded before this existed get asked too.
+  if(profile.revision_log_mode==='focus_lock' || profile.revision_log_mode==='manual'){
+    applyLogMode(profile.revision_log_mode);
+  } else {
+    applyLogMode('manual'); // sensible default underneath the modal
+    document.getElementById('logModeModal').classList.add('show');
+  }
+
+  // Suggest completing onboarding once the account isn't brand new
+  // anymore — never blocks anything, and never shows on someone's very
+  // first session. "Not brand new" = signed up over a day ago, or has
+  // already logged real study time (whichever comes first, since a very
+  // active first day shouldn't need the arbitrary 24h wait).
+  if(!profile.onboarded){
+    const accountAgeMs = profile.created_at ? (Date.now() - new Date(profile.created_at).getTime()) : 0;
+    const pastFirstSession = accountAgeMs > 24*60*60*1000 || (profile.total_study_seconds||0) > 0;
+    const dismissedUntil = Number(localStorage.getItem('rm2_profile_nudge_dismissed_until') || 0);
+    if(pastFirstSession && Date.now() > dismissedUntil){
+      document.getElementById('completeProfileCard').style.display = '';
+    }
+  }
+  document.getElementById('dismissProfileNudge').addEventListener('click', ()=>{
+    document.getElementById('completeProfileCard').style.display = 'none';
+    localStorage.setItem('rm2_profile_nudge_dismissed_until', String(Date.now() + 24*60*60*1000));
+  });
 
   // Greeting
   const rawName = profile.display_name || profile.full_name || '';
@@ -570,28 +688,6 @@ async function initHome(){
     const weekSecs = (daily||[]).reduce((a,r)=>a+(r.seconds||0),0);
     document.getElementById('weekFocusedTime').textContent = fmtTime(weekSecs);
   }catch(e){ console.warn('RM2 home: week totals unavailable', e); document.getElementById('weekFocusedTime').textContent='—'; }
-
-  // Live now — best-effort: is there an active (unended) session
-  // right now in any study group the user belongs to?
-  try{
-    const { data: memberships } = await sb.from('group_members').select('group_id').eq('user_id', myUserId);
-    const groupIds = (memberships||[]).map(m=>m.group_id);
-    if(groupIds.length){
-      const { data: live } = await sb.from('study_sessions')
-        .select('group_id').in('group_id', groupIds).is('ended_at', null).eq('is_private', false);
-      if(live && live.length){
-        const counts = {};
-        live.forEach(s=>{ counts[s.group_id]=(counts[s.group_id]||0)+1; });
-        const topGroupId = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
-        const { data: group } = await sb.from('study_groups').select('name').eq('id', topGroupId).single();
-        if(group){
-          document.getElementById('liveNowSubtitle').textContent =
-            `${group.name} · ${counts[topGroupId]} studying right now`;
-          document.getElementById('liveNowCard').style.display='';
-        }
-      }
-    }
-  }catch(e){ console.warn('RM2 home: live-now check unavailable', e); }
 }
 
 initHome();

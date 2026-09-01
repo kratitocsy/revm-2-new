@@ -9,83 +9,14 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;font-size:16px;}
 
-:root{
-  /* ── SURFACES ── */
-  --black:#000;
-  --bg:#08080c;
-  --s1:#0e0e14;
-  --s2:#14141e;
-  --s3:#1a1a28;
-  --s4:#22223a;
 
-  /* ── BORDERS ── */
-  --border:rgba(255,255,255,0.06);
-  --border2:rgba(255,255,255,0.12);
-  --border3:rgba(255,255,255,0.20);
-
-  /* ── ACCENTS — Violet / Cyan ── */
-  --violet:#8b5cf6;
-  --violet-bright:#a78bfa;
-  --violet-dim:rgba(139,92,246,0.12);
-  --violet-border:rgba(139,92,246,0.30);
-  --violet-glow:rgba(139,92,246,0.25);
-
-  --cyan:#06b6d4;
-  --cyan-bright:#22d3ee;
-  --cyan-dim:rgba(6,182,212,0.10);
-  --cyan-border:rgba(6,182,212,0.25);
-  --cyan-glow:rgba(6,182,212,0.20);
-
-  /* ── SIGNAL ── */
-  --accent:var(--violet);
-  --accent-bright:var(--violet-bright);
-  --accent-dim:var(--violet-dim);
-  --accent-border:var(--violet-border);
-  --accent-glow:var(--violet-glow);
-
-  /* ── TEXT ── */
-  --white:#f0f0f5;
-  --text:#c8c8d4;
-  --muted:#6b6b80;
-  --dim:#3a3a50;
-
-  /* ── STATUS ── */
-  --danger:#f87171;
-  --success:#4ade80;
-  --warn:#fbbf24;
-  --high:#f87171;
-  --med:#fbbf24;
-  --low:#4ade80;
-
-  /* ── TYPOGRAPHY ── */
-  --font:'Poppins',system-ui,sans-serif;
-  --mono:'DejaVu Sans Mono','Fira Code',monospace;
-
-  /* ── 8pt SPACING GRID ── */
-  --sp-1:4px;   /* 0.5u */
-  --sp-2:8px;   /* 1u */
-  --sp-3:12px;  /* 1.5u */
-  --sp-4:16px;  /* 2u */
-  --sp-5:20px;  /* 2.5u */
-  --sp-6:24px;  /* 3u */
-  --sp-8:32px;  /* 4u */
-  --sp-10:40px; /* 5u */
-  --sp-12:48px; /* 6u */
-  --sp-16:64px; /* 8u */
-
-  /* ── RADII ── */
-  --r-sm:6px;
-  --r-md:10px;
-  --r-lg:14px;
-  --r-xl:20px;
-  --r-full:999px;
-
-  /* ── BACKWARD-COMPAT ALIASES (old gold → new violet) ── */
-  --gold:var(--violet-bright);
-  --gold-dim:var(--violet-dim);
-  --gold-border:var(--violet-border);
-  --font-display:var(--font);
-}
+/* ── DESIGN TOKENS ──
+   Split out to src/styles/tokens.css in this repo's structural
+   reorg — this @import keeps that reference copy self-contained
+   and consistent with tokens.css. (Root style.css, still the
+   live stylesheet every page actually links, keeps its :root{}
+   block inline unchanged — see docs/MODULARIZATION.md.) ── */
+@import url('./tokens.css');
 
 body{
   background:var(--bg);
@@ -128,9 +59,13 @@ body{
   transition:transform 0.25s cubic-bezier(0.16,1,0.3,1);
 }
 .sidebar-logo{
-  padding:var(--sp-6) var(--sp-6) var(--sp-4);display:block;
+  padding:var(--sp-4) var(--sp-5) var(--sp-3);display:block;
   border-bottom:1px solid var(--border);
   text-decoration:none;
+}
+.sidebar-logo-img{
+  height:36px;width:auto;display:block;
+  filter:drop-shadow(0 0 8px rgba(139,92,246,0.3));
 }
 .sidebar-logo-text{
   font-family:var(--font);font-size:1.3rem;font-weight:800;

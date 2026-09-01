@@ -1,4 +1,4 @@
-import { escHtml } from '../core/format.js';
+import { escHtml } from '../../lib/utils.js';
 /* ── UNREAD MESSAGES + MISSED CALLS ───────────────────────────
    Puts a live count badge on the sidebar's "Study Partners" nav item
    (id="navPartnersBadge", added to every app page's sidebar) and pops

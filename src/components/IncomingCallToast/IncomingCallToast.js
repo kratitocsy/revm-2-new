@@ -1,5 +1,5 @@
-import { escHtml } from '../core/format.js';
-import { closeCallNotification, notifyIncomingCall, startCallRingtone, stopCallRingtone } from './call-ringtone.js';
+import { escHtml } from '../../lib/utils.js';
+import { closeCallNotification, notifyIncomingCall, startCallRingtone, stopCallRingtone } from '../CallRingtone/CallRingtone.js';
 /* ── GLOBAL CROSS-PAGE INCOMING-CALL TOAST ───────────────────
    chat.html's call system only ever rang on the exact chat.html?fid=
    page for that friendship — if you were on tracker/groups/store/etc.

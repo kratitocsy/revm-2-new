@@ -1,4 +1,4 @@
-import { escHtml } from '../core/format.js';
+import { escHtml } from '../../lib/utils.js';
 /* ── TYPOGRAPHY REVEAL ────────────────────────────────────── */
 /* Soft staggered word-by-word reveal for page headings (.topbar-title),
    paired with the display serif set in style.css. Auto-applies on every

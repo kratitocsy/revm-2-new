@@ -1,6 +1,5 @@
-import { logEvent } from './analytics.js';
-import { escAttr, escHtml } from './format.js';
-import { Store } from './store.js';
+import { logEvent, escAttr, escHtml } from '../../lib/utils.js';
+import { Store } from '../../lib/storage.js';
 /* ── EXAM SWITCHER ────────────────────────────────────────── */
 /* Click the sidebar track/exam labels to change your exam track.
    Auto-wires on any page that has #sTrack + #sExam in the DOM —

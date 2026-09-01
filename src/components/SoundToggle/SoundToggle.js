@@ -1,4 +1,4 @@
-import { Store } from '../core/store.js';
+import { Store } from '../../lib/storage.js';
 /* ── ROCKET LAUNCH SOUND ──────────────────────────────────── */
 /* Synthesized with Web Audio (no audio file to host/license) — a short
    ignition rumble + whoosh, timed to the rocket's animateMotion (~1.4s). */

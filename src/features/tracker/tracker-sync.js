@@ -1,4 +1,4 @@
-import { INTERVALS } from './config.js';
+import { INTERVALS } from '../../lib/utils.js';
 /* ── TRACKER SYNC (rows/slog ⇄ Supabase) ─────────────────── */
 /* Debounced push of the local tracker snapshot to user_profiles. */
 export let _syncTimer=null;

@@ -1,3 +1,16 @@
+/* ============================================================
+   RevM² — src/lib/supabase.js
+
+   Supabase connection config for the app (URL, anon key, plus the
+   Google Drive / Telegram integration keys that ride alongside it).
+   NOTE: this holds *config*, not a client factory — each page still
+   does its own `const sb = window.supabase.createClient(REVM2_CONFIG.SUPABASE_URL, REVM2_CONFIG.SUPABASE_ANON)`
+   rather than importing a shared client instance from here. Centralizing
+   that too is a reasonable next step, but changes runtime behavior
+   (one shared client vs. one per page) so it's deliberately not done
+   in this reorg pass — see docs/MODULARIZATION.md.
+   ============================================================ */
+
 /* ── SUPABASE CONFIG ─────────────────────────────────────── */
 export const REVM2_CONFIG = {
   SUPABASE_URL:  'https://dhzjtjekbvxxsauzhadl.supabase.co',
@@ -26,16 +39,4 @@ export const REVM2_CONFIG = {
    * Leave empty to hide the "Continue with Telegram" button. */
   TELEGRAM_BOT_ID: '',
 };
-
-/* ── EBBINGHAUS INTERVALS ────────────────────────────────── */
-export const INTERVALS = [
-  { key:'r0', label:'5m',   days:0      },
-  { key:'r1', label:'12h',  days:0.5    },
-  { key:'r2', label:'+1D',  days:1      },
-  { key:'r3', label:'+2D',  days:2      },
-  { key:'r4', label:'+4D',  days:4      },
-  { key:'r5', label:'+7D',  days:7      },
-  { key:'r6', label:'+15D', days:15     },
-  { key:'r7', label:'+30D', days:30     }
-];
 

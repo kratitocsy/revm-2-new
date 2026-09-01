@@ -1,4 +1,4 @@
-import { RevM2Logo } from './logo.js';
+import { RevM2Logo } from '../Logo/Logo.js';
 /* ── GLOBAL LOADING OVERLAY ──────────────────────────────────
    A full-page overlay that shows the animated RevM² logo (small,
    silent) any time the app is buffering: initial auth check, a
