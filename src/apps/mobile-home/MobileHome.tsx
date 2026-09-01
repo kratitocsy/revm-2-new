@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
+import { useWynkoTopics } from "./lib/useWynkoTopics";
 
 // ─── Types ────────────────────────────────────────────────
-type Screen = "home" | "focus" | "rooms" | "library" | "recall" | "more";
-type Priority = "HIGH" | "MEDIUM" | "LOW";
-type TopicStatus = "NOT DUE YET" | "DUE TODAY" | "OVERDUE";
+// Exported so lib/wynkoData.ts (the Supabase-backed data hook) can
+// share these instead of redefining them.
+export type Screen = "home" | "focus" | "rooms" | "library" | "recall" | "more";
+export type Priority = "HIGH" | "MEDIUM" | "LOW";
+export type TopicStatus = "NOT DUE YET" | "DUE TODAY" | "OVERDUE";
 
-interface Topic {
+export interface Topic {
   id: number;
   name: string;
   subject: string;
@@ -45,6 +48,8 @@ const STATUS_STYLES: Record<TopicStatus, { bg: string; text: string; border: str
   "OVERDUE":     { bg: "rgba(239,68,68,0.15)",    text: "#ef4444", border: "rgba(239,68,68,0.5)"   },
 };
 
+// Unused now that topics come from useWynkoTopics() (real Supabase
+// data) — kept only as a shape reference for the Topic type.
 const INITIAL_TOPICS: Topic[] = [
   { id: 1, name: "Cell Cycle",  subject: "Biology", retention: 25, priority: "HIGH", status: "NOT DUE YET", nextReview: "+1D review · 31 Aug", addedAt: Date.now() - 86400000 },
   { id: 2, name: "Life Cycle",  subject: "Biology", retention: 25, priority: "HIGH", status: "NOT DUE YET", nextReview: "+1D review · 31 Aug", addedAt: Date.now() - 86400000 },
@@ -70,7 +75,7 @@ function getSubjectColor(subject: string) {
 }
 
 // Spaced-repetition review intervals label
-const NEXT_REVIEW_LABELS = ["5 min from now", "+12h review", "+1D review", "+2D review", "+4D review", "+7D review", "+15D review", "+30D review"];
+export const NEXT_REVIEW_LABELS = ["5 min from now", "+12h review", "+1D review", "+2D review", "+4D review", "+7D review", "+15D review", "+30D review"];
 
 // ─── Daily Focus Curve Config ─────────────────────────────
 // Typical intraday cognitive retention curve [hour (24h), retention %]
@@ -222,7 +227,7 @@ const CARD_BORDER = "#1a1a35";
 function retentionColor(r: number) {
   return r >= 70 ? "#34d399" : r >= 40 ? "#f59e0b" : "#ef4444";
 }
-function calcPriority(retention: number): Priority {
+export function calcPriority(retention: number): Priority {
   return retention < 40 ? "HIGH" : retention < 70 ? "MEDIUM" : "LOW";
 }
 
@@ -1674,32 +1679,14 @@ function DesktopRecallContent({ onNav, topics, onRemove, onMarkReviewed }: {
 
 export default function MobileHome() {
   const [screen, setScreen] = useState<Screen>("home");
-  const [topics, setTopics] = useState<Topic[]>(INITIAL_TOPICS);
   const [customSubjects, setCustomSubjects] = useState<string[]>([]);
+  const { authState, topics, loading, addTopic, removeTopic, markAsReviewed } = useWynkoTopics();
 
   const goTo = (s: Screen) => setScreen(s);
   const goHome = () => setScreen("home");
 
   // All subjects available in the dropdown
   const allSubjects = [...SUBJECTS, ...customSubjects];
-
-  const addTopic = (subject: string, topicName: string) => {
-    const newTopic: Topic = {
-      id: Date.now(),
-      name: topicName,
-      subject,
-      retention: 100,
-      priority: "LOW",
-      status: "NOT DUE YET",
-      nextReview: NEXT_REVIEW_LABELS[0],
-      addedAt: Date.now(),
-    };
-    setTopics((prev) => [newTopic, ...prev]);
-  };
-
-  const removeTopic = (id: number) => {
-    setTopics((prev) => prev.filter((t) => t.id !== id));
-  };
 
   const addCustomSubject = (name: string) => {
     // Assign the next rotating color and cache it so SubjectBadge resolves it
@@ -1708,24 +1695,27 @@ export default function MobileHome() {
     setCustomSubjects((prev) => [...prev, name]);
   };
 
-  const markAsReviewed = (id: number) => {
-    setTopics((prev) =>
-      prev.map((t) => {
-        if (t.id !== id) return t;
-        // Big retention boost after active review; cap at 100
-        const newRetention = Math.min(100, t.retention + 60);
-        return {
-          ...t,
-          retention: newRetention,
-          priority: calcPriority(newRetention),
-          status: "NOT DUE YET" as TopicStatus,
-          nextReview: "+2D review",
-        };
-      })
-    );
-  };
-
   const sharedProps = { topics, allSubjects, onAddTopic: addTopic, onRemoveTopic: removeTopic, onMarkReviewed: markAsReviewed, onAddCustomSubject: addCustomSubject };
+
+  if (authState === "loading" || (authState === "ready" && loading)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#030309" }}>
+        <div className="text-[13px] text-[#6b6b80]">Loading your homepage…</div>
+      </div>
+    );
+  }
+
+  if (authState === "signed-out") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: "#030309" }}>
+        <div className="text-white text-[15px] font-semibold">Sign in to see your recall data</div>
+        <div className="text-[13px] text-[#6b6b80] max-w-xs">This screen shows your real topics and review schedule once you're signed in.</div>
+        <a href="/login.html" className="mt-2 px-4 py-2 rounded-lg text-[13px] font-bold" style={{ background: "#8b5cf6", color: "#fff" }}>
+          Go to sign in
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen" style={{ background: "#030309", fontFamily: "'Inter', sans-serif" }}>
