@@ -505,6 +505,18 @@
 .fm-mark-label { font-size: 0.55rem; font-weight: 700; color: #2a4a3a; }
 .fm-mark-btn:disabled { opacity: 0.4; cursor: default; }
 
+/* ── TODAY'S FOCUS card ── */
+.fm-focus-card { border-color: rgba(124,58,237,0.35); box-shadow: 0 0 24px rgba(124,58,237,0.08); }
+.fm-focus-stat-row { display: flex; align-items: baseline; gap: 0.4rem; margin: 0.4rem 0 0.7rem; }
+.fm-focus-big { font-size: 1.9rem; font-weight: 800; color: var(--text); line-height: 1; }
+.fm-focus-goal { font-size: 0.85rem; color: var(--muted); cursor: pointer; border-bottom: 1px dashed var(--muted); }
+.fm-focus-goal:hover { color: #a78bfa; border-color: #a78bfa; }
+.fm-focus-progress-track { height: 8px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; }
+.fm-focus-progress-fill { height: 100%; border-radius: 999px; background: var(--fm-grad); transition: width 0.4s ease; }
+.fm-focus-progress-labels { display: flex; justify-content: space-between; font-size: 0.66rem; color: #4a5980; margin-top: 0.4rem; }
+.fm-focus-nextup { display: flex; align-items: center; gap: 0.5rem; background: #080816; border: 1px solid var(--fm-card-border); border-radius: 10px; padding: 0.6rem 0.75rem; margin-top: 0.75rem; font-size: 0.76rem; color: var(--text); }
+.fm-focus-nextup-dot { width: 7px; height: 7px; border-radius: 999px; background: #22d3ee; flex-shrink: 0; box-shadow: 0 0 6px rgba(34,211,238,0.7); }
+
 .fm-header { display: none; }
 @media (max-width: 768px) {
   .fm-header { display: block; }

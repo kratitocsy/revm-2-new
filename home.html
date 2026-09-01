@@ -142,6 +142,39 @@
         <!-- ══ MAIN COLUMN ══ -->
         <div class="home-col-main">
 
+          <!-- TODAY'S FOCUS — real elapsed focus time today vs. your
+               daily goal, pulled from daily_study_totals (the same
+               table Focus Lock sessions write to). "Start Focus" opens
+               the real Focus Lock (timer.html), with Pomodoro/short/
+               long/deep/custom countdowns AND per-subject Unlimited
+               mode — this card is a summary + entry point, not a
+               second, smaller timer implementation. -->
+          <div class="home-card fm-focus-card">
+            <div class="home-card-header">
+              <div>
+                <div class="home-card-title">TODAY'S FOCUS</div>
+                <div class="home-card-subtitle" id="focusCardSubtitle">Loading&hellip;</div>
+              </div>
+            </div>
+            <div class="fm-focus-stat-row">
+              <span class="fm-focus-big" id="focusTodayTime">&mdash;</span>
+              <span class="fm-focus-goal" id="focusGoalLabel" onclick="editFocusGoal()" title="Tap to change your daily goal">/ &mdash; goal</span>
+            </div>
+            <div class="fm-focus-progress-track"><div class="fm-focus-progress-fill" id="focusProgressFill" style="width:0%;"></div></div>
+            <div class="fm-focus-progress-labels">
+              <span id="focusProgressPct">&nbsp;</span>
+              <span id="focusProgressRemaining"></span>
+            </div>
+            <div class="fm-focus-nextup" id="focusNextUp" style="display:none;">
+              <span class="fm-focus-nextup-dot"></span>
+              <span>Next up: <strong id="focusNextUpLabel"></strong></span>
+            </div>
+            <button class="qa-btn" onclick="go('timer.html')" style="margin-top:0.9rem;">&#9654; Start Focus</button>
+            <div style="text-align:center;margin-top:0.6rem;">
+              <a href="blocks.html" style="font-size:0.72rem;color:var(--muted);text-decoration:none;">View today's plan &rarr;</a>
+            </div>
+          </div>
+
           <!-- TODAY'S RECALL card (stat row + curve, like the mockup) -->
           <div class="home-card">
             <div class="home-card-header">
@@ -502,6 +535,60 @@ async function renderHomeFromState(){
 
   const totalDone = rows.reduce((sum,r)=>sum+INTERVALS.filter(iv=>r[iv.key]).length,0);
   document.getElementById('weekReviewsDone').textContent = totalDone.toLocaleString('en-IN');
+
+  // "Next up" on the Today's Focus card — the single most urgent due
+  // topic, same list the Review Queue card shows.
+  const nextUpEl = document.getElementById('focusNextUp');
+  if(dueForReview.length){
+    document.getElementById('focusNextUpLabel').textContent = `Revise ${dueForReview[0].topic}`;
+    nextUpEl.style.display = '';
+  } else {
+    nextUpEl.style.display = 'none';
+  }
+}
+
+/* Today's Focus card: real elapsed focus time today (daily_study_totals,
+   the same table every Focus Lock session writes to — timer.html's
+   Pomodoro/short/long/deep/custom countdowns AND per-subject Unlimited
+   mode all feed it) against the user's own daily_focus_goal_minutes. */
+async function renderFocusCard(){
+  let todaySecs = 0;
+  try{
+    const todayStr = new Date().toISOString().split('T')[0];
+    const { data } = await sb.from('daily_study_totals')
+      .select('seconds').eq('user_id', myUserId).eq('study_date', todayStr).maybeSingle();
+    todaySecs = data?.seconds || 0;
+  }catch(e){ console.warn('RM2 home: today focus total unavailable', e); }
+
+  const goalMin = cachedProfile?.daily_focus_goal_minutes || 180;
+  const goalSecs = goalMin*60;
+  const pct = Math.min(100, Math.round(todaySecs/goalSecs*100));
+  const remainingSecs = Math.max(0, goalSecs-todaySecs);
+
+  document.getElementById('focusTodayTime').textContent = fmtTime(todaySecs);
+  document.getElementById('focusGoalLabel').textContent = `/ ${fmtTime(goalSecs)} goal`;
+  document.getElementById('focusProgressFill').style.width = pct+'%';
+  document.getElementById('focusProgressPct').textContent = `${pct}% complete`;
+  document.getElementById('focusProgressRemaining').textContent =
+    remainingSecs>0 ? `${fmtTime(remainingSecs)} remaining` : 'Goal reached today 🎉';
+  document.getElementById('focusCardSubtitle').textContent =
+    todaySecs>0 ? `${fmtTime(todaySecs)} focused so far today` : "You haven't started a focus session today yet";
+}
+
+/* Tap the goal number on the Today's Focus card to change it — plain
+   prompt() rather than a full settings UI, kept lightweight since this
+   is the only place the goal is ever set. */
+async function editFocusGoal(){
+  const current = cachedProfile?.daily_focus_goal_minutes || 180;
+  const input = prompt('Daily focus goal, in minutes (e.g. 180 = 3 hours):', String(current));
+  if(input===null) return;
+  const mins = parseInt(input, 10);
+  if(!Number.isFinite(mins) || mins<=0 || mins>1440){ alert('Enter a number of minutes between 1 and 1440.'); return; }
+  if(cachedProfile) cachedProfile.daily_focus_goal_minutes = mins;
+  await renderFocusCard();
+  try{
+    await sb.from('user_profiles').update({daily_focus_goal_minutes: mins}).eq('id', myUserId);
+  }catch(e){ console.warn('RM2 home: could not save daily_focus_goal_minutes', e); }
 }
 
 /* ── Revision log mode: 'focus_lock' (auto, from the Focus Lock goal
@@ -617,7 +704,7 @@ async function initHome(){
   myUserId = session.user.id;
 
   const { data: profile, error } = await sb.from('user_profiles')
-    .select('full_name,display_name,tracker_data,study_log,subjects,current_streak,total_reviews_done,track,exam,onboarded,created_at,total_study_seconds,revision_log_mode')
+    .select('full_name,display_name,tracker_data,study_log,subjects,current_streak,total_reviews_done,track,exam,onboarded,created_at,total_study_seconds,revision_log_mode,daily_focus_goal_minutes')
     .eq('id', myUserId).single();
   if(error || !profile){ console.error('RM2 home: could not load profile', error); return; }
   cachedProfile = profile;
@@ -676,6 +763,7 @@ async function initHome(){
   document.getElementById('topbarSub').textContent = now.toLocaleDateString('en-IN',{weekday:'short'}) + ' · ' + now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
 
   await renderHomeFromState();
+  await renderFocusCard();
 
   // This week — real focused time from daily_study_totals.
   // (Reviews-cleared count is set inside renderHomeFromState from
