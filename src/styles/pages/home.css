@@ -16,6 +16,19 @@
   align-items: start;
 }
 .home-col-main, .home-col-side { min-width: 0; }
+
+/* ── Today's Focus: desktop gauge vs mobile bar ──
+   Same underlying data either way (renderFocusCard() in home.html)
+   -- this only swaps which element is visible. Desktop/tablet (this
+   file's existing breakpoint for the sidebar-vs-bottom-tab switch is
+   768px) gets the richer semicircular gauge; mobile keeps the plain
+   linear bar, which reads better at narrow widths. */
+.fm-focus-gauge-wrap { display: none; justify-content: center; margin: 0.4rem 0 0.6rem; }
+@media (min-width: 769px) {
+  .fm-focus-gauge-wrap { display: flex; }
+  .fm-focus-progress-track, .fm-focus-progress-labels { display: none; }
+}
+
 @media (max-width: 980px) {
   .home-grid { grid-template-columns: 1fr; }
 }

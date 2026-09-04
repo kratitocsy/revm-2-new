@@ -165,6 +165,31 @@
               <span id="focusProgressPct">&nbsp;</span>
               <span id="focusProgressRemaining"></span>
             </div>
+
+            <!-- DESKTOP-ONLY semicircular gauge — same real numbers as
+                 the linear bar above (todaySecs/goalSecs/pct from
+                 renderFocusCard()), just a second, richer rendering for
+                 wider viewports. Hidden entirely below the 769px
+                 breakpoint via CSS; the bar above stays the one and
+                 only mobile treatment, unchanged. From the uploaded
+                 "Wynko Desktop Dashboard Design" prototype's FocusPanel
+                 gauge -- ported as a visual only, not the prototype's
+                 hardcoded session list, which was fake data. -->
+            <div class="fm-focus-gauge-wrap" id="fmFocusGaugeWrap">
+              <svg width="180" height="102" viewBox="0 0 150 86" aria-hidden="true">
+                <defs>
+                  <linearGradient id="fmGaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#7C3AED"/>
+                    <stop offset="100%" stop-color="#22D3EE"/>
+                  </linearGradient>
+                </defs>
+                <path d="M 19,80 A 56,56 0 0,1 131,80" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="9" stroke-linecap="round"/>
+                <path id="fmGaugeArc" d="M 19,80 A 56,56 0 0,1 131,80" fill="none" stroke="url(#fmGaugeGrad)" stroke-width="9" stroke-linecap="round" stroke-dasharray="0 175.9"/>
+                <text x="75" y="60" text-anchor="middle" font-size="15" font-weight="600" fill="#E2E8F0" font-family="'IBM Plex Mono',monospace" id="fmGaugeTime">&mdash;</text>
+                <text x="75" y="75" text-anchor="middle" font-size="8.5" fill="rgba(148,163,184,0.6)" font-family="'IBM Plex Mono',monospace" id="fmGaugeGoal">of &mdash;</text>
+              </svg>
+            </div>
+
             <div class="fm-focus-nextup" id="focusNextUp" style="display:none;">
               <span class="fm-focus-nextup-dot"></span>
               <span>Next up: <strong id="focusNextUpLabel"></strong></span>
@@ -573,6 +598,14 @@ async function renderFocusCard(){
     remainingSecs>0 ? `${fmtTime(remainingSecs)} remaining` : 'Goal reached today 🎉';
   document.getElementById('focusCardSubtitle').textContent =
     todaySecs>0 ? `${fmtTime(todaySecs)} focused so far today` : "You haven't started a focus session today yet";
+
+  // Desktop gauge: same pct/todaySecs/goalSecs as the bar above, just a
+  // different rendering. Semicircle arc length = PI*56 (r=56), matching
+  // the SVG path's radius in the markup.
+  const arcLen = Math.PI * 56;
+  document.getElementById('fmGaugeArc').setAttribute('stroke-dasharray', `${(pct/100*arcLen).toFixed(1)} ${arcLen.toFixed(1)}`);
+  document.getElementById('fmGaugeTime').textContent = fmtTime(todaySecs);
+  document.getElementById('fmGaugeGoal').textContent = `of ${fmtTime(goalSecs)}`;
 }
 
 /* Tap the goal number on the Today's Focus card to change it — plain
