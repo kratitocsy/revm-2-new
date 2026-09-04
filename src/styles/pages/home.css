@@ -27,6 +27,100 @@
 @media (min-width: 769px) {
   .fm-focus-gauge-wrap { display: flex; }
   .fm-focus-progress-track, .fm-focus-progress-labels { display: none; }
+
+  /* ══ Figma "Wynko Desktop Dashboard Design" visual language ══
+     Ported color palette, glows, and card treatment faithfully.
+     Desktop/tablet only (this same 769px gate), real data unchanged
+     -- every number/label below still comes from the exact same
+     IDs/JS as before, this block is presentation only. Not applied to
+     Study Rooms' "coming soon" state beyond a matching muted card
+     treatment: the prototype's "24 online" text implied a live
+     people-count that doesn't exist yet, so that specific copy was
+     deliberately not carried over. */
+
+  .home-card {
+    background: #0A0D1E;
+    border: 1px solid rgba(124,58,237,0.22);
+    border-radius: 16px;
+    box-shadow: 0 0 60px rgba(124,58,237,0.06), inset 0 1px 0 rgba(255,255,255,0.04);
+    position: relative;
+    overflow: hidden;
+  }
+  .fm-focus-card::before {
+    content: '';
+    position: absolute; top: 0; right: 0; width: 280px; height: 280px;
+    background: radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 65%);
+    transform: translate(25%,-30%);
+    pointer-events: none;
+  }
+  .home-card:has(.recall-curve-canvas)::before {
+    content: '';
+    position: absolute; bottom: 0; left: 30%; width: 220px; height: 220px;
+    background: radial-gradient(circle, rgba(34,211,238,0.06) 0%, transparent 65%);
+    transform: translate(-50%,40%);
+    pointer-events: none;
+  }
+  .home-card-title, .home-card > * { position: relative; }
+
+  /* Today's Recall stat row as colour-coded chips (real values,
+     Figma's chip treatment) instead of plain stacked numbers */
+  .recall-stat-row { gap: 0.6rem; }
+  .recall-stat {
+    display: flex; flex-direction: column; gap: 0.3rem;
+    padding: 0.5rem 0.85rem; border-radius: 10px; border: 1px solid;
+    background: rgba(124,58,237,0.08); border-color: rgba(124,58,237,0.22);
+  }
+  .recall-stat:nth-child(2) { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.2); }
+  .recall-stat:nth-child(3) { background: rgba(34,211,238,0.07); border-color: rgba(34,211,238,0.2); }
+  .recall-stat-num { font-size: 1.3rem; color: #C4B5FD; }
+  .recall-stat:nth-child(2) .recall-stat-num { color: #fbbf24 !important; }
+  .recall-stat:nth-child(3) .recall-stat-num { color: #67e8f9; }
+
+  /* Quick Actions: vibrant per-card gradients like the prototype.
+     Only the two REAL, launching actions get the vivid treatment;
+     Study Rooms stays visually calmer since it's not live. */
+  .quick-actions { gap: 0.85rem; }
+  .qa-card {
+    border-radius: 14px;
+    border-color: rgba(255,255,255,0.1);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .qa-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.1); }
+  .qa-card:nth-child(1) {
+    background: linear-gradient(135deg,#7C3AED,#5B21B6);
+    box-shadow: 0 4px 24px rgba(124,58,237,0.3);
+  }
+  .qa-card:nth-child(2) {
+    background: linear-gradient(135deg,#0891B2,#0E7490);
+    box-shadow: 0 4px 24px rgba(8,145,178,0.25);
+  }
+  .qa-card:nth-child(1) .qa-icon, .qa-card:nth-child(2) .qa-icon {
+    background: rgba(0,0,0,0.2); color: #fff;
+  }
+  .qa-card:nth-child(1) .qa-title, .qa-card:nth-child(2) .qa-title { color: #fff; }
+  .qa-card:nth-child(1) .qa-sub, .qa-card:nth-child(2) .qa-sub { color: rgba(255,255,255,0.6); }
+  .qa-card:nth-child(1) .qa-btn, .qa-card:nth-child(2) .qa-btn {
+    background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.22); color: #fff;
+  }
+  .qa-card:nth-child(1) .qa-btn:hover, .qa-card:nth-child(2) .qa-btn:hover { background: rgba(255,255,255,0.24); }
+
+  /* Review Queue rows: dark rounded row, hover-reveal action --
+     same real markReviewedBtn() output, just shown on hover like
+     the prototype instead of always-visible */
+  .fm-topic-row {
+    border-bottom: none;
+    background: rgba(14,21,40,0.5);
+    border: 1px solid rgba(124,58,237,0.15);
+    border-radius: 12px;
+    padding: 0.85rem;
+    margin-bottom: 0.5rem;
+    transition: border-color 0.15s ease;
+  }
+  .fm-topic-row:hover { border-color: rgba(124,58,237,0.35); }
+  .fm-topic-row .fm-mark-btn {
+    opacity: 0; transition: opacity 0.15s ease;
+  }
+  .fm-topic-row:hover .fm-mark-btn { opacity: 1; }
 }
 
 @media (max-width: 980px) {
