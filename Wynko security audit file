@@ -1,0 +1,89 @@
+# WYNKO / REVM² — Security Audit Report
+
+**Project ref:** `dhzjtjekbvxxsauzhadl` · **Repo:** github.com/kratitocsy/revm2 · **Date:** 2026-09-06
+
+Audit method: (1) direct connection to the live Supabase project — ran the built-in security linter, then manually read the source of every flagged database function and RLS policy; (2) manual review of public source files fetched directly from GitHub. Everything marked **Fixed** was patched live against the production database during this session.
+
+---
+
+## Summary
+
+| # | Finding | Severity | Status |
+|---|---------|----------|--------|
+| 1 | `increment_wallet()` — anyone could credit any wallet | Critical | ✅ Fixed |
+| 2 | `spend_coins()` — anyone could drain any wallet | Critical | ✅ Fixed |
+| 3 | `log_group_time()` — fabricated study time fed real payouts | Critical | ✅ Fixed |
+| 4 | `user_profiles` — full PII table publicly readable, no login | Critical | ✅ Fixed |
+| 5 | `rpc_create_battle_challenge()` — negative bounty bypassed coin deduction | Moderate | ✅ Fixed |
+| 6 | Hardcoded Metered.ca TURN API key in public client source (`chat.html`) | Low | ⚠️ Flagged — not fixed |
+| 7 | Leaked-password protection disabled in Supabase Auth | Low | ⚠️ Flagged — manual toggle needed |
+| 8 | RLS enabled, no policy on 4 tables | Info | No action needed (safe by default) |
+| 9 | ~95 other anon-callable DB functions | — | Reviewed, confirmed safe |
+| 10 | 13 `admin_*` functions (roles, payouts, moderation) | — | Reviewed, confirmed safe |
+| 11 | 3 CI workflows (pages/android/desktop) | — | Reviewed, confirmed clean |
+| 12 | `ads.js`, `login.html`, `chat.html`, `admin.html`, `battle.html` | — | Reviewed, confirmed clean |
+
+---
+
+## ✅ Fixed
+
+### 1. `increment_wallet()` — unauthenticated wallet credit (Critical)
+**Issue:** `SECURITY DEFINER` function, callable by the unauthenticated `anon` role, with no check on who was calling it or which wallet was targeted.
+**Exploit:** Anyone could POST to `/rest/v1/rpc/increment_wallet` with any `user_id` and any amount to credit that wallet with unlimited free coins — no login required.
+**Fix:** Added a guard requiring `auth.uid()` to match the wallet owner (or `service_role`); revoked `anon` EXECUTE.
+
+### 2. `spend_coins()` — unauthenticated wallet drain (Critical)
+**Issue:** Same pattern in reverse — no ownership check on who could debit a wallet.
+**Exploit:** Anyone could drain any user's coin balance to zero, and user IDs are discoverable via the app's own username-lookup functions.
+**Fix:** Added the same ownership guard; revoked `anon` EXECUTE.
+
+### 3. `log_group_time()` — fabricated study time feeding real payouts (Critical)
+**Issue:** No auth check, anon-callable, and this data feeds directly into the functions that calculate real revenue payouts to group owners and RevHeads.
+**Exploit:** Anyone could inflate any user's/group's logged study seconds with no login, directly manipulating real payout math.
+**Fix:** Added an ownership check (`auth.uid() = p_user_id`, or `service_role`); revoked `anon` EXECUTE.
+
+### 4. `user_profiles` — entire user database publicly readable (Critical)
+**Issue:** A policy named `"profiles: public read"` had `qual = true` applied to role `public` (includes unauthenticated `anon`) — meaning every column of every profile (email, DOB, gender, UPI payment ID, verification photos, admin/moderator flags) was readable by anyone, no login required.
+**Exploit:** A single unauthenticated request to `/rest/v1/user_profiles?select=*` would dump the entire user base's PII, including financial payout details.
+**Fix:** Removed the public-read policy and a redundant duplicate. Confirmed every legitimate cross-user lookup already runs through `SECURITY DEFINER` functions that bypass RLS on their own (unaffected). Widened the remaining policy to cover admins, moderators, and owner-role accounts — matching what `admin.html` already checks client-side — so the admin dashboard kept working.
+
+### 5. `rpc_create_battle_challenge()` — negative bounty bypassed deduction (Moderate)
+**Issue:** Coins were only deducted when `p_bounty > 0`, but any value — including negative — was still recorded into the challenge/pledge rows.
+**Exploit:** A user could submit a negative bounty, skip the deduction, and still create a challenge carrying that value, risking downstream payout-logic manipulation.
+**Fix:** Added an explicit check rejecting `p_bounty < 0`.
+
+---
+
+## ⚠️ Flagged, not fixed by me
+
+### 6. Hardcoded Metered.ca TURN API key (`chat.html`)
+A WebRTC TURN credential key is hardcoded in public client source in a **public** GitHub repo. It only issues short-lived, rate-limited TURN credentials and can't access user data, so it's not a data leak — but anyone browsing the repo could copy it and run up usage against your Metered.ca account.
+**Recommendation:** Rotate the key; consider issuing credentials via a small server-side endpoint (e.g. a Supabase Edge Function) instead of embedding it in source.
+
+### 7. Leaked-password protection disabled
+Supabase Auth can check new passwords against known-breach databases (HaveIBeenPwned) at signup/reset. Currently off.
+**Recommendation:** Enable it manually — Supabase Dashboard → Authentication → Policies → Password Security. This is a config toggle, not something I can apply via SQL.
+
+---
+
+## Reviewed and confirmed clean (no changes needed)
+
+**Database:**
+- 4 tables with RLS enabled and no policy (`rate_limit_events`, `site_config`, `waitlist_status_checks`, `waitlist_status_lookups`) — deny-by-default, not exploitable.
+- ~95 other anon-callable functions individually read and confirmed to already enforce `auth.uid()`/admin checks internally.
+- All 13 `admin_*` functions (role grants, moderator toggling, RevHead verification, payout approval/rejection) confirmed to check `is_owner()` or `is_admin_or_moderator()` server-side, independent of the page's own UI gate.
+- RLS on `dm_messages`, `group_messages`, `focus_lock_sessions`, `focus_lock_presets`, `user_wallets`, `payout_requests` all correctly scope to the resource owner or relevant group membership.
+
+**Application code / CI:**
+- `pages.yml`, `android-build.yml`, `build-desktop.yml` — credentials referenced correctly via `secrets.*`, nothing hardcoded.
+- `ads.js` — reward gating is UI-only client-side; actual coin credit only happens server-side via a `service_role`-only function, so it can't be spoofed.
+- `login.html` — no user-enumeration in password reset, no hardcoded secrets.
+- `chat.html` — message content is properly HTML-escaped (no XSS).
+- `admin.html` — admin-only access is backed by real server-side checks, not just UI hiding.
+- `battle.html` — static placeholder page, no live backend logic yet.
+
+---
+
+## Out of scope / not reviewed
+
+`groups.page.js`, `materials.js`, and other feature-specific JS bundles referenced by `groups.html` were **not reviewed** — they weren't provided as direct file links, and GitHub's folder/repo browsing pages couldn't be accessed by the tooling used here (only direct `blob` file links worked). If you want those covered, send direct `blob` links to those files.
