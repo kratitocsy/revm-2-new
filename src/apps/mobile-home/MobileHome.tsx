@@ -1066,7 +1066,7 @@ function MobileHeader({ streak }: { streak: number }) {
       <div className="flex items-start justify-between mb-3">
         {/* Brand */}
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-white text-sm" style={{ background: GRAD }}>W</div>
+          <img src="/icon-192.png" alt="WYNKO" className="w-7 h-7 rounded-lg object-cover" />
           <span className="text-[15px] font-black tracking-[0.12em]" style={{ background: GRAD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>WYNKO</span>
         </div>
         {/* Top-right badges */}
@@ -1351,7 +1351,7 @@ function Sidebar({ active, onNav }: { active: Screen; onNav: (s: Screen) => void
     <aside className="w-[220px] flex-shrink-0 flex flex-col h-full border-r" style={{ background: "#080812", borderColor: "rgba(255,255,255,0.05)" }}>
       <div className="px-5 pt-7 pb-5 border-b" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
         <div className="flex items-center gap-2.5 mb-1">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-white text-sm" style={{ background: GRAD }}>W</div>
+          <img src="/icon-192.png" alt="WYNKO" className="w-8 h-8 rounded-xl object-cover" />
           <span className="text-[18px] font-black tracking-[0.1em]" style={{ background: GRAD, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>WYNKO</span>
         </div>
         <p className="text-[9px] text-[#2a3a52] tracking-wider mt-1">FOCUS · STUDY · TOGETHER</p>
