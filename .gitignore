@@ -1,2 +1,9 @@
 node_modules/
 release_notes.txt
+
+# Never commit real secrets — see .env.example for what's expected
+# and where each one actually gets set (mostly Supabase function
+# secrets, not a repo-root .env — see the comment in .env.example).
+.env
+.env.*
+!.env.example
